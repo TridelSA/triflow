@@ -2102,7 +2102,7 @@ const normCode = s => String(s || '').trim().toUpperCase().replace(/\s+/g, ' ');
 const findLieu = s => { const c = normCode(s); return c ? db.lieux.find(l => lieuCode(l) === c) : null; };
 const findSalle = s => { const c = normCode(s); return db.salles.find(x => salleCode(x) === c); };
 function parseCode(str){
-  const m = normCode(str).match(/^([A-Z]{1,3})(-?\d+)\.(\d+)(?: ([A-Z])(\d*))?(?: ([A-Z]))?$/);
+  const m = normCode(str).match(/^([A-Z]{1,3}) ?(-?\d+) ?[.,] ?(\d+)(?: ?([A-Z]) ?(\d*))?(?: ?([A-Z]))?$/);
   return m ? {batiment:m[1], etage:m[2], numero:m[3], rayonnage:m[4] || '', niveau:m[5] || '', bac:m[6] || ''} : null;
 }
 const persName = p => p ? `${p.prenom || ''} ${p.nom}`.trim() : '(supprimé)';
@@ -2583,7 +2583,7 @@ const OPT_SECS = [['lieux', 'Emplacements', 'shelf'], ['kks', 'Repères KKS', 'p
 const OPT = {};
 OPT.lieux = () => {
   const salles = [...db.salles].sort((a, b) => coll.compare(salleCode(a), salleCode(b)));
-  return `<section class="opt-sec"><div class="head"><h2>Emplacements</h2><div class="tools"><button class="btn" data-act="new-salle">${icon('plus')}Salle</button><button class="btn" data-act="gen-series">Créer une série</button><button class="btn primary" data-act="new-lieu">${icon('plus')}Emplacement</button></div></div>
+  return `<section class="opt-sec"><div class="head"><h2>Emplacements</h2><div class="tools"><button class="btn" data-act="new-salle">${icon('plus')}Salle</button><button class="btn" data-act="gen-series">Créer une série</button><button class="btn" data-act="import-lieux">Coller une liste</button><button class="btn primary" data-act="new-lieu">${icon('plus')}Emplacement</button></div></div>
     <div class="pad"><div class="format-ex"><span class="plate">E1.11 C45 A</span><span>bâtiment (lettre, ex. E) + étage . n° de salle</span>·<span>rayonnage (lettre) + niveau (chiffres)</span>·<span>bac (lettre)</span></div>
     <p class="hint">Créez d’abord la salle, puis ses emplacements un par un ou en série (ex. rayonnage C, niveaux 40-42 et 30-32, bacs A-B). Cliquez sur un emplacement pour le modifier.</p></div>
     ${salles.length ? salles.map(s => { const ls = db.lieux.filter(l => l.salleId === s.id).sort(lieuSort); return `<details class="oroom" ${salles.length < 4 ? 'open' : ''}><summary><span class="chev">${icon('chev')}</span><span class="plate">${esc(salleCode(s))}</span><strong>${esc(s.nom)}</strong><span class="muted">${ls.length} empl.</span>
@@ -2969,6 +2969,48 @@ function expandLetters(s){
     else if (/^[A-Z]$/.test(tok)) out.push(tok); else throw new Error(`Bac invalide : ${tok}`);
   }
   return out.length ? out : [''];
+}
+function importLieuxDialog(){
+  const analyse = txt => {
+    const ok = [], bad = [], seen = new Set();
+    for (const raw of txt.split(/\r?\n/)){
+      const line = raw.trim(); if (!line) continue;
+      const [codeTxt, ...rest] = line.split(/\t|;/); const nom = rest.join(' ').trim();
+      const c = parseCode(codeTxt);
+      if (!c){ bad.push(line); continue; }
+      const key = `${c.batiment}${c.etage}.${c.numero}|${c.rayonnage}|${c.niveau}|${c.bac}`;
+      if (seen.has(key)) continue; seen.add(key);
+      if (!c.rayonnage && (c.niveau || c.bac)){ bad.push(line); continue; }
+      ok.push({...c, nom});
+    }
+    return {ok, bad};
+  };
+  dialog({title:'Coller une liste d’emplacements', saveLabel:'Créer', wide:true,
+    body:`<p>Un emplacement par ligne, par exemple <span class="plate">E1.11 C45 A</span>. Les salles manquantes sont créées automatiquement ; vous pouvez ajouter le nom de la salle après une tabulation ou un point-virgule (<span class="mono">E1.11 C45 A;Magasin mécanique</span>). Les emplacements qui existent déjà sont ignorés.</p>
+      <label>Liste<textarea name="txt" rows="12" style="font-family:var(--f-mono);font-size:.85rem" placeholder="E1.11 C45 A&#10;E1.11 C45 B&#10;E0.04 A10 A"></textarea></label>
+      <p class="hint" data-prev></p>`,
+    onOpen(f, d){
+      const u = () => { const {ok, bad} = analyse(val(f, 'txt'));
+        const nw = ok.filter(c => (c.rayonnage || c.bac) && !db.lieux.some(l => { const s = getSalle(l.salleId); return s && salleCode(s) === `${c.batiment}${c.etage}.${c.numero}` && l.rayonnage === c.rayonnage && l.niveau === c.niveau && l.bac === c.bac; }));
+        const salles = new Set(ok.map(c => `${c.batiment}${c.etage}.${c.numero}`).filter(code => !findSalle(code)));
+        $('[data-prev]', d).innerHTML = ok.length || bad.length ? `${nw.length} nouvel(s) emplacement(s)${salles.size ? `, ${salles.size} nouvelle(s) salle(s)` : ''}.${bad.length ? ` <span style="color:var(--bad)">${bad.length} ligne(s) non reconnue(s) : ${esc(bad.slice(0, 5).join(' · '))}${bad.length > 5 ? '…' : ''}</span>` : ''}` : ''; };
+      f.addEventListener('input', u); u();
+    },
+    onSave(f){
+      const {ok, bad} = analyse(val(f, 'txt'));
+      if (!ok.length) throw new Error(bad.length ? 'Aucune ligne reconnue. Format attendu : E1.11 C45 A' : 'Collez au moins une ligne.');
+      let nl = 0, ns = 0;
+      tx(() => { for (const c of ok){
+        const sc = `${c.batiment}${c.etage}.${c.numero}`;
+        let s = findSalle(sc);
+        if (!s){ s = {id:uid(), batiment:c.batiment, etage:c.etage, numero:c.numero, nom:c.nom || ''}; db.salles.push(s); ns++; }
+        else if (c.nom && !s.nom) s.nom = c.nom;
+        if (!c.rayonnage && !c.bac) continue;
+        if (db.lieux.some(l => l.salleId === s.id && l.rayonnage === c.rayonnage && l.niveau === c.niveau && l.bac === c.bac)) continue;
+        db.lieux.push({id:uid(), salleId:s.id, rayonnage:c.rayonnage, niveau:c.niveau, bac:c.bac, note:''}); nl++;
+      }});
+      render(); toast(`${nl} emplacement(s) et ${ns} salle(s) créés${bad.length ? ` · ${bad.length} ligne(s) ignorée(s)` : ''}`);
+    }});
 }
 function seriesDialog(salleId){
   if (!db.salles.length){ toast('Créez d’abord une salle.', 'bad'); return salleDialog(); }
@@ -3382,6 +3424,7 @@ const ACT = {
   'new-lieu': d => lieuDialog(null, d.salle),
   'edit-lieu': d => lieuDialog(getLieu(d.id)),
   'gen-series': d => seriesDialog(d.salle),
+  'import-lieux': () => importLieuxDialog(),
   'labels-pick': () => pieceLabelsDialog(null),
   'labels-list': () => pieceLabelsDialog(filteredPieces().map(p => p.id)),
   'labels-one': d => pieceLabelsDialog([d.id]),
