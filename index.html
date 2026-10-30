@@ -326,7 +326,9 @@ details.oroom > summary .chev{transition:transform .15s;color:var(--muted)}
 details.oroom[open] > summary .chev{transform:rotate(90deg)}
 details.oroom > summary .rname{color:var(--muted);font-size:.9rem}
 details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-size:.85rem;color:var(--muted)}
-.rtools{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}
+.rtools .del-salle{margin-left:auto;font-size:.85rem;opacity:.75}
+.rtools .del-salle:hover{opacity:1}
+.rtools{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chips .c{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:999px;padding:2px 4px 2px 12px;font-size:.88rem;background:var(--bg)}
 .chips .c .icon-btn{width:24px;height:24px;font-size:1rem}
@@ -2648,7 +2650,7 @@ OPT.lieux = () => {
   const room = (s, i) => { const ls = db.lieux.filter(l => l.salleId === s.id).sort(lieuSort);
     return `${s.statut && !salles[i - 1]?.statut ? `<div class="stat-head" style="margin:0">${icon('out')}<div><strong>Hors magasin</strong><span>En prêt, en révision, en attente… : suivi, mais pas compté dans le stock.</span></div></div>` : ''}<details class="oroom"><summary><span class="chev">${icon('chev')}</span>${s.statut ? `<span class="stat">${icon('out')}${esc(salleCode(s))}</span>` : `<span class="plate">${esc(salleCode(s))}</span>`}${s.nom && s.nom !== salleCode(s) ? `<span class="rname">${esc(s.nom)}</span>` : ''}<span class="cnt">${ls.length}</span></summary>
       <div class="otree">${ls.length ? lieuTree(ls, 'edit-lieu', null) : '<span class="muted">Aucun emplacement.</span>'}
-        <div class="rtools"><button class="btn small" data-act="new-lieu" data-salle="${s.id}">${icon('plus')}Emplacement</button><button class="btn small" data-act="edit-salle" data-id="${s.id}">${icon('edit')}Modifier le local</button></div></div></details>`; };
+        <div class="rtools"><button class="btn small" data-act="new-lieu" data-salle="${s.id}">${icon('plus')}Emplacement</button><button class="btn small" data-act="edit-salle" data-id="${s.id}">${icon('edit')}Modifier le local</button><button class="link danger del-salle" data-act="del-salle" data-id="${s.id}">Supprimer</button></div></div></details>`; };
   return `<section class="opt-sec"><div class="head"><h2>Emplacements</h2><div class="tools">${add}</div></div>
     <div class="pad"><p class="hint">Ouvrez un local pour voir ses emplacements. Cliquez sur un emplacement pour le modifier.</p></div>
     ${salles.length ? salles.map(room).join('') : `<div class="pad">${empty('Aucun local', '<p>Utilisez « Ajouter ».</p>')}</div>`}</section>`;
@@ -3466,6 +3468,12 @@ const ACT = {
   'unlink-kks'(d){ const p = getPiece(d.piece), k = getKks(d.id); tx(() => p.kks = p.kks.filter(id => id !== d.id)); fillList(); fillDetail(); toast(`Lien ${p.ref} ↔ ${k?.code || ''} retiré`); },
   'new-salle': () => salleDialog(),
   'edit-salle': d => salleDialog(getSalle(d.id)),
+  'del-salle'(d){ const s = getSalle(d.id); if (!s) return; const ids = new Set(db.lieux.filter(l => l.salleId === s.id).map(l => l.id));
+    const n = db.pieces.filter(p => p.stock.some(x => ids.has(x.lieuId) && x.qte > 0)).length;
+    if (n){ toast(`Impossible : ${n} pièce(s) sont encore rangées dans ${salleCode(s)}. Déplacez-les d’abord.`); return; }
+    confirmDialog(`Supprimer ${esc(salleCode(s))}`, `Le local ${esc(salleCode(s))}${ids.size ? ` et ses ${ids.size} emplacement(s) vides seront supprimés` : ' sera supprimé'}.`, 'Supprimer', () => {
+      tx(() => { db.pieces.forEach(p => { if (p.stock.some(x => ids.has(x.lieuId))) p.stock = p.stock.filter(x => !ids.has(x.lieuId)); }); db.lieux = db.lieux.filter(l => !ids.has(l.id)); db.salles = db.salles.filter(x => x.id !== s.id); });
+      render(); toast(`Local ${salleCode(s)} supprimé`); }); },
   'new-lieu': d => lieuDialog(null, d.salle),
   'edit-lieu': d => lieuDialog(getLieu(d.id)),
   'gen-series': d => seriesDialog(d.salle),
