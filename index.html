@@ -342,6 +342,23 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .sys-head h3{margin:2px 0 0;font-size:1.05rem;text-transform:none;letter-spacing:0;color:var(--ink);display:flex;gap:8px;align-items:center}
 .sys-head .crumb{font-size:.8rem}
 .sys-head .btn .ico{transform:rotate(180deg)}
+@media (min-width:981px){.tsplit{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr)}}
+.tree{display:flex;flex-direction:column;padding:6px}
+.tnode{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:7px 10px;cursor:pointer;color:var(--ink);font:inherit;font-size:.9rem;min-height:38px}
+.tnode:hover,.tnode:focus-visible{background:var(--accent-soft)}
+.tnode.sel{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.tnode.l1{font-weight:600}
+.tnode.l2{padding-left:30px}
+.tnode.l3{padding-left:58px}
+.tnode .t{flex:1;min-width:0}
+.tnode .cnt{font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
+.tnode .chev{display:inline-flex;color:var(--muted);transition:transform .15s}
+.tnode .chev.open{transform:rotate(90deg)}
+.tnode .tdot{width:16px;flex:none}
+.tnode .kks{min-width:2.6em;text-align:center}
+.sys-head .cnt{margin-left:auto;font-family:var(--f-mono);color:var(--muted)}
+.btn.back{margin-bottom:12px}
+.btn.back .ico{transform:rotate(180deg)}
 .rtools{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chips .c{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:999px;padding:2px 4px 2px 12px;font-size:.88rem;background:var(--bg)}
@@ -2331,7 +2348,7 @@ let db = CLOUD.cfg().url ? migrate(blank()) : load();
 if (!db){ db = seed(); save(); }
 
 /* ---------------- État d'affichage ---------------- */
-const S = {pour:'', tvue:'afaire', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:''}, lowOnly:false, statut:'actives', zone:'', sys:'', sysOpen:'', opt:'lieux'};
+const S = {pour:'', tvue:'afaire', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:''}, lowOnly:false, statut:'actives', zone:'', sys:'', sysExp:new Set(), sysAuto:null, opt:'lieux'};
 
 function toast(msg, kind = ''){
   const t = $('#toast'); t.textContent = msg; t.className = 'show ' + kind;
@@ -2640,7 +2657,7 @@ const kksSort = (a, b) => coll.compare(a.code.replace(/^\d+/, ''), b.code.replac
 VIEWS.kks = {
   shell: () => `<header class="page-head"><h1>Installation</h1><div class="tools">${searchBox('kks', 'KKS, AIC ou équipement…')}
     ${menu([['new-kks', 'Un équipement', 'plus', {}], ['import-kks', 'Coller une liste', 'list', {}]], 'Ajouter', 'plus', 'primary')}</div></header>
-    <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
+    <div class="split tsplit"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list(){
     if (!db.kks.length) return empty('Aucun équipement', '<p>Ajoutez-les avec « Coller une liste ».</p>');
     const q = norm(S.q.kks);
@@ -2649,26 +2666,35 @@ VIEWS.kks = {
       if (!rows.length) return empty('Rien ne correspond', '');
       return `<p class="list-note">${rows.length} équipement(s)${rows.length > 300 ? ', les 300 premiers affichés' : ''}</p>${kksRows(rows.slice(0, 300))}`;
     }
-    if (S.sys){
-      const rows = db.kks.filter(k => (S.sys === '?' ? !sysOf(k.code) : sysOf(k.code) === S.sys)).sort(kksSort);
-      const crumb = S.sys === '?' ? '' : `${S.sys[0]} › ${S.sys.slice(0, 2)} ${esc(sysName(S.sys.slice(0, 2)))}`;
-      return `<div class="sys-head"><button class="btn small" data-act="sys" data-sys="${S.sys[0]}">${icon('chev')}Retour</button><div><div class="muted crumb">${crumb}</div><h3>${S.sys === '?' ? 'Sans système' : `<span class="kks">${S.sys}</span> ${esc(sysName(S.sys))}`}</h3></div></div>
-        ${rows.length ? kksRows(rows) : '<p class="empty-line" style="padding:16px">Aucun équipement.</p>'}`;
-    }
-    const cnt = new Map(); for (const k of db.kks){ const c = sysOf(k.code) || '?'; cnt.set(c, (cnt.get(c) || 0) + 1); }
+    const k = getKks(S.sel.kks);
+    if (k && S.sysAuto !== k.id){ S.sysAuto = k.id; S.sys = sysOf(k.code) || '?'; if (S.sys !== '?'){ S.sysExp.add(S.sys[0]); S.sysExp.add(S.sys.slice(0, 2)); } }
+    const cnt = new Map(); for (const x of db.kks){ const c = sysOf(x.code) || '?'; cnt.set(c, (cnt.get(c) || 0) + 1); }
     const s3 = [...cnt.keys()].filter(c => c !== '?').sort();
-    const L1 = [...new Set(s3.map(c => c[0]))];
     const n = pre => s3.filter(c => c.startsWith(pre)).reduce((a, c) => a + cnt.get(c), 0);
-    return L1.map(L => `<details class="oroom sys1" ${S.sysOpen === L ? 'open' : ''} data-sys1="${L}"><summary><span class="chev">${icon('chev')}</span><span class="kks">${L}</span><strong>${esc(sysName(L))}</strong><span class="cnt">${n(L)}</span></summary>
-      <div class="sys-body">${[...new Set(s3.filter(c => c[0] === L).map(c => c.slice(0, 2)))].map(L2 => `<div class="sys2"><div class="sys2-h"><span class="kks">${L2}</span>${esc(sysName(L2))}</div>
-        ${s3.filter(c => c.startsWith(L2)).map(c => `<button class="sys3" data-act="sys" data-sys="${c}"><span class="kks">${c}</span><span class="t">${esc(sysName(c)) || '<span class="muted">—</span>'}</span><span class="cnt">${cnt.get(c)}</span></button>`).join('')}</div>`).join('')}</div></details>`).join('')
-      + (cnt.get('?') ? `<button class="sys3 sys-none" data-act="sys" data-sys="?"><span class="t">Sans système</span><span class="cnt">${cnt.get('?')}</span></button>` : '');
+    const node = (c, lvl, open, label) => `<button class="tnode l${lvl} ${S.sys === c ? 'sel' : ''}" data-act="${lvl < 3 ? 'sys-tog' : 'sys'}" data-sys="${c}" ${lvl < 3 ? `aria-expanded="${open}"` : ''}>${lvl < 3 ? `<span class="chev ${open ? 'open' : ''}">${icon('chev')}</span>` : '<span class="tdot"></span>'}<span class="kks">${c}</span><span class="t">${label}</span><span class="cnt">${lvl < 3 ? n(c) : cnt.get(c)}</span></button>`;
+    let h = '<div class="tree">';
+    for (const L of [...new Set(s3.map(c => c[0]))]){
+      const o1 = S.sysExp.has(L); h += node(L, 1, o1, esc(sysName(L)) || '<span class="muted">—</span>');
+      if (!o1) continue;
+      for (const L2 of [...new Set(s3.filter(c => c[0] === L).map(c => c.slice(0, 2)))]){
+        const o2 = S.sysExp.has(L2); h += node(L2, 2, o2, esc(sysName(L2)) || '<span class="muted">—</span>');
+        if (o2) for (const c of s3.filter(c => c.startsWith(L2))) h += node(c, 3, false, esc(sysName(c)) || '<span class="muted">—</span>');
+      }
+    }
+    if (cnt.get('?')) h += `<button class="tnode l1 ${S.sys === '?' ? 'sel' : ''}" data-act="sys" data-sys="?"><span class="tdot"></span><span class="t">Sans système</span><span class="cnt">${cnt.get('?')}</span></button>`;
+    return h + '</div>';
   },
   detail(){
     const k = getKks(S.sel.kks);
-    if (!k) return placeholder('plant', 'Choisissez un équipement pour voir ses pièces de rechange.');
+    if (!k){
+      if (!S.sys) return placeholder('plant', 'Choisissez un système à gauche (ex. L › LC › LCA) pour voir ses équipements.');
+      const rows = db.kks.filter(x => (S.sys === '?' ? !sysOf(x.code) : sysOf(x.code) === S.sys)).sort(kksSort);
+      const crumb = S.sys === '?' ? '' : `${S.sys[0]} › ${S.sys.slice(0, 2)} ${esc(sysName(S.sys.slice(0, 2)))}`;
+      return `<div class="sys-head"><div><div class="muted crumb">${crumb}</div><h3>${S.sys === '?' ? 'Sans système' : `<span class="kks">${S.sys}</span> ${esc(sysName(S.sys))}`}</h3></div><span class="cnt">${rows.length}</span></div>
+        ${rows.length ? kksRows(rows) : '<p class="empty-line" style="padding:16px">Aucun équipement.</p>'}`;
+    }
     const ps = db.pieces.filter(p => p.kks.includes(k.id)), ints = db.interventions.filter(i => i.kksId === k.id);
-    return `<div class="d-head"><div class="d-title"><span><span class="kks big">${esc(k.code)}</span></span><h2>${esc(k.designation)}</h2></div>
+    return `${S.q.kks ? '' : `<button class="btn small back" data-act="kks-back">${icon('chev')}${sysOf(k.code) ? `${sysOf(k.code)} ${esc(sysName(sysOf(k.code)))}` : 'Retour'}</button>`}<div class="d-head"><div class="d-title"><span><span class="kks big">${esc(k.code)}</span></span><h2>${esc(k.designation)}</h2></div>
       <div class="d-actions"><button class="btn primary" data-act="new-int" data-kks="${k.id}">${icon('report')}Nouveau rapport</button>
         <button class="btn" data-act="edit-kks" data-id="${k.id}">${icon('edit')}Modifier</button></div></div>
       <dl class="facts">${sysOf(k.code) ? `<div><dt>Système</dt><dd><button class="link" data-act="sys" data-sys="${sysOf(k.code)}">${esc(sysLabel(k.code))}</button></dd></div>` : ''}${k.aic ? `<div><dt>AIC</dt><dd><span class="aic">${esc(k.aic)}</span></dd></div>` : ''}</dl>
@@ -3497,7 +3523,11 @@ const ACT = {
   goto(d){ $('#gq').value = ''; go(d.view, d.id); },
   tab(d){ S.tab[S.view] = d.tab; fillDetail(); },
   zone(d){ S.zone = d.zone; S.q.kks = ''; go('kks'); },
-  sys(d){ const c = d.sys || ''; if (c.length === 3 || c === '?'){ S.sys = c; S.sysOpen = c[0]; } else { S.sys = ''; S.sysOpen = c; } S.q.kks = ''; if (S.view !== 'kks') go('kks'); else render(); },
+  sys(d){ const c = d.sys || ''; S.q.kks = ''; S.sel.kks = null; S.sysAuto = null;
+    if (c.length === 3 || c === '?'){ S.sys = c; if (c !== '?'){ S.sysExp.add(c[0]); S.sysExp.add(c.slice(0, 2)); } } else { S.sys = ''; S.sysExp.add(c); }
+    if (S.view !== 'kks') go('kks'); else { fillList(); fillDetail(); scrollDetail(); } },
+  'sys-tog'(d){ const c = d.sys; if (S.sysExp.has(c)){ S.sysExp.delete(c); for (const x of [...S.sysExp]) if (x.startsWith(c)) S.sysExp.delete(x); } else S.sysExp.add(c); fillList(); },
+  'kks-back'(){ S.sel.kks = null; fillList(); fillDetail(); },
   'zone-clear'(){ S.zone = ''; render(); },
   opt(d){ S.opt = d.sec; go('options'); },
   'show-low'(){ S.lowOnly = true; go('pieces'); },
