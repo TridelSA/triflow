@@ -3402,7 +3402,7 @@ function importKksDialog(){
       const byCode = new Map(db.kks.map(x => [x.code.toUpperCase(), x]));
       tx(() => { for (const ln of lines){
         const [c, designation = '', aic = ''] = ln.split(/\t|;/).map(x => x.trim()); const code = normCode(c);
-        if (!code || /^code/i.test(code) || code.startsWith('#')) continue;
+        if (!code || /^code/i.test(code) || /^\W*#/.test(code)) continue;
         if (/^[A-Z]{1,3}$/.test(code)){ if (designation && db.listes.systemes[code] !== designation){ db.listes.systemes[code] = designation; sys++; } continue; }
         const ex = byCode.get(code);
         if (ex){ let ch = false; if (designation && ex.designation !== designation){ ex.designation = designation; ch = true; } if (aic && ex.aic !== aic){ ex.aic = aic; ch = true; } if (ch) upd++; }
