@@ -229,6 +229,9 @@ button.kks:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .rack{margin-top:10px;padding-left:12px;border-left:2px solid var(--line)}
 .rack-head{font-size:.76rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600;margin-bottom:6px}
 .slots{display:flex;flex-wrap:wrap;gap:5px}
+.otree{padding:0 18px 14px 44px}
+.rack .rack{margin-top:6px}
+.rack-head .slot{font-weight:600}
 .slot{all:unset;cursor:pointer;font-family:var(--f-mono);font-size:.8rem;padding:3px 8px;border:1px solid var(--line);border-radius:4px;background:var(--surface);display:inline-flex;gap:6px;align-items:center;min-height:26px}
 .slot:hover{border-color:var(--plate-line)}
 .slot small{font-size:.68rem;color:var(--muted)}
@@ -308,7 +311,6 @@ details.oroom > summary::-webkit-details-marker{display:none}
 details.oroom > summary .chev{transition:transform .15s;color:var(--muted)}
 details.oroom[open] > summary .chev{transform:rotate(90deg)}
 details.oroom > summary .acts{margin-left:auto;display:flex;flex-wrap:wrap;gap:12px}
-details.oroom .slots{padding:0 18px 14px 44px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chips .c{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:999px;padding:2px 4px 2px 12px;font-size:.88rem;background:var(--bg)}
 .chips .c .icon-btn{width:24px;height:24px;font-size:1rem}
@@ -435,7 +437,7 @@ dialog.dlg::backdrop{background:rgba(12,18,21,.55)}
   .pline .pl-lieu{grid-column:1/2;grid-row:2}
   .hide-sm{display:none}
   .d-actions .links{margin-left:0;width:100%}
-  details.oroom .slots{padding-left:18px}
+  .otree{padding-left:18px}
 }
 
 /* ---------- Impression ---------- */
@@ -459,7 +461,7 @@ dialog.dlg::backdrop{background:rgba(12,18,21,.55)}
 .lbl-room{font-size:7pt;line-height:1.2;font-family:var(--f-mono)}
 .lbl-org{font-size:5.5pt;letter-spacing:.12em;text-transform:uppercase;color:#555}
 .lbl.loc{grid-template-columns:minmax(0,1fr);align-content:center;gap:1.5mm}
-.lbl.loc .lbl-code{font-size:17pt;padding:1.5mm 2.5mm;background:#f5d66e;color:#000;border:.5mm solid #000}
+.lbl.loc .lbl-code{white-space:normal;font-size:13pt;padding:1.5mm 2.5mm;background:#f5d66e;color:#000;border:.5mm solid #000}
 .lbl.loc .lbl-room{font-family:var(--f-body);font-size:8pt}
 .roll{page:roll;width:62mm;height:29mm;break-after:page;overflow:hidden}
 .roll .lbl{height:29mm;grid-template-columns:23mm minmax(0,1fr);padding:2mm}
@@ -1799,7 +1801,7 @@ return {QRCode:M.index,L:M.QRErrorCorrectLevel};})();
    TriFlow — prototype local (v2)
    Modèle de données (prévu pour être repris dans une vraie base) :
      salles(id, etage, numero, nom)                     → code E{etage}.{numero}
-     lieux(id, salleId, rayonnage, niveau, bac, note)   → code E1.11 C45 A
+     lieux(id, salleId, chemin[], note)                 → code « E1.14 / A / 11 / 1 » (arborescence libre)
      personnes(id, prenom, nom, fonction, actif)
      kks(id, code, designation)                         → zone déduite de la lettre de groupe KKS
      pieces(id, ref, designation, categorie, fabricant, refFab, fournisseur, unite, stockMin, notes,
@@ -1935,6 +1937,7 @@ function migrate(d){
   const G0 = blank().listes.groupes; d.listes.groupes = [...G0, ...d.listes.groupes.filter(g => !G0.includes(g))];
   for (const p of d.pieces) for (const n of [p.fabricant, p.fournisseur]) if (n && !d.listes.fournisseurs.some(x => norm(x) === norm(n))) d.listes.fournisseurs.push(n);
   d.listes.fournisseurs.sort(coll.compare);
+  for (const l of d.lieux) if (!Array.isArray(l.chemin)){ l.chemin = [(l.rayonnage || '') + (l.niveau || ''), l.bac || ''].filter(Boolean); delete l.rayonnage; delete l.niveau; delete l.bac; }
   ensureSnaps(d);
   if (d.meta.demo && !d.meta.tachesV){ seedTaches(d); }
   d.meta.tachesV = 1;
@@ -2091,19 +2094,30 @@ const get = (col, id) => db[col].find(x => x.id === id);
 const getSalle = id => get('salles', id), getLieu = id => get('lieux', id), getPiece = id => get('pieces', id),
       getKks = id => get('kks', id), getPers = id => get('personnes', id), getInt = id => get('interventions', id);
 const salleCode = s => `${s.batiment || 'E'}${s.etage}.${s.numero}`;
+const pathOf = l => l.chemin || [];
 function lieuCode(l){
   if (!l) return '(supprimé)';
-  const s = getSalle(l.salleId); let c = s ? salleCode(s) : 'E?';
-  if (l.rayonnage) c += ' ' + l.rayonnage + (l.niveau || '');
-  if (l.bac) c += ' ' + l.bac;
-  return c;
+  const s = getSalle(l.salleId), ch = pathOf(l);
+  return (s ? salleCode(s) : '?') + (ch.length ? ' / ' + ch.join(' / ') : '');
 }
 const normCode = s => String(s || '').trim().toUpperCase().replace(/\s+/g, ' ');
-const findLieu = s => { const c = normCode(s); return c ? db.lieux.find(l => lieuCode(l) === c) : null; };
+const normLieu = s => normCode(s).replace(/\s*[\/›>]\s*/g, ' / ');
+const flatLieu = s => normCode(s).replace(/[\s\/›>]+/g, '');
+function findLieu(s){
+  const c = normLieu(s); if (!c) return null;
+  const ex = db.lieux.find(l => normLieu(lieuCode(l)) === c); if (ex) return ex;
+  const fl = flatLieu(s), m = db.lieux.filter(l => flatLieu(lieuCode(l)) === fl);
+  return m.length === 1 ? m[0] : null;
+}
 const findSalle = s => { const c = normCode(s); return db.salles.find(x => salleCode(x) === c); };
+/* « E1.14 / A / 11 / 1 » ou « E1.11 C45 A » → salle + chemin */
 function parseCode(str){
-  const m = normCode(str).match(/^([A-Z]{1,3}) ?(-?\d+) ?[.,] ?(\d+)(?: ?([A-Z]) ?(\d*))?(?: ?([A-Z]))?$/);
-  return m ? {batiment:m[1], etage:m[2], numero:m[3], rayonnage:m[4] || '', niveau:m[5] || '', bac:m[6] || ''} : null;
+  const t = String(str || '').trim().replace(/\s+/g, ' ');
+  const m = t.match(/^([A-Za-z]{1,3}) ?(-?\d+) ?[.,] ?(\d+)(.*)$/);
+  if (!m) return null;
+  const rest = m[4].trim().replace(/^[\/›>]\s*/, '');
+  const chemin = !rest ? [] : /[\/›>]/.test(rest) ? rest.split(/\s*[\/›>]\s*/).filter(Boolean) : rest.split(' ');
+  return {batiment:m[1].toUpperCase(), etage:m[2], numero:m[3], chemin};
 }
 const persName = p => p ? `${p.prenom || ''} ${p.nom}`.trim() : '(supprimé)';
 /* Intervenants d'un rapport : figés tels qu'ils étaient lors du rapport (nom + groupe). */
@@ -2127,7 +2141,7 @@ const findKks = s => findBy('kks', 'code', kksLabel, s);
 const total = p => round(p.stock.reduce((a, s) => a + (+s.qte || 0), 0));
 const isLow = p => +p.stockMin > 0 && total(p) <= +p.stockMin;
 const stockAt = (p, lieuId) => (p.stock.find(s => s.lieuId === lieuId) || {qte:0}).qte;
-const lieuSort = (a, b) => coll.compare(lieuCode(a), lieuCode(b));
+const lieuSort = (a, b) => coll.compare(salleCode(getSalle(a.salleId) || {etage:'', numero:''}), salleCode(getSalle(b.salleId) || {etage:'', numero:''})) || coll.compare(pathOf(a).join('\u0001'), pathOf(b).join('\u0001'));
 const contentsOf = lieuId => db.pieces.flatMap(p => p.stock.filter(s => s.lieuId === lieuId).map(s => ({p, qte:s.qte})));
 const usedInInterventions = pieceId => db.interventions.filter(i => i.pieces.some(l => l.pieceId === pieceId));
 const sortedStock = p => [...p.stock].filter(s => getLieu(s.lieuId)).sort((a, b) => lieuSort(getLieu(a.lieuId), getLieu(b.lieuId)));
@@ -2169,7 +2183,7 @@ function seed(){
   const d = blank(); d.meta.demo = true;
   const salle = (etage, numero, nom) => { const s = {id:uid(), etage, numero, nom}; d.salles.push(s); return s; };
   const S1 = salle('1', '11', 'Magasin pièces mécaniques'), S2 = salle('0', '04', 'Atelier électrique'), S3 = salle('2', '07', 'Local instrumentation');
-  const L = {}; const lieu = (s, r, n, b) => { const l = {id:uid(), salleId:s.id, rayonnage:r, niveau:n, bac:b, note:''}; d.lieux.push(l); return l; };
+  const L = {}; const lieu = (s, r, n, b) => { const l = {id:uid(), salleId:s.id, chemin:[r + n, b].filter(Boolean), note:''}; d.lieux.push(l); return l; };
   ['40','41','42','30','31','32'].forEach(n => ['A','B'].forEach(b => L['C' + n + b] = lieu(S1, 'C', n, b)));
   ['10','11'].forEach(n => L['D' + n + 'A'] = lieu(S1, 'D', n, 'A'));
   ['10','11','12'].forEach(n => ['A','B'].forEach(b => L['A' + n + b] = lieu(S2, 'A', n, b)));
@@ -2392,6 +2406,19 @@ VIEWS.pieces = {
 };
 
 /* ---------- Emplacements (consultation) ---------- */
+/* Arborescence d'une salle : chaque niveau du chemin devient un groupe, les emplacements sont des boutons. */
+function lieuTree(ls, act, selId){
+  const root = {kids:new Map(), lieu:null};
+  for (const l of ls){ let n = root; for (const seg of pathOf(l)){ if (!n.kids.has(seg)) n.kids.set(seg, {kids:new Map(), lieu:null}); n = n.kids.get(seg); } n.lieu = l; }
+  const slot = (label, l) => { const c = contentsOf(l.id).filter(x => x.qte > 0).length; return `<button class="slot ${c ? 'filled' : ''} ${selId === l.id ? 'sel' : ''}" data-act="${act}" data-id="${l.id}" title="${esc(lieuCode(l))}">${esc(label)}${c ? `<small>${c}</small>` : ''}</button>`; };
+  const draw = (node, depth) => {
+    const keys = [...node.kids.keys()].sort(coll.compare);
+    const leaves = keys.filter(k => !node.kids.get(k).kids.size), groups = keys.filter(k => node.kids.get(k).kids.size);
+    return (leaves.length ? `<div class="slots">${leaves.map(k => slot(k, node.kids.get(k).lieu)).join('')}</div>` : '')
+      + groups.map(k => { const g = node.kids.get(k); return `<div class="rack"><div class="rack-head">${g.lieu ? slot(k, g.lieu) : esc(k)}</div>${draw(g, depth + 1)}</div>`; }).join('');
+  };
+  return (root.lieu ? `<div class="slots">${slot('Dans la salle', root.lieu)}</div>` : '') + draw(root, 0);
+}
 VIEWS.lieux = {
   shell: () => `<header class="page-head"><h1>Emplacements</h1><div class="tools">${searchBox('lieux', 'Filtrer : code, salle ou pièce rangée…')}${menu([['opt', 'Gérer les emplacements', 'shelf', {sec:'lieux'}], '-', ['new-salle', 'Nouvelle salle', 'plus', {}], ['new-lieu', 'Nouvel emplacement', 'plus', {}], ['gen-series', 'Créer une série', 'plus', {}]])}</div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
@@ -2403,13 +2430,8 @@ VIEWS.lieux = {
       let ls = db.lieux.filter(l => l.salleId === s.id).sort(lieuSort);
       if (q && !salleMatch) ls = ls.filter(l => norm(lieuCode(l) + ' ' + l.note + ' ' + contentsOf(l.id).map(x => x.p.designation + ' ' + x.p.ref).join(' ')).includes(q));
       if (q && !salleMatch && !ls.length) continue;
-      const racks = {}; ls.forEach(l => (racks[l.rayonnage] ??= []).push(l));
       out.push(`<div class="room"><div class="room-head"><span class="plate">${esc(salleCode(s))}</span><strong>${esc(s.nom)}</strong><span class="muted">${ls.length} empl.</span></div>
-        ${Object.keys(racks).sort(coll.compare).map(r => `<div class="rack"><div class="rack-head">${r ? 'Rayonnage ' + esc(r) : 'Dans la salle'}</div><div class="slots">${racks[r].map(l => {
-          const n = contentsOf(l.id).filter(x => x.qte > 0).length;
-          const label = r ? (l.niveau || '—') + (l.bac ? ' ' + l.bac : '') : (l.bac || 'Sol / vrac');
-          return `<button class="slot ${n ? 'filled' : ''} ${S.sel.lieux === l.id ? 'sel' : ''}" data-act="select" data-id="${l.id}" title="${esc(lieuCode(l))}">${esc(label)}${n ? `<small>${n}</small>` : ''}</button>`;
-        }).join('')}</div></div>`).join('')}
+        ${lieuTree(ls, 'select', S.sel.lieux)}
         ${!ls.length ? '<p class="empty-line">Aucun emplacement dans cette salle.</p>' : ''}</div>`);
     }
     return out.length ? out.join('') : empty('Aucun emplacement ne correspond', '');
@@ -2418,7 +2440,7 @@ VIEWS.lieux = {
     const l = getLieu(S.sel.lieux);
     if (!l) return placeholder('shelf', 'Choisissez un emplacement pour voir ce qui y est rangé et imprimer les étiquettes du matériel.');
     const s = getSalle(l.salleId), items = contentsOf(l.id);
-    const parts = [`Étage ${esc(s?.etage)}`, `salle ${esc(s?.numero)}`, l.rayonnage && `rayonnage ${esc(l.rayonnage)}`, l.niveau && `niveau ${esc(l.niveau)}`, l.bac && `bac ${esc(l.bac)}`].filter(Boolean).join(' · ');
+    const parts = [`Bâtiment ${esc(s?.batiment || 'E')}`, `étage ${esc(s?.etage)}`, `local ${esc(s?.numero)}`, ...pathOf(l).map(esc)].join(' › ');
     const withStock = items.filter(x => x.qte > 0);
     return `<div class="d-head"><div class="d-title"><span><span class="plate big">${esc(lieuCode(l))}</span></span><h2>${esc(s?.nom || '')}</h2><p class="muted">${parts}</p></div>
       <div class="d-actions"><button class="btn primary" data-act="labels-here" data-id="${l.id}" ${withStock.length ? '' : 'disabled'}>${icon('qr')}Étiquettes du matériel (${withStock.length})</button>
@@ -2584,11 +2606,11 @@ const OPT = {};
 OPT.lieux = () => {
   const salles = [...db.salles].sort((a, b) => coll.compare(salleCode(a), salleCode(b)));
   return `<section class="opt-sec"><div class="head"><h2>Emplacements</h2><div class="tools"><button class="btn" data-act="new-salle">${icon('plus')}Salle</button><button class="btn" data-act="gen-series">Créer une série</button><button class="btn" data-act="import-lieux">Coller une liste</button><button class="btn primary" data-act="new-lieu">${icon('plus')}Emplacement</button></div></div>
-    <div class="pad"><div class="format-ex"><span class="plate">E1.11 C45 A</span><span>bâtiment (lettre, ex. E) + étage . n° de salle</span>·<span>rayonnage (lettre) + niveau (chiffres)</span>·<span>bac (lettre)</span></div>
-    <p class="hint">Créez d’abord la salle, puis ses emplacements un par un ou en série (ex. rayonnage C, niveaux 40-42 et 30-32, bacs A-B). Cliquez sur un emplacement pour le modifier.</p></div>
+    <div class="pad"><div class="format-ex"><span class="plate">E1.14 / A / 11 / 1</span><span>le local (bâtiment, étage . n°), puis son organisation, niveau par niveau, séparée par des « / » : rayonnage, armoire, niveau, palette…</span></div>
+    <p class="hint">Chaque local peut être organisé à sa façon. Le plus rapide : « Coller une liste ». Cliquez sur un emplacement pour le modifier.</p></div>
     ${salles.length ? salles.map(s => { const ls = db.lieux.filter(l => l.salleId === s.id).sort(lieuSort); return `<details class="oroom" ${salles.length < 4 ? 'open' : ''}><summary><span class="chev">${icon('chev')}</span><span class="plate">${esc(salleCode(s))}</span><strong>${esc(s.nom)}</strong><span class="muted">${ls.length} empl.</span>
       <span class="acts"><button class="link" data-act="edit-salle" data-id="${s.id}">Modifier</button><button class="link" data-act="new-lieu" data-salle="${s.id}">+ Emplacement</button><button class="link" data-act="gen-series" data-salle="${s.id}">Série</button><button class="link" data-act="labels-loc" data-ids="${ls.map(l => l.id).join(',')}">Étiquettes</button></span></summary>
-      <div class="slots">${ls.map(l => `<button class="slot" data-act="edit-lieu" data-id="${l.id}">${esc(lieuCode(l).slice(salleCode(s).length + 1) || 'Sol / vrac')}</button>`).join('') || '<span class="muted">Aucun emplacement.</span>'}</div></details>`; }).join('') : `<div class="pad">${empty('Aucune salle', '<p>Commencez par « + Salle ».</p>')}</div>`}</section>`;
+      <div class="otree">${ls.length ? lieuTree(ls, 'edit-lieu', null) : '<span class="muted">Aucun emplacement.</span>'}</div></details>`; }).join('') : `<div class="pad">${empty('Aucune salle', '<p>Commencez par « + Salle ».</p>')}</div>`}</section>`;
 };
 OPT.kks = () => {
   const q = norm(S.q.optkks);
@@ -2910,24 +2932,17 @@ function salleDialog(s){
 }
 function lieuDialog(l, salleId){
   if (!db.salles.length){ toast('Créez d’abord une salle.', 'bad'); return salleDialog(); }
-  const isNew = !l, v = l || {salleId: salleId || db.salles[0].id, rayonnage:'', niveau:'', bac:'', note:''};
+  const isNew = !l, v = l || {salleId: salleId || db.salles[0].id, chemin:[], note:''};
   const salles = [...db.salles].sort((a, b) => coll.compare(salleCode(a), salleCode(b)));
   dialog({title: isNew ? 'Nouvel emplacement' : 'Modifier l’emplacement',
-    body:`${isNew ? `<label>Saisie rapide du code<input name="quick" placeholder="ex. E1.11 C45 A" autocomplete="off"></label><p class="hint">Tapez le code complet, ou remplissez les champs ci-dessous.</p>` : ''}
-      <label>Salle<select name="salleId">${salles.map(s => opt(s.id, `${salleCode(s)} — ${s.nom}`, v.salleId)).join('')}</select></label>
-      <div class="grid3"><label>Rayonnage (lettre)<input name="rayonnage" value="${esc(v.rayonnage)}" maxlength="1" placeholder="C"></label><label>Niveau (chiffres)<input name="niveau" value="${esc(v.niveau)}" inputmode="numeric" placeholder="45"></label><label>Bac (lettre)<input name="bac" value="${esc(v.bac)}" maxlength="1" placeholder="A"></label></div>
+    body:`<label>Local<select name="salleId">${salles.map(s => opt(s.id, `${salleCode(s)} — ${s.nom}`, v.salleId)).join('')}</select></label>
+      <label>Emplacement dans le local<input name="chemin" value="${esc(pathOf(v).join(' / '))}" placeholder="ex. A / 11 / 1   ou   Armoire E (API) / E1" autocomplete="off"></label>
+      <p class="hint">Les niveaux sont séparés par « / », du plus grand au plus petit. Laissez vide pour un emplacement « dans le local ».</p>
       <label>Note<input name="note" value="${esc(v.note)}" placeholder="facultatif, ex. pièces lourdes en bas"></label>
       <p class="preview-code">Code : <span class="plate" data-prev></span></p>`,
     onOpen(f, d){
-      const prev = () => { const s = getSalle(val(f, 'salleId')); const r = val(f, 'rayonnage').toUpperCase(); $('[data-prev]', d).textContent = (s ? salleCode(s) : 'E?') + (r ? ' ' + r + val(f, 'niveau') : '') + (val(f, 'bac') ? ' ' + val(f, 'bac').toUpperCase() : ''); };
-      f.addEventListener('input', e => {
-        if (e.target.name === 'quick'){
-          const c = parseCode(e.target.value), s = c && findSalle(`${c.batiment}${c.etage}.${c.numero}`);
-          if (s){ f.elements.salleId.value = s.id; f.elements.rayonnage.value = c.rayonnage; f.elements.niveau.value = c.niveau; f.elements.bac.value = c.bac; }
-        }
-        prev();
-      });
-      f.addEventListener('change', prev); prev();
+      const prev = () => { const s = getSalle(val(f, 'salleId')); const ch = val(f, 'chemin').split('/').map(x => x.trim()).filter(Boolean); $('[data-prev]', d).textContent = (s ? salleCode(s) : '?') + (ch.length ? ' / ' + ch.join(' / ') : ''); };
+      f.addEventListener('input', prev); f.addEventListener('change', prev); prev();
     },
     del: isNew ? null : {label:'Supprimer', run(){
       if (db.pieces.some(p => p.stock.some(s => s.lieuId === l.id && s.qte > 0))) throw new Error('Cet emplacement contient du stock. Déplacez-le avant de supprimer.');
@@ -2936,18 +2951,9 @@ function lieuDialog(l, salleId){
       S.sel.lieux = null; render(); toast('Emplacement supprimé');
     }},
     onSave(f){
-      if (isNew && val(f, 'quick')){
-        const c = parseCode(val(f, 'quick'));
-        if (!c) throw new Error('Format de code non reconnu. Exemple attendu : E1.11 C45 A');
-        if (!findSalle(`${c.batiment}${c.etage}.${c.numero}`)) throw new Error(`La salle ${c.batiment}${c.etage}.${c.numero} n’existe pas encore. Créez-la avec « + Salle ».`);
-      }
-      const data = {salleId:val(f, 'salleId'), rayonnage:val(f, 'rayonnage').toUpperCase(), niveau:val(f, 'niveau'), bac:val(f, 'bac').toUpperCase(), note:val(f, 'note')};
-      if (!/^[A-Z]?$/.test(data.rayonnage)) throw new Error('Le rayonnage est une seule lettre (A à Z).');
-      if (!/^\d*$/.test(data.niveau)) throw new Error('Le niveau ne contient que des chiffres.');
-      if (!/^[A-Z]?$/.test(data.bac)) throw new Error('Le bac est une seule lettre (A à Z).');
-      if ((data.niveau || data.bac) && !data.rayonnage) throw new Error('Un niveau ou un bac doit appartenir à un rayonnage.');
+      const data = {salleId:val(f, 'salleId'), chemin:val(f, 'chemin').split('/').map(x => x.trim()).filter(Boolean), note:val(f, 'note')};
       const code = lieuCode(data);
-      if (db.lieux.some(x => x !== l && lieuCode(x) === code)) throw new Error(`L’emplacement ${code} existe déjà.`);
+      if (db.lieux.some(x => x !== l && normLieu(lieuCode(x)) === normLieu(code))) throw new Error(`L’emplacement ${code} existe déjà.`);
       tx(() => { if (isNew){ const n = {id:uid(), ...data}; db.lieux.push(n); S.sel.lieux = n.id; } else Object.assign(l, data); });
       render(); toast(isNew ? `Emplacement ${code} créé` : 'Emplacement enregistré');
     }});
@@ -2970,60 +2976,62 @@ function expandLetters(s){
   }
   return out.length ? out : [''];
 }
+const findLieuExact = c => db.lieux.find(l => { const s = getSalle(l.salleId); return s && salleCode(s) === `${c.batiment}${c.etage}.${c.numero}` && normLieu(pathOf(l).join(' / ')) === normLieu(c.chemin.join(' / ')); });
 function importLieuxDialog(){
   const analyse = txt => {
     const ok = [], bad = [], seen = new Set();
     for (const raw of txt.split(/\r?\n/)){
       const line = raw.trim(); if (!line) continue;
-      const [codeTxt, ...rest] = line.split(/\t|;/); const nom = rest.join(' ').trim();
+      const [codeTxt, ...rest] = line.split(/\t|;/).map(x => x.trim()); const nom = rest.join(' ').trim();
       const c = parseCode(codeTxt);
       if (!c){ bad.push(line); continue; }
-      const key = `${c.batiment}${c.etage}.${c.numero}|${c.rayonnage}|${c.niveau}|${c.bac}`;
+      const key = normLieu(`${c.batiment}${c.etage}.${c.numero} / ${c.chemin.join(' / ')}`);
       if (seen.has(key)) continue; seen.add(key);
-      if (!c.rayonnage && (c.niveau || c.bac)){ bad.push(line); continue; }
       ok.push({...c, nom});
     }
     return {ok, bad};
   };
   dialog({title:'Coller une liste d’emplacements', saveLabel:'Créer', wide:true,
-    body:`<p>Un emplacement par ligne, par exemple <span class="plate">E1.11 C45 A</span>. Les salles manquantes sont créées automatiquement ; vous pouvez ajouter le nom de la salle après une tabulation ou un point-virgule (<span class="mono">E1.11 C45 A;Magasin mécanique</span>). Les emplacements qui existent déjà sont ignorés.</p>
-      <label>Liste<textarea name="txt" rows="12" style="font-family:var(--f-mono);font-size:.85rem" placeholder="E1.11 C45 A&#10;E1.11 C45 B&#10;E0.04 A10 A"></textarea></label>
+    body:`<p>Un emplacement par ligne : le local puis les niveaux séparés par « / », par exemple <span class="plate">E1.14 / A / 11 / 1</span>. Les locaux manquants sont créés automatiquement ; vous pouvez ajouter le nom du local après un point-virgule (<span class="mono">E1.14 / A / 11 / 1;Magasin</span>). Les emplacements qui existent déjà sont ignorés.</p>
+      <label>Liste<textarea name="txt" rows="12" style="font-family:var(--f-mono);font-size:.85rem" placeholder="E1.13 / A / Palette 1&#10;E1.14 / A / 11 / 1&#10;E1.14 / Armoire E (API) / E1"></textarea></label>
       <p class="hint" data-prev></p>`,
     onOpen(f, d){
       const u = () => { const {ok, bad} = analyse(val(f, 'txt'));
-        const nw = ok.filter(c => (c.rayonnage || c.bac) && !db.lieux.some(l => { const s = getSalle(l.salleId); return s && salleCode(s) === `${c.batiment}${c.etage}.${c.numero}` && l.rayonnage === c.rayonnage && l.niveau === c.niveau && l.bac === c.bac; }));
+        const nw = ok.filter(c => c.chemin.length && !findLieuExact(c));
         const salles = new Set(ok.map(c => `${c.batiment}${c.etage}.${c.numero}`).filter(code => !findSalle(code)));
         $('[data-prev]', d).innerHTML = ok.length || bad.length ? `${nw.length} nouvel(s) emplacement(s)${salles.size ? `, ${salles.size} nouvelle(s) salle(s)` : ''}.${bad.length ? ` <span style="color:var(--bad)">${bad.length} ligne(s) non reconnue(s) : ${esc(bad.slice(0, 5).join(' · '))}${bad.length > 5 ? '…' : ''}</span>` : ''}` : ''; };
       f.addEventListener('input', u); u();
     },
     onSave(f){
       const {ok, bad} = analyse(val(f, 'txt'));
-      if (!ok.length) throw new Error(bad.length ? 'Aucune ligne reconnue. Format attendu : E1.11 C45 A' : 'Collez au moins une ligne.');
+      if (!ok.length) throw new Error(bad.length ? 'Aucune ligne reconnue. Format attendu : E1.14 / A / 11 / 1' : 'Collez au moins une ligne.');
       let nl = 0, ns = 0;
       tx(() => { for (const c of ok){
         const sc = `${c.batiment}${c.etage}.${c.numero}`;
         let s = findSalle(sc);
         if (!s){ s = {id:uid(), batiment:c.batiment, etage:c.etage, numero:c.numero, nom:c.nom || ''}; db.salles.push(s); ns++; }
         else if (c.nom && !s.nom) s.nom = c.nom;
-        if (!c.rayonnage && !c.bac) continue;
-        if (db.lieux.some(l => l.salleId === s.id && l.rayonnage === c.rayonnage && l.niveau === c.niveau && l.bac === c.bac)) continue;
-        db.lieux.push({id:uid(), salleId:s.id, rayonnage:c.rayonnage, niveau:c.niveau, bac:c.bac, note:''}); nl++;
+        if (!c.chemin.length) continue;
+        if (findLieuExact(c)) continue;
+        db.lieux.push({id:uid(), salleId:s.id, chemin:c.chemin, note:''}); nl++;
       }});
       render(); toast(`${nl} emplacement(s) et ${ns} salle(s) créés${bad.length ? ` · ${bad.length} ligne(s) ignorée(s)` : ''}`);
     }});
 }
+function expandAny(s){ const t = String(s || '').trim(); if (!t) return ['']; return /[A-Za-z]/.test(t) ? expandLetters(t) : expandNums(t); }
 function seriesDialog(salleId){
   if (!db.salles.length){ toast('Créez d’abord une salle.', 'bad'); return salleDialog(); }
   const salles = [...db.salles].sort((a, b) => coll.compare(salleCode(a), salleCode(b)));
   const build = f => {
-    const s = getSalle(val(f, 'salleId')), r = val(f, 'rayonnage').toUpperCase();
-    if (!/^[A-Z]$/.test(r)) throw new Error('Indiquez la lettre du rayonnage.');
-    return expandNums(val(f, 'niveaux')).flatMap(n => expandLetters(val(f, 'bacs')).map(b => ({salleId:s.id, rayonnage:r, niveau:n, bac:b, note:''})));
+    const s = getSalle(val(f, 'salleId')), base = val(f, 'base').split('/').map(x => x.trim()).filter(Boolean);
+    const n1 = expandAny(val(f, 'n1')), n2 = expandAny(val(f, 'n2'));
+    if (!base.length && n1[0] === '') throw new Error('Indiquez au moins le début du chemin ou une liste.');
+    return n1.flatMap(a => n2.map(b => ({salleId:s.id, chemin:[...base, a, b].filter(Boolean), note:''})));
   };
   dialog({title:'Créer une série d’emplacements', saveLabel:'Créer',
-    body:`<label>Salle<select name="salleId">${salles.map(s => opt(s.id, `${salleCode(s)} — ${s.nom}`, salleId || salles[0].id)).join('')}</select></label>
-      <div class="grid3"><label>Rayonnage<input name="rayonnage" maxlength="1" placeholder="C" required></label><label>Niveaux<input name="niveaux" placeholder="40-42, 30-32"></label><label>Bacs<input name="bacs" placeholder="A-C"></label></div>
-      <p class="hint">Plages avec un tiret, listes avec des virgules. Exemple : niveaux « 40-42, 30-32 » et bacs « A-B » donnent 12 emplacements. Ceux qui existent déjà sont ignorés.</p>
+    body:`<label>Local<select name="salleId">${salles.map(s => opt(s.id, `${salleCode(s)} — ${s.nom}`, salleId || salles[0].id)).join('')}</select></label>
+      <div class="grid3"><label>Début du chemin<input name="base" placeholder="ex. A   ou   Armoire E"></label><label>Puis<input name="n1" placeholder="ex. 11-13, 21"></label><label>Puis<input name="n2" placeholder="ex. 1-3   ou   A-C"></label></div>
+      <p class="hint">Plages avec un tiret, listes avec des virgules, chiffres ou lettres. Exemple : « A », puis « 11-13 », puis « 1-2 » donne A / 11 / 1 … A / 13 / 2. Ceux qui existent déjà sont ignorés.</p>
       <p class="preview-code" data-prev></p>`,
     onOpen(f, d){
       const prev = () => { try { const nw = build(f).filter(x => !findLieu(lieuCode(x))); $('[data-prev]', d).innerHTML = `${nw.length} nouvel(s) emplacement(s)${nw.length ? ` : <span class="plate">${esc(lieuCode(nw[0]))}</span>${nw.length > 1 ? ` … <span class="plate">${esc(lieuCode(nw[nw.length - 1]))}</span>` : ''}` : ''}`; } catch(e){ $('[data-prev]', d).textContent = e.message; } };
