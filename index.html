@@ -324,7 +324,9 @@ details.oroom > summary{list-style:none;cursor:pointer;display:flex;flex-wrap:wr
 details.oroom > summary::-webkit-details-marker{display:none}
 details.oroom > summary .chev{transition:transform .15s;color:var(--muted)}
 details.oroom[open] > summary .chev{transform:rotate(90deg)}
-details.oroom > summary .acts{margin-left:auto;display:flex;flex-wrap:wrap;gap:12px}
+details.oroom > summary .rname{color:var(--muted);font-size:.9rem}
+details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-size:.85rem;color:var(--muted)}
+.rtools{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chips .c{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:999px;padding:2px 4px 2px 12px;font-size:.88rem;background:var(--bg)}
 .chips .c .icon-btn{width:24px;height:24px;font-size:1rem}
@@ -1873,9 +1875,9 @@ const ICONS = {
   tag:'M3 12V4h8l10 10-8 8zM7.5 7.5h.5'
 };
 let menuSeq = 0;
-function menu(items, label = 'Options'){
+function menu(items, label = 'Options', ic = 'cog', cls = ''){
   const id = 'menu-' + (++menuSeq);
-  return `<div class="menu"><button type="button" class="btn" data-act="menu" aria-haspopup="menu" aria-expanded="false" aria-controls="${id}">${icon('cog')}${label}<svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="menu-list" id="${id}" role="menu" hidden>${items.map(it => it === '-' ? '<hr>' : `<button type="button" role="menuitem" data-act="${it[0]}" ${Object.entries(it[3] || {}).map(([k, v]) => `data-${k}="${esc(v)}"`).join(' ')}>${icon(it[2])}${it[1]}</button>`).join('')}</div></div>`;
+  return `<div class="menu"><button type="button" class="btn ${cls}" data-act="menu" aria-haspopup="menu" aria-expanded="false" aria-controls="${id}">${icon(ic)}${label}<svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="menu-list" id="${id}" role="menu" hidden>${items.map(it => it === '-' ? '<hr>' : `<button type="button" role="menuitem" data-act="${it[0]}" ${Object.entries(it[3] || {}).map(([k, v]) => `data-${k}="${esc(v)}"`).join(' ')}>${icon(it[2])}${it[1]}</button>`).join('')}</div></div>`;
 }
 function closeMenus(except){ document.querySelectorAll('.menu-list').forEach(m => { if (m !== except && !m.hidden){ m.hidden = true; m.previousElementSibling?.setAttribute('aria-expanded', 'false'); } }); }
 const icon = n => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="${ICONS[n] || ''}"/></svg>`;
@@ -2642,12 +2644,14 @@ const OPT_SECS = [['lieux', 'Emplacements', 'shelf'], ['kks', 'Repères KKS', 'p
 const OPT = {};
 OPT.lieux = () => {
   const salles = [...db.salles].sort((a, b) => (!!a.statut - !!b.statut) || coll.compare(salleCode(a), salleCode(b)));
-  return `<section class="opt-sec"><div class="head"><h2>Emplacements</h2><div class="tools"><button class="btn" data-act="new-salle">${icon('plus')}Local</button><button class="btn" data-act="gen-series">Créer une série</button><button class="btn" data-act="import-lieux">Coller une liste</button><button class="btn primary" data-act="new-lieu">${icon('plus')}Emplacement</button></div></div>
-    <div class="pad"><div class="format-ex"><span class="plate">E1.14 / A / 11 / 1</span><span>le local (bâtiment, étage . n°), puis son organisation, niveau par niveau, séparée par des « / » : rayonnage, armoire, niveau, palette…</span></div>
-    <p class="hint">Chaque local peut être organisé à sa façon. Le plus rapide : « Coller une liste ». Cliquez sur un emplacement pour le modifier.</p></div>
-    ${salles.length ? salles.map((s, i) => { const ls = db.lieux.filter(l => l.salleId === s.id).sort(lieuSort); return `${s.statut && !salles[i - 1]?.statut ? `<div class="stat-head" style="margin:0">${icon('out')}<div><strong>Hors magasin (statuts)</strong><span>En prêt, en révision, en attente… : les pièces y restent suivies sans compter dans le stock.</span></div></div>` : ''}<details class="oroom" ${salles.length < 4 ? 'open' : ''}><summary><span class="chev">${icon('chev')}</span>${s.statut ? `<span class="stat">${icon('out')}${esc(salleCode(s))}</span>` : `<span class="plate">${esc(salleCode(s))}</span>`}<strong>${esc(s.nom)}</strong><span class="muted">${ls.length} empl.</span>
-      <span class="acts"><button class="link" data-act="edit-salle" data-id="${s.id}">Modifier</button><button class="link" data-act="new-lieu" data-salle="${s.id}">+ Emplacement</button><button class="link" data-act="gen-series" data-salle="${s.id}">Série</button><button class="link" data-act="labels-loc" data-ids="${ls.map(l => l.id).join(',')}">Étiquettes</button></span></summary>
-      <div class="otree">${ls.length ? lieuTree(ls, 'edit-lieu', null) : '<span class="muted">Aucun emplacement.</span>'}</div></details>`; }).join('') : `<div class="pad">${empty('Aucune salle', '<p>Commencez par « + Salle ».</p>')}</div>`}</section>`;
+  const add = menu([['new-lieu', 'Un emplacement', 'shelf'], ['new-salle', 'Un local', 'plus'], ['gen-series', 'Une série (ex. A / 1 à 20)', 'list'], '-', ['import-lieux', 'Coller une liste', 'save']], 'Ajouter', 'plus', 'primary');
+  const room = (s, i) => { const ls = db.lieux.filter(l => l.salleId === s.id).sort(lieuSort);
+    return `${s.statut && !salles[i - 1]?.statut ? `<div class="stat-head" style="margin:0">${icon('out')}<div><strong>Hors magasin</strong><span>En prêt, en révision, en attente… : suivi, mais pas compté dans le stock.</span></div></div>` : ''}<details class="oroom"><summary><span class="chev">${icon('chev')}</span>${s.statut ? `<span class="stat">${icon('out')}${esc(salleCode(s))}</span>` : `<span class="plate">${esc(salleCode(s))}</span>`}${s.nom && s.nom !== salleCode(s) ? `<span class="rname">${esc(s.nom)}</span>` : ''}<span class="cnt">${ls.length}</span></summary>
+      <div class="otree">${ls.length ? lieuTree(ls, 'edit-lieu', null) : '<span class="muted">Aucun emplacement.</span>'}
+        <div class="rtools"><button class="btn small" data-act="new-lieu" data-salle="${s.id}">${icon('plus')}Emplacement</button><button class="btn small" data-act="labels-loc" data-ids="${ls.map(l => l.id).join(',')}">${icon('qr')}Étiquettes</button><button class="btn small" data-act="edit-salle" data-id="${s.id}">${icon('edit')}Modifier le local</button></div></div></details>`; };
+  return `<section class="opt-sec"><div class="head"><h2>Emplacements</h2><div class="tools">${add}</div></div>
+    <div class="pad"><p class="hint">Ouvrez un local pour voir ses emplacements. Cliquez sur un emplacement pour le modifier.</p></div>
+    ${salles.length ? salles.map(room).join('') : `<div class="pad">${empty('Aucun local', '<p>Utilisez « Ajouter ».</p>')}</div>`}</section>`;
 };
 OPT.kks = () => {
   const q = norm(S.q.optkks);
