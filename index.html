@@ -355,7 +355,22 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .tnode .chev{display:inline-flex;color:var(--muted);transition:transform .15s}
 .tnode .chev.open{transform:rotate(90deg)}
 .tnode .tdot{width:16px;flex:none}
-.tnode .kks{min-width:2.6em;text-align:center}
+.tnode .t{display:flex;gap:10px;align-items:baseline}
+.code{font-family:var(--f-mono);font-weight:700;color:var(--accent);letter-spacing:.02em;flex:none}
+.tnode.l1 .code{min-width:1.4em}.tnode.l2 .code{min-width:1.9em}.tnode.l3 .code{min-width:2.6em}
+.tnode.l1{font-size:.95rem}
+.tnode.l3{font-weight:400}
+.crumbs{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;font-size:.85rem;margin-bottom:10px;font-family:var(--f-mono)}
+.crumbs .link{font-family:inherit}
+.sys-head{padding:0 0 12px !important;border-bottom:1px solid var(--line);margin-bottom:6px}
+.sys-head h3{display:flex;gap:10px;align-items:baseline}
+.sys-kids{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.sys-kid{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--paper, transparent);border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;color:var(--ink);font:inherit}
+.sys-kid:hover,.sys-kid:focus-visible{border-color:var(--accent);background:var(--accent-soft)}
+.sys-kid .code{min-width:2.6em}
+.sys-kid .t{flex:1;min-width:0}
+.sys-kid .cnt{font-family:var(--f-mono);font-size:.85rem;color:var(--muted)}
+.sys-kid .ico{color:var(--muted)}
 .sys-head .cnt{margin-left:auto;font-family:var(--f-mono);color:var(--muted)}
 .btn.back{margin-bottom:12px}
 .btn.back .ico{transform:rotate(180deg)}
@@ -2424,7 +2439,7 @@ VIEWS.accueil = {
       <section class="panel"><div class="panel-head"><h2>Rapports en cours</h2><button class="link" data-act="nav" data-view="interventions">Toutes</button></div>${open.length ? intTable(open) : '<div style="padding:0 16px 16px"><p class="empty-line">Aucun rapport en cours.</p></div>'}</section>
       </div>
       <section class="panel"><div class="panel-head"><h2>Installation</h2><button class="link" data-act="nav" data-view="kks">Tout voir</button></div>
-        ${zones.length ? `<div class="zlist">${zones.map(([c, n]) => `<button class="zrow" data-act="sys" data-sys="${c}"><span><span class="kks">${c}</span> ${esc(sysName(c))}</span><span class="qty muted">${n}</span></button>`).join('')}</div>` : '<div style="padding:0 16px 16px"><p class="empty-line">Aucun repère KKS.</p></div>'}</section>
+        ${zones.length ? `<div class="zlist">${zones.map(([c, n]) => `<button class="zrow" data-act="sys-sel" data-sys="${c}"><span><b class="code">${c}</b> ${esc(sysName(c))}</span><span class="qty muted">${n}</span></button>`).join('')}</div>` : '<div style="padding:0 16px 16px"><p class="empty-line">Aucun repère KKS.</p></div>'}</section>
     </div>`;
   },
   list: () => '', detail: () => ''
@@ -2671,33 +2686,40 @@ VIEWS.kks = {
     const cnt = new Map(); for (const x of db.kks){ const c = sysOf(x.code) || '?'; cnt.set(c, (cnt.get(c) || 0) + 1); }
     const s3 = [...cnt.keys()].filter(c => c !== '?').sort();
     const n = pre => s3.filter(c => c.startsWith(pre)).reduce((a, c) => a + cnt.get(c), 0);
-    const node = (c, lvl, open, label) => `<button class="tnode l${lvl} ${S.sys === c ? 'sel' : ''}" data-act="${lvl < 3 ? 'sys-tog' : 'sys'}" data-sys="${c}" ${lvl < 3 ? `aria-expanded="${open}"` : ''}>${lvl < 3 ? `<span class="chev ${open ? 'open' : ''}">${icon('chev')}</span>` : '<span class="tdot"></span>'}<span class="kks">${c}</span><span class="t">${label}</span><span class="cnt">${lvl < 3 ? n(c) : cnt.get(c)}</span></button>`;
+    const node = (c, lvl, open, label) => `<button class="tnode l${lvl} ${S.sys === c ? 'sel' : ''}" data-act="sys-sel" data-sys="${c}" ${lvl < 3 ? `aria-expanded="${open}"` : ''}>${lvl < 3 ? `<span class="chev ${open ? 'open' : ''}">${icon('chev')}</span>` : '<span class="tdot"></span>'}<span class="t"><b class="code">${c}</b>${label}</span><span class="cnt">${lvl < 3 ? n(c) : cnt.get(c)}</span></button>`;
     let h = '<div class="tree">';
     for (const L of [...new Set(s3.map(c => c[0]))]){
-      const o1 = S.sysExp.has(L); h += node(L, 1, o1, esc(sysName(L)) || '<span class="muted">—</span>');
+      const o1 = S.sysExp.has(L); h += node(L, 1, o1, esc(sysName(L)));
       if (!o1) continue;
       for (const L2 of [...new Set(s3.filter(c => c[0] === L).map(c => c.slice(0, 2)))]){
-        const o2 = S.sysExp.has(L2); h += node(L2, 2, o2, esc(sysName(L2)) || '<span class="muted">—</span>');
-        if (o2) for (const c of s3.filter(c => c.startsWith(L2))) h += node(c, 3, false, esc(sysName(c)) || '<span class="muted">—</span>');
+        const o2 = S.sysExp.has(L2); h += node(L2, 2, o2, esc(sysName(L2)));
+        if (o2) for (const c of s3.filter(c => c.startsWith(L2))) h += node(c, 3, false, esc(sysName(c)));
       }
     }
-    if (cnt.get('?')) h += `<button class="tnode l1 ${S.sys === '?' ? 'sel' : ''}" data-act="sys" data-sys="?"><span class="tdot"></span><span class="t">Sans système</span><span class="cnt">${cnt.get('?')}</span></button>`;
+    if (cnt.get('?')) h += `<button class="tnode l1 ${S.sys === '?' ? 'sel' : ''}" data-act="sys-sel" data-sys="?"><span class="tdot"></span><span class="t">Sans système</span><span class="cnt">${cnt.get('?')}</span></button>`;
     return h + '</div>';
   },
   detail(){
     const k = getKks(S.sel.kks);
     if (!k){
-      if (!S.sys) return placeholder('plant', 'Choisissez un système à gauche (ex. L › LC › LCA) pour voir ses équipements.');
-      const rows = db.kks.filter(x => (S.sys === '?' ? !sysOf(x.code) : sysOf(x.code) === S.sys)).sort(kksSort);
-      const crumb = S.sys === '?' ? '' : `${S.sys[0]} › ${S.sys.slice(0, 2)} ${esc(sysName(S.sys.slice(0, 2)))}`;
-      return `<div class="sys-head"><div><div class="muted crumb">${crumb}</div><h3>${S.sys === '?' ? 'Sans système' : `<span class="kks">${S.sys}</span> ${esc(sysName(S.sys))}`}</h3></div><span class="cnt">${rows.length}</span></div>
-        ${rows.length ? kksRows(rows) : '<p class="empty-line" style="padding:16px">Aucun équipement.</p>'}`;
+      const cnt = new Map(); for (const x of db.kks){ const c = sysOf(x.code) || '?'; cnt.set(c, (cnt.get(c) || 0) + 1); }
+      const n = pre => [...cnt].filter(([c]) => c !== '?' && c.startsWith(pre)).reduce((a, [, v]) => a + v, 0);
+      const cur = S.sys === '?' ? '' : S.sys;
+      const crumb = `<nav class="crumbs"><button class="link" data-act="sys-sel" data-sys="">Installation</button>${[...cur].map((_, i) => cur.slice(0, i + 1)).map(c => ` <span class="muted">›</span> ${c === cur ? `<strong>${c}</strong>` : `<button class="link" data-act="sys-sel" data-sys="${c}">${c}</button>`}`).join('')}</nav>`;
+      if (S.sys === '?' || cur.length === 3){
+        const rows = db.kks.filter(x => (S.sys === '?' ? !sysOf(x.code) : sysOf(x.code) === S.sys)).sort(kksSort);
+        return `${crumb}<div class="sys-head"><h3><b class="code">${S.sys === '?' ? '' : cur}</b>${S.sys === '?' ? 'Sans système' : esc(sysName(cur))}</h3><span class="cnt">${rows.length} équip.</span></div>
+          ${rows.length ? kksRows(rows) : '<p class="empty-line" style="padding:16px 0">Aucun équipement.</p>'}`;
+      }
+      const kids = [...new Set([...cnt.keys()].filter(c => c !== '?' && c.startsWith(cur)).map(c => c.slice(0, cur.length + 1)))].sort();
+      return `${crumb}${cur ? `<div class="sys-head"><h3><b class="code">${cur}</b>${esc(sysName(cur))}</h3><span class="cnt">${n(cur)} équip.</span></div>` : '<p class="hint" style="margin:0 0 10px">Choisissez un système : il se déplie dans le menu de gauche.</p>'}
+        <div class="sys-kids">${kids.map(c => `<button class="sys-kid" data-act="sys-sel" data-sys="${c}"><b class="code">${c}</b><span class="t">${esc(sysName(c)) || '<span class="muted">Sans nom</span>'}</span><span class="cnt">${n(c)}</span>${icon('chev')}</button>`).join('')}</div>`;
     }
     const ps = db.pieces.filter(p => p.kks.includes(k.id)), ints = db.interventions.filter(i => i.kksId === k.id);
     return `${S.q.kks ? '' : `<button class="btn small back" data-act="kks-back">${icon('chev')}${sysOf(k.code) ? `${sysOf(k.code)} ${esc(sysName(sysOf(k.code)))}` : 'Retour'}</button>`}<div class="d-head"><div class="d-title"><span><span class="kks big">${esc(k.code)}</span></span><h2>${esc(k.designation)}</h2></div>
       <div class="d-actions"><button class="btn primary" data-act="new-int" data-kks="${k.id}">${icon('report')}Nouveau rapport</button>
         <button class="btn" data-act="edit-kks" data-id="${k.id}">${icon('edit')}Modifier</button></div></div>
-      <dl class="facts">${sysOf(k.code) ? `<div><dt>Système</dt><dd><button class="link" data-act="sys" data-sys="${sysOf(k.code)}">${esc(sysLabel(k.code))}</button></dd></div>` : ''}${k.aic ? `<div><dt>AIC</dt><dd><span class="aic">${esc(k.aic)}</span></dd></div>` : ''}</dl>
+      <dl class="facts">${sysOf(k.code) ? `<div><dt>Système</dt><dd><button class="link" data-act="sys-sel" data-sys="${sysOf(k.code)}">${esc(sysLabel(k.code))}</button></dd></div>` : ''}${k.aic ? `<div><dt>AIC</dt><dd><span class="aic">${esc(k.aic)}</span></dd></div>` : ''}</dl>
       <section class="block"><h3>Pièces de rechange</h3>
         ${ps.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${ps.map(p => `<tr data-act="goto" data-view="pieces" data-id="${p.id}" tabindex="0"><td><span class="ref">${esc(p.ref)}</span> ${esc(p.designation)}</td><td class="num qty">${num(total(p))} <span class="muted">${esc(p.unite)}</span></td><td class="row-tools" style="width:1%"><button class="icon-btn" data-act="unlink-kks" data-piece="${p.id}" data-id="${k.id}" aria-label="Retirer ${esc(p.ref)}" title="Retirer le lien">×</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-line">Aucune pièce liée.</p>'}
         <form class="inline-form" data-form="link-piece" data-kks="${k.id}"><input name="piece" list="dl-pieces" placeholder="Lier une pièce" aria-label="Pièce à lier" autocomplete="off"><button class="btn">Lier</button></form></section>
@@ -3526,6 +3548,10 @@ const ACT = {
   sys(d){ const c = d.sys || ''; S.q.kks = ''; S.sel.kks = null; S.sysAuto = null;
     if (c.length === 3 || c === '?'){ S.sys = c; if (c !== '?'){ S.sysExp.add(c[0]); S.sysExp.add(c.slice(0, 2)); } } else { S.sys = ''; S.sysExp.add(c); }
     if (S.view !== 'kks') go('kks'); else { fillList(); fillDetail(); scrollDetail(); } },
+  'sys-sel'(d){ const c = d.sys || ''; S.q.kks = ''; S.sel.kks = null;
+    if (c && c !== '?' && c.length < 3){ if (S.sysExp.has(c) && S.sys === c){ S.sysExp.delete(c); for (const x of [...S.sysExp]) if (x.startsWith(c)) S.sysExp.delete(x); } else { S.sysExp.add(c[0]); S.sysExp.add(c); } }
+    if (c.length === 3){ S.sysExp.add(c[0]); S.sysExp.add(c.slice(0, 2)); }
+    S.sys = c; S.sysAuto = null; if (S.view !== 'kks') go('kks'); else { fillList(); fillDetail(); scrollDetail(); } },
   'sys-tog'(d){ const c = d.sys; if (S.sysExp.has(c)){ S.sysExp.delete(c); for (const x of [...S.sysExp]) if (x.startsWith(c)) S.sysExp.delete(x); } else S.sysExp.add(c); fillList(); },
   'kks-back'(){ S.sel.kks = null; fillList(); fillDetail(); },
   'zone-clear'(){ S.zone = ''; render(); },
