@@ -2093,7 +2093,7 @@ function tx(fn){ const snap = JSON.stringify(db); try { const r = fn(); save(); 
 const get = (col, id) => db[col].find(x => x.id === id);
 const getSalle = id => get('salles', id), getLieu = id => get('lieux', id), getPiece = id => get('pieces', id),
       getKks = id => get('kks', id), getPers = id => get('personnes', id), getInt = id => get('interventions', id);
-const salleCode = s => `${s.batiment || 'E'}${s.etage}.${s.numero}`;
+const salleCode = s => s.code || `${s.batiment || 'E'}${s.etage}.${s.numero}`;
 const pathOf = l => l.chemin || [];
 function lieuCode(l){
   if (!l) return '(supprimé)';
@@ -2109,15 +2109,24 @@ function findLieu(s){
   const fl = flatLieu(s), m = db.lieux.filter(l => flatLieu(lieuCode(l)) === fl);
   return m.length === 1 ? m[0] : null;
 }
-const findSalle = s => { const c = normCode(s); return db.salles.find(x => salleCode(x) === c); };
+const findSalle = s => { const c = normCode(s); return c ? db.salles.find(x => normCode(salleCode(x)) === c) : null; };
 /* « E1.14 / A / 11 / 1 » ou « E1.11 C45 A » → salle + chemin */
 function parseCode(str){
   const t = String(str || '').trim().replace(/\s+/g, ' ');
+  if (!t) return null;
   const m = t.match(/^([A-Za-z]{1,3}) ?(-?\d+) ?[.,] ?(\d+)(.*)$/);
-  if (!m) return null;
-  const rest = m[4].trim().replace(/^[\/›>]\s*/, '');
-  const chemin = !rest ? [] : /[\/›>]/.test(rest) ? rest.split(/\s*[\/›>]\s*/).filter(Boolean) : rest.split(' ');
-  return {batiment:m[1].toUpperCase(), etage:m[2], numero:m[3], chemin};
+  if (m){
+    const rest = m[4].trim().replace(/^[\/›>]\s*/, '');
+    if (!rest || /^[\/›>\s]/.test(m[4]) || !/^\S/.test(m[4]) || /[\/›>]/.test(rest)){
+      const chemin = !rest ? [] : /[\/›>]/.test(m[4]) ? rest.split(/\s*[\/›>]\s*/).filter(Boolean) : rest.split(' ');
+      const batiment = m[1].toUpperCase();
+      return {batiment, etage:m[2], numero:m[3], local:`${batiment}${m[2]}.${m[3]}`, chemin};
+    }
+  }
+  /* Local au nom libre : « Atelier électrique / A / 10 », « S1 / Visserie », « Banc d'essai » */
+  const parts = t.split(/\s*[\/›>]\s*/).filter(Boolean);
+  if (!parts.length) return null;
+  return {local:parts[0], chemin:parts.slice(1), libre:true};
 }
 const persName = p => p ? `${p.prenom || ''} ${p.nom}`.trim() : '(supprimé)';
 /* Intervenants d'un rapport : figés tels qu'ils étaient lors du rapport (nom + groupe). */
@@ -2440,7 +2449,7 @@ VIEWS.lieux = {
     const l = getLieu(S.sel.lieux);
     if (!l) return placeholder('shelf', 'Choisissez un emplacement pour voir ce qui y est rangé et imprimer les étiquettes du matériel.');
     const s = getSalle(l.salleId), items = contentsOf(l.id);
-    const parts = [`Bâtiment ${esc(s?.batiment || 'E')}`, `étage ${esc(s?.etage)}`, `local ${esc(s?.numero)}`, ...pathOf(l).map(esc)].join(' › ');
+    const parts = [...(s?.code ? [esc(s.code)] : [`Bâtiment ${esc(s?.batiment || 'E')}`, `étage ${esc(s?.etage)}`, `local ${esc(s?.numero)}`]), ...pathOf(l).map(esc)].join(' › ');
     const withStock = items.filter(x => x.qte > 0);
     return `<div class="d-head"><div class="d-title"><span><span class="plate big">${esc(lieuCode(l))}</span></span><h2>${esc(s?.nom || '')}</h2><p class="muted">${parts}</p></div>
       <div class="d-actions"><button class="btn primary" data-act="labels-here" data-id="${l.id}" ${withStock.length ? '' : 'disabled'}>${icon('qr')}Étiquettes du matériel (${withStock.length})</button>
@@ -2605,7 +2614,7 @@ const OPT_SECS = [['lieux', 'Emplacements', 'shelf'], ['kks', 'Repères KKS', 'p
 const OPT = {};
 OPT.lieux = () => {
   const salles = [...db.salles].sort((a, b) => coll.compare(salleCode(a), salleCode(b)));
-  return `<section class="opt-sec"><div class="head"><h2>Emplacements</h2><div class="tools"><button class="btn" data-act="new-salle">${icon('plus')}Salle</button><button class="btn" data-act="gen-series">Créer une série</button><button class="btn" data-act="import-lieux">Coller une liste</button><button class="btn primary" data-act="new-lieu">${icon('plus')}Emplacement</button></div></div>
+  return `<section class="opt-sec"><div class="head"><h2>Emplacements</h2><div class="tools"><button class="btn" data-act="new-salle">${icon('plus')}Local</button><button class="btn" data-act="gen-series">Créer une série</button><button class="btn" data-act="import-lieux">Coller une liste</button><button class="btn primary" data-act="new-lieu">${icon('plus')}Emplacement</button></div></div>
     <div class="pad"><div class="format-ex"><span class="plate">E1.14 / A / 11 / 1</span><span>le local (bâtiment, étage . n°), puis son organisation, niveau par niveau, séparée par des « / » : rayonnage, armoire, niveau, palette…</span></div>
     <p class="hint">Chaque local peut être organisé à sa façon. Le plus rapide : « Coller une liste ». Cliquez sur un emplacement pour le modifier.</p></div>
     ${salles.length ? salles.map(s => { const ls = db.lieux.filter(l => l.salleId === s.id).sort(lieuSort); return `<details class="oroom" ${salles.length < 4 ? 'open' : ''}><summary><span class="chev">${icon('chev')}</span><span class="plate">${esc(salleCode(s))}</span><strong>${esc(s.nom)}</strong><span class="muted">${ls.length} empl.</span>
@@ -2908,28 +2917,25 @@ function addPlaceDialog(p){
 
 /* ---------- Salles & emplacements ---------- */
 function salleDialog(s){
-  const isNew = !s, v = s || {batiment:'E', etage:'', numero:'', nom:''};
-  const prevCode = f => `${val(f, 'batiment').toUpperCase() || '?'}${val(f, 'etage') || '?'}.${val(f, 'numero') || '?'}`;
-  dialog({title: isNew ? 'Nouvelle salle' : 'Modifier la salle',
-    body:`<div class="grid3"><label>Bâtiment / locaux<input name="batiment" value="${esc(v.batiment || 'E')}" maxlength="3" placeholder="E" required></label><label>Étage<input name="etage" value="${esc(v.etage)}" inputmode="numeric" placeholder="ex. 1" required></label><label>N° de salle<input name="numero" value="${esc(v.numero)}" inputmode="numeric" placeholder="ex. 11" required></label></div>
-      <label>Nom de la salle<input name="nom" value="${esc(v.nom)}" placeholder="ex. Magasin pièces mécaniques"></label>
-      <p class="preview-code">Code : <span class="plate" data-prev>${esc(salleCode({batiment:v.batiment || 'E', etage:v.etage || '?', numero:v.numero || '?'}))}</span></p>`,
-    onOpen(f, d){ f.addEventListener('input', () => $('[data-prev]', d).textContent = prevCode(f)); },
-    del: isNew ? null : {label:'Supprimer la salle', run(){
-      if (db.lieux.some(l => l.salleId === s.id)) throw new Error('Supprimez d’abord les emplacements de cette salle.');
-      tx(() => db.salles = db.salles.filter(x => x.id !== s.id)); render(); toast('Salle supprimée');
+  const isNew = !s, v = s || {code:'', nom:''};
+  dialog({title: isNew ? 'Nouveau local' : 'Modifier le local',
+    body:`<label>Code du local<input name="code" value="${esc(isNew ? '' : salleCode(v))}" placeholder="ex. E1.13, S1.12 ou un nom (Atelier électrique)" required></label>
+      <label>Nom (facultatif)<input name="nom" value="${esc(v.nom)}" placeholder="ex. Magasin pièces mécaniques"></label>`,
+    del: isNew ? null : {label:'Supprimer le local', run(){
+      if (db.lieux.some(l => l.salleId === s.id)) throw new Error('Supprimez d’abord les emplacements de ce local.');
+      tx(() => db.salles = db.salles.filter(x => x.id !== s.id)); render(); toast('Local supprimé');
     }},
     onSave(f){
-      const batiment = val(f, 'batiment').toUpperCase(), etage = val(f, 'etage'), numero = val(f, 'numero');
-      if (!/^[A-Z]{1,3}$/.test(batiment)) throw new Error('Le bâtiment s’écrit avec 1 à 3 lettres (ex. E).');
-      if (!/^-?\d+$/.test(etage)) throw new Error('L’étage doit être un nombre (ex. 0, 1, -1).');
-      if (!/^\d+$/.test(numero)) throw new Error('Le numéro de salle ne contient que des chiffres (ex. 11 ou 04).');
-      const code = `${batiment}${etage}.${numero}`;
-      if (db.salles.some(x => salleCode(x) === code && x !== s)) throw new Error(`La salle ${code} existe déjà.`);
-      tx(() => { if (isNew) db.salles.push({id:uid(), batiment, etage, numero, nom:val(f, 'nom')}); else Object.assign(s, {batiment, etage, numero, nom:val(f, 'nom')}); });
-      render(); toast(isNew ? `Salle ${code} créée` : 'Salle enregistrée');
+      const raw = val(f, 'code').replace(/\s+/g, ' '); if (!raw) throw new Error('Indiquez le code ou le nom du local.');
+      if (/\//.test(raw)) throw new Error('Le code du local ne peut pas contenir « / ».');
+      const c = parseCode(raw), data = c && !c.libre && !c.chemin.length ? {code:'', batiment:c.batiment, etage:c.etage, numero:c.numero} : {code:raw, batiment:'', etage:'', numero:''};
+      const code = data.code || `${data.batiment}${data.etage}.${data.numero}`;
+      if (db.salles.some(x => x !== s && normCode(salleCode(x)) === normCode(code))) throw new Error(`Le local ${code} existe déjà.`);
+      tx(() => { if (isNew) db.salles.push({id:uid(), ...data, nom:val(f, 'nom')}); else Object.assign(s, data, {nom:val(f, 'nom')}); });
+      render(); toast(isNew ? `Local ${code} créé` : 'Local enregistré');
     }});
 }
+
 function lieuDialog(l, salleId){
   if (!db.salles.length){ toast('Créez d’abord une salle.', 'bad'); return salleDialog(); }
   const isNew = !l, v = l || {salleId: salleId || db.salles[0].id, chemin:[], note:''};
@@ -2976,7 +2982,7 @@ function expandLetters(s){
   }
   return out.length ? out : [''];
 }
-const findLieuExact = c => db.lieux.find(l => { const s = getSalle(l.salleId); return s && salleCode(s) === `${c.batiment}${c.etage}.${c.numero}` && normLieu(pathOf(l).join(' / ')) === normLieu(c.chemin.join(' / ')); });
+const findLieuExact = c => db.lieux.find(l => { const s = getSalle(l.salleId); return s && normCode(salleCode(s)) === normCode(c.local) && normLieu(pathOf(l).join(' / ')) === normLieu(c.chemin.join(' / ')); });
 function importLieuxDialog(){
   const analyse = txt => {
     const ok = [], bad = [], seen = new Set();
@@ -2985,21 +2991,21 @@ function importLieuxDialog(){
       const [codeTxt, ...rest] = line.split(/\t|;/).map(x => x.trim()); const nom = rest.join(' ').trim();
       const c = parseCode(codeTxt);
       if (!c){ bad.push(line); continue; }
-      const key = normLieu(`${c.batiment}${c.etage}.${c.numero} / ${c.chemin.join(' / ')}`);
+      const key = normLieu(`${c.local} / ${c.chemin.join(' / ')}`);
       if (seen.has(key)) continue; seen.add(key);
       ok.push({...c, nom});
     }
     return {ok, bad};
   };
   dialog({title:'Coller une liste d’emplacements', saveLabel:'Créer', wide:true,
-    body:`<p>Un emplacement par ligne : le local puis les niveaux séparés par « / », par exemple <span class="plate">E1.14 / A / 11 / 1</span>. Les locaux manquants sont créés automatiquement ; vous pouvez ajouter le nom du local après un point-virgule (<span class="mono">E1.14 / A / 11 / 1;Magasin</span>). Les emplacements qui existent déjà sont ignorés.</p>
+    body:`<p>Un emplacement par ligne : le local puis les niveaux séparés par « / », par exemple <span class="plate">E1.14 / A / 11 / 1</span>. Le local peut être un code (E1.14) ou un nom (Atelier électrique). Les locaux manquants sont créés automatiquement ; vous pouvez ajouter le nom du local après un point-virgule (<span class="mono">E1.14 / A / 11 / 1;Magasin</span>). Les emplacements qui existent déjà sont ignorés.</p>
       <label>Liste<textarea name="txt" rows="12" style="font-family:var(--f-mono);font-size:.85rem" placeholder="E1.13 / A / Palette 1&#10;E1.14 / A / 11 / 1&#10;E1.14 / Armoire E (API) / E1"></textarea></label>
       <p class="hint" data-prev></p>`,
     onOpen(f, d){
       const u = () => { const {ok, bad} = analyse(val(f, 'txt'));
-        const nw = ok.filter(c => c.chemin.length && !findLieuExact(c));
-        const salles = new Set(ok.map(c => `${c.batiment}${c.etage}.${c.numero}`).filter(code => !findSalle(code)));
-        $('[data-prev]', d).innerHTML = ok.length || bad.length ? `${nw.length} nouvel(s) emplacement(s)${salles.size ? `, ${salles.size} nouvelle(s) salle(s)` : ''}.${bad.length ? ` <span style="color:var(--bad)">${bad.length} ligne(s) non reconnue(s) : ${esc(bad.slice(0, 5).join(' · '))}${bad.length > 5 ? '…' : ''}</span>` : ''}` : ''; };
+        const nw = ok.filter(c => !findLieuExact(c));
+        const salles = new Set(ok.map(c => normCode(c.local)).filter(code => !findSalle(code)));
+        $('[data-prev]', d).innerHTML = ok.length || bad.length ? `${nw.length} nouvel(s) emplacement(s)${salles.size ? `, ${salles.size} nouveau(x) local(aux)` : ''}.${bad.length ? ` <span style="color:var(--bad)">${bad.length} ligne(s) non reconnue(s) : ${esc(bad.slice(0, 5).join(' · '))}${bad.length > 5 ? '…' : ''}</span>` : ''}` : ''; };
       f.addEventListener('input', u); u();
     },
     onSave(f){
@@ -3007,15 +3013,13 @@ function importLieuxDialog(){
       if (!ok.length) throw new Error(bad.length ? 'Aucune ligne reconnue. Format attendu : E1.14 / A / 11 / 1' : 'Collez au moins une ligne.');
       let nl = 0, ns = 0;
       tx(() => { for (const c of ok){
-        const sc = `${c.batiment}${c.etage}.${c.numero}`;
-        let s = findSalle(sc);
-        if (!s){ s = {id:uid(), batiment:c.batiment, etage:c.etage, numero:c.numero, nom:c.nom || ''}; db.salles.push(s); ns++; }
+        let s = findSalle(c.local);
+        if (!s){ s = c.libre ? {id:uid(), code:c.local, nom:c.nom || ''} : {id:uid(), batiment:c.batiment, etage:c.etage, numero:c.numero, nom:c.nom || ''}; db.salles.push(s); ns++; }
         else if (c.nom && !s.nom) s.nom = c.nom;
-        if (!c.chemin.length) continue;
         if (findLieuExact(c)) continue;
         db.lieux.push({id:uid(), salleId:s.id, chemin:c.chemin, note:''}); nl++;
       }});
-      render(); toast(`${nl} emplacement(s) et ${ns} salle(s) créés${bad.length ? ` · ${bad.length} ligne(s) ignorée(s)` : ''}`);
+      render(); toast(`${nl} emplacement(s) et ${ns} local(aux) créés${bad.length ? ` · ${bad.length} ligne(s) ignorée(s)` : ''}`);
     }});
 }
 function expandAny(s){ const t = String(s || '').trim(); if (!t) return ['']; return /[A-Za-z]/.test(t) ? expandLetters(t) : expandNums(t); }
