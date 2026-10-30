@@ -364,6 +364,21 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .crumbs .link{font-family:inherit}
 .sys-head{padding:0 0 12px !important;border-bottom:1px solid var(--line);margin-bottom:6px}
 .sys-head h3{display:flex;gap:10px;align-items:baseline}
+.kgroups{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.kgrp{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.kgrp.single{border:0}
+.kgrp.open{border-color:var(--accent-line, var(--line))}
+.kgrp-h{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;padding:11px 14px;cursor:pointer;color:var(--ink);font:inherit;font-size:.92rem}
+.kgrp-h:hover,.kgrp-h:focus-visible{background:var(--accent-soft)}
+.kgrp.open .kgrp-h{background:var(--accent-soft);font-weight:600}
+.kgrp-h .code{min-width:5.4em}
+.kgrp-h .t{flex:1;min-width:0}
+.kgrp-h .cnt{font-family:var(--f-mono);font-size:.85rem;color:var(--muted)}
+.kgrp-h .chev{display:inline-flex;color:var(--muted);transition:transform .15s}
+.kgrp-h .chev.open{transform:rotate(90deg)}
+.kgrp .chip{font-size:.72rem}
+.ktype{padding:10px 14px 4px;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.kgrp .tbl-wrap{border:0}
 .sys-kids{display:flex;flex-direction:column;gap:6px;margin-top:10px}
 .sys-kid{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--paper, transparent);border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;color:var(--ink);font:inherit}
 .sys-kid:hover,.sys-kid:focus-visible{border-color:var(--accent);background:var(--accent-soft)}
@@ -2366,7 +2381,7 @@ let db = CLOUD.cfg().url ? migrate(blank()) : load();
 if (!db){ db = seed(); save(); }
 
 /* ---------------- État d'affichage ---------------- */
-const S = {pour:'', tvue:'afaire', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:''}, lowOnly:false, statut:'actives', zone:'', sys:'', sysExp:new Set(), sysAuto:null, opt:'lieux'};
+const S = {pour:'', tvue:'afaire', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:''}, lowOnly:false, statut:'actives', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux'};
 
 function toast(msg, kind = ''){
   const t = $('#toast'); t.textContent = msg; t.className = 'show ' + kind;
@@ -2671,6 +2686,23 @@ VIEWS.interventions = {
 };
 
 const kksRows = rows => `<div class="tbl-wrap"><table class="tbl"><tbody>${rows.map(k => `<tr data-act="select" data-id="${k.id}" class="${S.sel.kks === k.id ? 'sel' : ''}" tabindex="0"><td style="width:1%"><span class="kks">${esc(k.code)}</span></td><td>${esc(k.designation)}</td><td class="num">${k.aic ? `<span class="aic">${esc(k.aic)}</span>` : ''}</td></tr>`).join('')}</tbody></table></div>`;
+/* Regroupement des équipements d'un système : 1HHX10… (n° de sous-ensemble), puis par type (AA vannes, AP pompes…) */
+const KKS_TYPES = {AA:'Vannes et robinetterie', AB:'Clapets et registres', AC:'Échangeurs de chaleur', AE:'Levage et rotation', AF:'Convoyeurs', AH:'Chauffage et refroidissement', AJ:'Broyage', AM:'Agitateurs et mélangeurs', AN:'Ventilateurs et compresseurs', AP:'Pompes', AT:'Filtres et nettoyage', AU:'Transmissions et réducteurs', BB:'Réservoirs et bâches', BN:'Éjecteurs et injecteurs', BP:'Diaphragmes', BR:'Tuyauteries et gaines', BS:'Silencieux', BZ:'Supports et divers', CE:'Mesures électriques', CF:'Mesures de débit', CG:'Mesures de position', CL:'Mesures de niveau', CP:'Mesures de pression', CQ:'Analyses', CS:'Mesures de vitesse', CT:'Mesures de température', CY:'Vibrations', CU:'Mesures combinées'};
+const kksParts = code => { const m = String(code).replace(/\s+/g, '').match(/^(\d?)([A-Z]{3})(\d{2})([A-Z]{2})?/); return m ? {grp:m[1] + m[2] + m[3], unit:m[1], num:m[3], type:m[4] || ''} : {grp:'', unit:'', num:'', type:''}; };
+const typeName = t => KKS_TYPES[t] || (t[0] === 'C' ? 'Mesures' : t[0] === 'E' ? 'Signaux et automatisme' : t ? 'Autres' : 'Ensemble');
+function kksGroups(rows){
+  const byCode = new Map(db.kks.map(k => [k.code.replace(/\s+/g, ''), k]));
+  const groups = new Map(); for (const k of rows){ const g = kksParts(k.code).grp || '—'; if (!groups.has(g)) groups.set(g, []); groups.get(g).push(k); }
+  return `<div class="kgroups">${[...groups].sort((a, b) => coll.compare(a[0].slice(1), b[0].slice(1)) || coll.compare(a[0], b[0])).map(([g, ks]) => {
+    const own = byCode.get(g), p = kksParts(g), open = S.grpOpen.has(g) || groups.size === 1;
+    const name = g === '—' ? 'Général' : own ? own.designation : (() => { const c = ks.filter(k => /\d$/.test(k.code) && kksParts(k.code).type !== 'BR'); return (c.length ? c : ks).map(k => k.designation).sort((x, y) => y.length - x.length)[0]; })()
+    const line = p.unit === '1' ? 'Ligne 1' : p.unit === '2' ? 'Ligne 2' : p.unit === '0' ? 'Commun' : '';
+    if (ks.length === 1 && !own) return `<div class="kgrp single">${kksRows(ks)}</div>`;
+    const types = new Map(); for (const k of ks){ const t = kksParts(k.code).type; const n = typeName(t); if (!types.has(n)) types.set(n, []); types.get(n).push(k); }
+    return `<div class="kgrp ${open ? 'open' : ''}"><button class="kgrp-h" data-act="kgrp" data-g="${esc(g)}" aria-expanded="${open}"><span class="chev ${open ? 'open' : ''}">${icon('chev')}</span><b class="code">${esc(g)}</b><span class="t">${esc(name)}</span>${line ? `<span class="chip">${line}</span>` : ''}<span class="cnt">${ks.length}</span></button>
+      ${open ? [...types].map(([n, list]) => `${types.size > 1 ? `<div class="ktype">${esc(n)} <span class="muted">${list.length}</span></div>` : ''}${kksRows(list)}`).join('') : ''}</div>`;
+  }).join('')}</div>`;
+}
 const kksSort = (a, b) => coll.compare(a.code.replace(/^\d+/, ''), b.code.replace(/^\d+/, '')) || coll.compare(a.code, b.code);
 VIEWS.kks = {
   shell: () => `<header class="page-head"><h1>Installation</h1><div class="tools">${searchBox('kks', 'KKS, AIC ou équipement…')}
@@ -2712,7 +2744,7 @@ VIEWS.kks = {
       if (S.sys === '?' || cur.length === 3){
         const rows = db.kks.filter(x => (S.sys === '?' ? !sysEff(x.code) : sysEff(x.code) === S.sys)).sort(kksSort);
         return `${crumb}<div class="sys-head"><h3><b class="code">${S.sys === '?' ? '' : cur}</b>${S.sys === '?' ? 'Sans système' : esc(sysName(cur))}</h3><span class="cnt">${rows.length} équip.</span></div>
-          ${rows.length ? kksRows(rows) : '<p class="empty-line" style="padding:16px 0">Aucun équipement.</p>'}`;
+          ${rows.length ? (rows.length > 12 && S.sys !== '?' ? kksGroups(rows) : kksRows(rows)) : '<p class="empty-line" style="padding:16px 0">Aucun équipement.</p>'}`;
       }
       const kids = [...new Set([...cnt.keys()].filter(c => c !== '?' && c.startsWith(cur)).map(c => c.slice(0, cur.length + 1)))].sort();
       return `${crumb}${cur ? `<div class="sys-head"><h3><b class="code">${cur}</b>${esc(sysName(cur))}</h3><span class="cnt">${n(cur)} équip.</span></div>` : '<p class="hint" style="margin:0 0 10px">Choisissez un système : il se déplie dans le menu de gauche.</p>'}
@@ -3555,6 +3587,7 @@ const ACT = {
     if (c && c !== '?' && c.length < 3){ if (S.sysExp.has(c) && S.sys === c){ S.sysExp.delete(c); for (const x of [...S.sysExp]) if (x.startsWith(c)) S.sysExp.delete(x); } else { S.sysExp.add(c[0]); S.sysExp.add(c); } }
     if (c.length === 3){ S.sysExp.add(c[0]); S.sysExp.add(c.slice(0, 2)); }
     S.sys = c; S.sysAuto = null; if (S.view !== 'kks') go('kks'); else { fillList(); fillDetail(); scrollDetail(); } },
+  kgrp(d){ S.grpOpen.has(d.g) ? S.grpOpen.delete(d.g) : S.grpOpen.add(d.g); fillDetail(); },
   'sys-tog'(d){ const c = d.sys; if (S.sysExp.has(c)){ S.sysExp.delete(c); for (const x of [...S.sysExp]) if (x.startsWith(c)) S.sysExp.delete(x); } else S.sysExp.add(c); fillList(); },
   'kks-back'(){ S.sel.kks = null; fillList(); fillDetail(); },
   'zone-clear'(){ S.zone = ''; render(); },
