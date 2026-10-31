@@ -374,6 +374,19 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .crumbs .link{font-family:inherit}
 .sys-head{padding:0 0 12px !important;border-bottom:1px solid var(--line);margin-bottom:6px}
 .sys-head h3{display:flex;gap:10px;align-items:baseline}
+.plist{display:flex;flex-direction:column}
+.prow{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:14px;padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer;width:100%}
+.prow:hover{background:var(--sunk)}
+.prow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.prow.sel{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.prow .pm{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.prow .pid{font-family:var(--f-mono);font-size:.75rem;color:var(--muted)}
+.prow .pdes{font-weight:500;color:var(--ink);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.prow .ploc{font-size:.8rem}
+.prow .ploc .plate{font-size:.78rem}
+.prow .pq{flex:none;display:flex;flex-direction:column;align-items:flex-end;min-width:3.5em}
+.prow .pq b{font-family:var(--f-mono);font-size:1.15rem;color:var(--ink)}
+.prow .pq small{color:var(--muted);font-size:.75rem}
 .pd-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
 .pd-id{font-family:var(--f-mono);font-size:.85rem;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:3px 10px;border-radius:999px}
 .pd-tools{display:flex;gap:6px;align-items:center}
@@ -2525,13 +2538,13 @@ VIEWS.pieces = {
     if (!db.pieces.length) return empty('Aucune pièce', '<p>Créez la première avec « Nouvelle pièce ».</p>');
     if (!rows.length) return empty('Aucune pièce ne correspond', '');
     const more = rows.length > 300 ? `<p class="list-note">${rows.length} pièces : les 300 premières sont affichées, utilisez la recherche pour affiner.</p>` : '';
-    return `${more}<div class="tbl-wrap"><table class="tbl"><thead><tr><th>ID · Pièce</th><th class="hide-sm">Emplacement</th><th class="num">Stock</th></tr></thead><tbody>${rows.slice(0, 300).map(p => {
-      const mp = mainPlace(p), n = sortedStock(p).length;
-      return `<tr data-act="select" data-id="${p.id}" class="${S.sel.pieces === p.id ? 'sel' : ''}" tabindex="0">
-        <td><span class="ref">${esc(p.ref)}</span><span class="des">${esc(p.designation)}</span></td>
-        <td class="hide-sm">${mp ? plate(mp, false) + (n > 1 ? ` <span class="muted">+${n - 1}</span>` : '') : ''}</td>
-        <td class="num"><span class="qty">${num(dispo(p))}</span> <span class="muted">${esc(p.unite)}</span>${horsMag(p).length ? `<span class="sub" style="color:var(--stat)">+${num(horsMag(p).reduce((a, s) => a + s.qte, 0))} hors magasin</span>` : ''}</td></tr>`;
-    }).join('')}</tbody></table></div>`;
+    return `${more}<div class="plist">${rows.slice(0, 300).map(p => {
+      const mp = mainPlace(p), n = sortedStock(p).length, hm = horsMag(p);
+      return `<button class="prow ${S.sel.pieces === p.id ? 'sel' : ''}" data-act="select" data-id="${p.id}">
+        <span class="pm"><span class="pid">${esc(p.ref)}</span><span class="pdes">${esc(p.designation)}</span>
+          <span class="ploc">${mp ? plate(mp, false) + (n > 1 ? ` <span class="muted">+${n - 1}</span>` : '') : '<span class="muted">Sans emplacement</span>'}${hm.length ? ` <span class="muted" style="color:var(--stat)">+${num(hm.reduce((a, s) => a + s.qte, 0))} hors magasin</span>` : ''}</span></span>
+        <span class="pq"><b>${num(dispo(p))}</b><small>${esc(p.unite)}</small></span></button>`;
+    }).join('')}</div>`;
   },
   detail(){
     const p = getPiece(S.sel.pieces);
