@@ -2061,6 +2061,26 @@ function blank(){
     listes:{fournisseurs:[], categories:['Mécanique','Électrique','Instrumentation','Hydraulique','Pneumatique','Consommable'], unites:['pce','jeu','m','l','kg','rouleau','boîte'], types:['Corrective','Préventive','Contrôle','Amélioration'], groupes:['Électricien','Automaticien','Mécanicien','Intendance','Chauffeurs-grutiers','Cadres','Équipe','Administration'], systemes:{}},
     salles:[], lieux:[], personnes:[], kks:[], pieces:[], interventions:[], mouvements:[], taches:[], histo:[]};
 }
+/* Retire des notes d'une pièce les codes KKS déjà liés à la pièce (écrits d'un bloc, avec espaces ou « 1 / 2 HTQ30AA310 ») */
+const KKS_RX = /(^|[^A-Z0-9])((?:[0-2]\s*(?:\/|\+|ET|,|-)\s*)*[0-2])?\s?([A-Z]{3})\s?(\d{2})\s?([A-Z]{2})\s?(\d{3})(-[A-Z0-9.]+)?(?![0-9])/g;
+function cleanNotes(notes, codes){
+  if (!notes || !codes.size) return notes;
+  const out = [];
+  for (const line of String(notes).split('\n')){
+    const m = line.match(/^([^:]{2,30}?\s:\s)(.*)$/), head = m ? m[1] : '', body = m ? m[2] : line;
+    const up = body.toUpperCase(); let res = '', last = 0, hit = false;
+    for (const x of up.matchAll(KKS_RX)){
+      const units = (x[2] || '').match(/[0-2]/g) || ['0', '1', '2'], base = x[3] + x[4] + x[5] + x[6];
+      if (!units.some(u => codes.has(u + base))) continue;
+      const st = x.index + x[1].length; res += body.slice(last, st); last = x.index + x[0].length; hit = true;
+    }
+    if (!hit){ out.push(line); continue; }
+    res = (res + body.slice(last)).replace(/\s{2,}/g, ' ').replace(/^[\s\/,;+|.\-]+|[\s\/,;+|.\-]+$/g, '').trim();
+    if (res && !/^(ET)?$/i.test(res)) out.push(head + res);
+  }
+  return out.join('\n');
+}
+function cleanPieceNotes(d, p){ const codes = new Set((p.kks || []).map(id => d.kks.find(k => k.id === id)?.code.replace(/\s+/g, '').toUpperCase()).filter(Boolean)); const n = cleanNotes(p.notes, codes); if (n !== p.notes) p.notes = n; }
 function migrate(d){
   const b = blank();
   for (const k in b) if (d[k] == null) d[k] = b[k];
@@ -2089,6 +2109,7 @@ function migrate(d){
   for (const p of d.pieces) for (const n of [p.fabricant, p.fournisseur]) if (n && !d.listes.fournisseurs.some(x => norm(x) === norm(n))) d.listes.fournisseurs.push(n);
   d.listes.fournisseurs.sort(coll.compare);
   for (const l of d.lieux) if (!Array.isArray(l.chemin)){ l.chemin = [(l.rayonnage || '') + (l.niveau || ''), l.bac || ''].filter(Boolean); delete l.rayonnage; delete l.niveau; delete l.bac; }
+  if (!d.meta.notesKksV){ const byId = new Map(d.kks.map(k => [k.id, k])); for (const p of d.pieces) if (p.notes && p.kks?.length){ const codes = new Set(p.kks.map(id => byId.get(id)?.code.replace(/\s+/g, '').toUpperCase()).filter(Boolean)); const n = cleanNotes(p.notes, codes); if (n !== p.notes) p.notes = n; } d.meta.notesKksV = 1; }
   if (!d.meta.statutV){ for (const x of d.salles) if (x.code && STATUT_RE.test(x.code.trim())) x.statut = true; d.meta.statutV = 1; }
   ensureSnaps(d);
   if (d.meta.demo && !d.meta.tachesV){ seedTaches(d); }
@@ -3297,6 +3318,7 @@ function importPiecesDialog(){
           const ex = byRef.get(ref);
           if (ex){ Object.assign(ex, data, {stock, kks:[...new Set([...(ex.kks || []), ...kks])]}); upd++; }
           else { const n = {id:uid(), ...data, stock, kks}; db.pieces.push(n); byRef.set(ref, n); add++; }
+          const pc = byRef.get(ref); pc.notes = cleanNotes(pc.notes, new Set(pc.kks.map(id => db.kks.find(k => k.id === id)?.code.replace(/\s+/g, '').toUpperCase()).filter(Boolean)));
         }
         db.listes.fournisseurs.sort(coll.compare);
         for (const [ref, l] of Object.entries(j.histo || {})){ const pc = byRef.get(String(ref).toUpperCase()); if (!pc) continue; const ex = db.histo.find(h => h.id === pc.id); if (ex) ex.l = l; else db.histo.push({id:pc.id, l}); nh++; }
