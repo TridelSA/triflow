@@ -20,7 +20,7 @@
   --accent:#1F7A4D; --accent-ink:#FFFFFF; --accent-soft:#E7F4EC; --accent-line:#9CCDB2;
   --signal:#E8770F;
   --steel:#1D516B; --steel-soft:#E1ECF1;
-  --plate:#F5D66E; --plate-ink:#2A2200; --plate-line:#C4A134;
+  --plate:#F6EFDC; --plate-ink:#5B4718; --plate-line:#E2D3AA;
   --stat:#6B3FA0; --stat-soft:#EFE7F8;
   --ok:#1C6E3E; --ok-soft:#E7F6EC; --warn:#8A5A00; --warn-soft:#FFF3D6; --bad:#C62838; --bad-soft:#FDECEE; --info:#1D516B; --info-soft:#E1ECF1;
   --f-display:"Space Grotesk","Segoe UI",system-ui,sans-serif;
@@ -34,7 +34,7 @@
   --accent:#2AA468; --accent-ink:#06150D; --accent-soft:#163225; --accent-line:#2E6B4B;
   --signal:#F09A47;
   --steel:#8FC3DA; --steel-soft:#16303B;
-  --plate:#E2C157; --plate-ink:#221A00; --plate-line:#A5862A;
+  --plate:#332C1D; --plate-ink:#E8D7A8; --plate-line:#54482C;
   --stat:#C9A8F0; --stat-soft:#2A1E3A;
   --ok:#7FD8A8; --ok-soft:#16301F; --warn:#F0C860; --warn-soft:#3A3015; --bad:#F0707C; --bad-soft:#3A1A1F; --info:#8FC3DA; --info-soft:#16303B;
   color-scheme:dark;
@@ -387,6 +387,8 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .prow{padding:9px 16px}
 .list-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 16px;border-bottom:1px solid var(--line);font-size:.85rem}
 .list-bar label{display:flex;flex-direction:row;align-items:center;gap:8px;margin:0;color:var(--muted);font-size:.85rem;white-space:nowrap}
+.list-bar{flex-wrap:wrap}
+.list-bar .lb-r{display:flex;gap:14px;flex-wrap:wrap}
 .list-bar select{width:auto;min-height:32px;padding:4px 8px;font-size:.85rem}
 .prow .ploc{font-size:.8rem}
 .prow .ploc .plate{font-size:.78rem}
@@ -2466,7 +2468,7 @@ let db = CLOUD.cfg().url ? migrate(blank()) : load();
 if (!db){ db = seed(); save(); }
 
 /* ---------------- État d'affichage ---------------- */
-const S = {pour:'', tvue:'afaire', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:''}, lowOnly:false, psort:'id', statut:'actives', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux'};
+const S = {pour:'', tvue:'afaire', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:''}, lowOnly:false, psort:'iddesc', plimit:300, statut:'actives', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux'};
 
 function toast(msg, kind = ''){
   const t = $('#toast'); t.textContent = msg; t.className = 'show ' + kind;
@@ -2573,8 +2575,8 @@ VIEWS.pieces = {
     const rows = filteredPieces();
     if (!db.pieces.length) return empty('Aucune pièce', '<p>Créez la première avec « Nouvelle pièce ».</p>');
     if (!rows.length) return empty('Aucune pièce ne correspond', '');
-    const more = `<div class="list-bar"><span class="muted">${rows.length} pièce(s)${rows.length > 300 ? ' · 300 affichées' : ''}</span><label>Trier<select class="mini" data-change="psort" aria-label="Trier les pièces">${[['id', 'Par ID (croissant)'], ['iddesc', 'Par ID (décroissant)'], ['alpha', 'Alphabétique'], ['recent', 'Mouvement le plus récent'], ['old', 'Mouvement le plus ancien']].map(([v, t]) => `<option value="${v}" ${S.psort === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label></div>`;
-    return `${more}<div class="plist">${rows.slice(0, 300).map(p => {
+    const more = `<div class="list-bar"><span class="muted">${rows.length} pièce(s)${rows.length > S.plimit ? ` · ${S.plimit} affichées` : ''}</span><span class="lb-r"><label>Afficher<select class="mini" data-change="plimit" aria-label="Nombre de pièces affichées">${[[300, '300'], [500, '500'], [1000, '1000'], [1e9, 'Toutes']].map(([v, t]) => `<option value="${v}" ${S.plimit === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label><label>Trier<select class="mini" data-change="psort" aria-label="Trier les pièces">${[['iddesc', 'Par ID (décroissant)'], ['id', 'Par ID (croissant)'], ['alpha', 'Alphabétique'], ['recent', 'Mouvement le plus récent'], ['old', 'Mouvement le plus ancien']].map(([v, t]) => `<option value="${v}" ${S.psort === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label></span></div>`;
+    return `${more}<div class="plist">${rows.slice(0, S.plimit).map(p => {
       const mp = mainPlace(p), n = sortedStock(p).length, hm = horsMag(p);
       return `<button class="prow ${S.sel.pieces === p.id ? 'sel' : ''}" data-act="select" data-id="${p.id}">
         <span class="pm"><span class="pdes" title="${esc(p.designation)}">${esc(p.designation)}</span>
@@ -3857,6 +3859,7 @@ document.addEventListener('change', e => {
   if (c === 'lowOnly') S.lowOnly = !!e.target.value;
   if (c === 'statut') S.statut = e.target.value;
   if (c === 'psort'){ S.psort = e.target.value; fillList(); return; }
+  if (c === 'plimit'){ S.plimit = +e.target.value; fillList(); return; }
   if (c === 'zone') S.zone = e.target.value;
   if (c === 'pour'){ S.pour = e.target.value; }
   if (c === 'optGrp'){ S.optGrp = e.target.value; render(); return; }
