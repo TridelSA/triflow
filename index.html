@@ -395,6 +395,8 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .prow .pq{flex:none;display:flex;flex-direction:column;align-items:flex-end;min-width:3.5em}
 .prow .pq b{font-family:var(--f-mono);font-size:1.15rem;color:var(--ink)}
 .prow .pq small{color:var(--muted);font-size:.75rem}
+.back-nav{margin:0 0 10px}
+.back-nav .ico{transform:rotate(180deg)}
 .pd-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
 .pd-id{font-family:var(--f-mono);font-size:.85rem;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:3px 10px;border-radius:999px}
 .pd-tools{display:flex;gap:6px;align-items:center}
@@ -2468,7 +2470,7 @@ let db = CLOUD.cfg().url ? migrate(blank()) : load();
 if (!db){ db = seed(); save(); }
 
 /* ---------------- État d'affichage ---------------- */
-const S = {pour:'', tvue:'afaire', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:''}, lowOnly:false, psort:'iddesc', plimit:300, statut:'actives', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux'};
+const S = {pour:'', tvue:'afaire', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:''}, lowOnly:false, psort:'iddesc', plimit:300, back:[], statut:'actives', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux'};
 
 function toast(msg, kind = ''){
   const t = $('#toast'); t.textContent = msg; t.className = 'show ' + kind;
@@ -2491,7 +2493,9 @@ function hydrateIcons(root = document){ $$('[data-icon]', root).forEach(el => { 
 function render(){
   refreshDatalists(); refreshCounts();
   $$('#nav button').forEach(b => b.setAttribute('aria-current', b.dataset.view === S.view ? 'page' : 'false'));
-  $('#main').innerHTML = VIEWS[S.view].shell();
+  const bk = S.back[S.back.length - 1], VN = {accueil:'l’accueil', pieces:'la pièce', kks:'l’installation', lieux:'les emplacements', interventions:'le rapport', taches:'la tâche', options:'les options'};
+  const bl = bk ? (bk.view === 'pieces' && getPiece(bk.sel.pieces) ? `la pièce ${getPiece(bk.sel.pieces).ref}` : bk.view === 'pieces' && bk.q.pieces ? `la recherche « ${bk.q.pieces} »` : bk.view === 'kks' && getKks(bk.sel.kks) ? getKks(bk.sel.kks).code : VN[bk.view] || 'la page précédente') : '';
+  $('#main').innerHTML = (bk ? `<button class="btn small back-nav" data-act="nav-back">${icon('chev')}Retour à ${esc(bl)}</button>` : '') + VIEWS[S.view].shell();
   fillList(); fillDetail();
 }
 function fillList(){ const el = $('#list'); if (el) el.innerHTML = VIEWS[S.view].list(); }
@@ -3724,9 +3728,11 @@ const ACT = {
     l.style.top = (r.bottom + 6 + h > innerHeight - 8 && r.top - 6 - h > 8 ? r.top - 6 - h : r.bottom + 6) + 'px';
     l.querySelector('button')?.focus();
   },
-  nav: d => go(d.view),
+  nav: d => { S.back = []; go(d.view); },
+  'nav-back'(){ const b = S.back.pop(); if (!b) return; Object.assign(S, {view:b.view, sel:b.sel, q:b.q, sys:b.sys, sysExp:b.sysExp, psort:b.psort, plimit:b.plimit}); closeSearch(); render();
+    requestAnimationFrame(() => { const l = $('#list'); if (l) l.scrollTop = b.ls; window.scrollTo(0, b.y); const si = document.querySelector('.page-head input[type=search]'); if (si && b.q[si.dataset.search]) { /* recherche conservée */ } }); },
   select(d){ S.sel[S.view] = d.id; fillList(); fillDetail(); scrollDetail(); },
-  goto(d){ $('#gq').value = ''; go(d.view, d.id); },
+  goto(d){ if (d.view !== S.view || S.sel[d.view] !== d.id){ S.back.push({view:S.view, sel:{...S.sel}, q:{...S.q}, sys:S.sys, sysExp:new Set(S.sysExp), psort:S.psort, plimit:S.plimit, y:window.scrollY, ls:$('#list')?.scrollTop || 0}); if (S.back.length > 20) S.back.shift(); } $('#gq').value = ''; go(d.view, d.id); },
   tab(d){ S.tab[S.view] = d.tab; fillDetail(); },
   zone(d){ S.zone = d.zone; S.q.kks = ''; go('kks'); },
   sys(d){ const c = d.sys || ''; S.q.kks = ''; S.sel.kks = null; S.sysAuto = null;
