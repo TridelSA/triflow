@@ -2159,6 +2159,8 @@ function migrate(d){
   for (const k of d.kks) if (!k.aic){ const m = String(k.designation || '').match(/^(.*\S)\s+(\d{2}\s?[A-Z]{2,3}\s?[A-Z]?\d)$/); if (m){ k.designation = m[1]; k.aic = m[2]; } }
   if (!d.meta.statutV){ for (const x of d.salles) if (x.code && STATUT_RE.test(x.code.trim())) x.statut = true; d.meta.statutV = 1; }
   ensureSnaps(d);
+  { const P = new Map(d.pieces.map(p => [p.id, p])), Lm = new Map(d.lieux.map(l => [l.id, l]));
+    for (const i of d.interventions) for (const x of i.pieces || []) if (!x.s){ const p = P.get(x.pieceId), l = Lm.get(x.lieuId); if (p){ const sa = l && d.salles.find(z => z.id === l.salleId); x.s = {ref:p.ref, designation:p.designation, unite:p.unite, lieu:l && sa ? [sa.code || `${sa.batiment || 'E'}${sa.etage}.${sa.numero}`, ...(l.chemin || [])].join(' / ') : ''}; } } }
   if (d.meta.demo && !d.meta.tachesV){ seedTaches(d); }
   d.meta.tachesV = 1;
   d.version = 2; return d;
@@ -2379,6 +2381,9 @@ const stockAt = (p, lieuId) => (p.stock.find(s => s.lieuId === lieuId) || {qte:0
 const lieuSort = (a, b) => coll.compare(salleCode(getSalle(a.salleId) || {etage:'', numero:''}), salleCode(getSalle(b.salleId) || {etage:'', numero:''})) || coll.compare(pathOf(a).join('\u0001'), pathOf(b).join('\u0001'));
 let contIdx = null;
 const contentsOf = lieuId => { if (!contIdx){ contIdx = new Map(); for (const p of db.pieces) for (const s of p.stock){ if (!contIdx.has(s.lieuId)) contIdx.set(s.lieuId, []); contIdx.get(s.lieuId).push({p, qte:s.qte}); } } return contIdx.get(lieuId) || []; };
+/* Pièce figée dans un rapport : on garde l'ID, la désignation, l'unité et l'emplacement tels qu'ils étaient au moment du rapport */
+const pSnap = (p, l) => ({ref:p.ref, designation:p.designation, unite:p.unite, lieu:l ? lieuCode(l) : ''});
+const lineInfo = x => x.s || (getPiece(x.pieceId) ? pSnap(getPiece(x.pieceId), getLieu(x.lieuId)) : {ref:'', designation:'(pièce supprimée)', unite:'', lieu:getLieu(x.lieuId) ? lieuCode(getLieu(x.lieuId)) : ''});
 const usedInInterventions = pieceId => db.interventions.filter(i => i.pieces.some(l => l.pieceId === pieceId));
 const sortedStock = p => [...p.stock].filter(s => getLieu(s.lieuId)).sort((a, b) => lieuSort(getLieu(a.lieuId), getLieu(b.lieuId)));
 const mainPlace = p => { const l = [...p.stock].filter(s => getLieu(s.lieuId)).sort((a, b) => (isStatut(getLieu(a.lieuId)) - isStatut(getLieu(b.lieuId))) || (b.qte - a.qte))[0]; return l ? getLieu(l.lieuId) : null; };
@@ -2848,7 +2853,7 @@ VIEWS.interventions = {
       ${get('taches', i.tacheId) ? `<div class="wide"><dt>Tâche</dt><dd><button class="link" data-act="goto" data-view="taches" data-id="${i.tacheId}">${icon('repeat')}${esc(get('taches', i.tacheId).titre)}</button></dd></div>` : ''}</dl>
       ${i.constat ? `<section class="block"><h3>Constat</h3><p class="pre">${esc(i.constat)}</p></section>` : ''}
       ${i.travaux ? `<section class="block"><h3>Travaux réalisés</h3><p class="pre">${esc(i.travaux)}</p></section>` : ''}
-      ${i.pieces.length ? `<section class="block"><h3>Pièces utilisées</h3><div class="tbl-wrap"><table class="tbl compact"><tbody>${i.pieces.map(x => { const p = getPiece(x.pieceId); return `<tr><td>${p ? `<span class="ref">${esc(p.ref)}</span> ${esc(p.designation)}` : '(pièce supprimée)'}</td><td class="num qty">${num(x.qte)} ${esc(p?.unite || '')}</td></tr>`; }).join('')}</tbody></table></div></section>` : ''}`;
+      ${i.pieces.length ? `<section class="block"><h3>Pièces utilisées</h3><div class="tbl-wrap"><table class="tbl compact"><tbody>${i.pieces.map(x => { const p = getPiece(x.pieceId), s = lineInfo(x); return `<tr ${p ? `data-act="goto" data-view="pieces" data-id="${p.id}" tabindex="0"` : ''}><td><span class="ref">${esc(s.ref)}</span> ${esc(s.designation)}${s.lieu ? `<span class="sub">${esc(s.lieu)}</span>` : ''}</td><td class="num qty">${num(x.qte)} ${esc(s.unite || '')}</td></tr>`; }).join('')}</tbody></table></div></section>` : ''}`;
   }
 };
 
@@ -3601,7 +3606,7 @@ function interventionDialog(it, kksId, tache){
         const q = +$('.pl-qte', row).value; if (!(q > 0)) throw new Error(`Quantité invalide pour ${p.ref}.`);
         const key = p.id + '|' + lieuId; merged.set(key, round((merged.get(key) || 0) + q));
       }
-      const lines = [...merged].map(([key, qte]) => { const [pieceId, lieuId] = key.split('|'); return {pieceId, lieuId, qte}; });
+      const lines = [...merged].map(([key, qte]) => { const [pieceId, lieuId] = key.split('|'); const prev = (it?.pieces || []).find(x => x.pieceId === pieceId && x.lieuId === lieuId && x.s); return {pieceId, lieuId, qte, s:prev ? prev.s : pSnap(getPiece(pieceId), getLieu(lieuId))}; });
       const data = {date, type:val(f, 'type'), statut:val(f, 'statut'), titre, kksId:kk ? kk.id : '', constat:val(f, 'constat'), travaux:val(f, 'travaux'), duree:duree ? +duree : '', intervenants:[...d._pers], snap:Object.fromEntries([...d._pers].map(id => [id, d._snap(id)])), pieces:lines};
       tx(() => {
         const numero = isNew ? nextNum(date) : it.num;
@@ -3652,7 +3657,7 @@ function reportHTML(i){
       <tr><th>Durée</th><td>${i.duree ? num(i.duree) + ' h' : ''}</td><th>Date</th><td>${fmtD(i.date)}</td></tr></table>
     <h2>Constat / demande</h2><div class="rpt-box">${esc(i.constat)}</div>
     <h2>Travaux réalisés</h2><div class="rpt-box tall">${esc(i.travaux)}</div>
-    <h2>Pièces consommées</h2>${i.pieces.length ? `<table class="rpt-tbl"><thead><tr><th>ID</th><th>Désignation</th><th>Prélevé en</th><th class="n">Qté</th></tr></thead><tbody>${i.pieces.map(x => { const p = getPiece(x.pieceId); return `<tr><td class="mono">${esc(p?.ref || '')}</td><td>${esc(p?.designation || '(pièce supprimée)')}</td><td class="mono">${esc(lieuCode(getLieu(x.lieuId)))}</td><td class="n">${num(x.qte)} ${esc(p?.unite || '')}</td></tr>`; }).join('')}</tbody></table>` : '<p>Aucune pièce consommée.</p>'}
+    <h2>Pièces consommées</h2>${i.pieces.length ? `<table class="rpt-tbl"><thead><tr><th>ID</th><th>Désignation</th><th>Prélevé en</th><th class="n">Qté</th></tr></thead><tbody>${i.pieces.map(x => { const s = lineInfo(x); return `<tr><td class="mono">${esc(s.ref)}</td><td>${esc(s.designation)}</td><td class="mono">${esc(s.lieu)}</td><td class="n">${num(x.qte)} ${esc(s.unite || '')}</td></tr>`; }).join('')}</tbody></table>` : '<p>Aucune pièce consommée.</p>'}
     <div class="rpt-sign"><div><span>Intervenant(s)</span><div class="sigbox"></div><small>Nom, date, signature</small></div><div><span>Responsable</span><div class="sigbox"></div><small>Nom, date, visa</small></div></div>
     <footer class="rpt-foot">Imprimé le ${fmtDT(new Date().toISOString())} · TriFlow</footer></article>`;
 }
@@ -3754,7 +3759,7 @@ function exportInts(){
   const rows = [['N°', 'Date', 'Type', 'Statut', 'Titre', 'Repère KKS', 'Équipement', 'Zone', 'Intervenants', 'Durée (h)', 'Constat', 'Travaux', 'Pièces consommées']];
   for (const i of [...db.interventions].sort((a, b) => a.num.localeCompare(b.num))){
     const k = getKks(i.kksId);
-    rows.push([i.num, fmtD(i.date), i.type || '', STATUTS[i.statut]?.[0] || '', i.titre, k?.code || '', k?.designation || '', k ? sysLabel(k.code) : '', intPers(i).map(snapLabel).join(', '), i.duree, i.constat, i.travaux, i.pieces.map(x => `${num(x.qte)} × ${getPiece(x.pieceId)?.ref || '?'} (${lieuCode(getLieu(x.lieuId))})`).join(', ')]);
+    rows.push([i.num, fmtD(i.date), i.type || '', STATUTS[i.statut]?.[0] || '', i.titre, k?.code || '', k?.designation || '', k ? sysLabel(k.code) : '', intPers(i).map(snapLabel).join(', '), i.duree, i.constat, i.travaux, i.pieces.map(x => { const s = lineInfo(x); return `${num(x.qte)} × ${s.ref || '?'} ${s.designation} (${s.lieu})`; }).join(', ')]);
   }
   download(`triflow-rapports-${todayISO()}.csv`, csv(rows), 'text/csv;charset=utf-8'); toast('Export des interventions téléchargé');
 }
