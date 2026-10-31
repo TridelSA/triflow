@@ -374,6 +374,40 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .crumbs .link{font-family:inherit}
 .sys-head{padding:0 0 12px !important;border-bottom:1px solid var(--line);margin-bottom:6px}
 .sys-head h3{display:flex;gap:10px;align-items:baseline}
+.pd-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.pd-id{font-family:var(--f-mono);font-size:.85rem;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:3px 10px;border-radius:999px}
+.pd-tools{display:flex;gap:6px;align-items:center}
+.pd-title{margin:4px 0 2px;font-size:1.35rem;line-height:1.25}
+.pd-sub{margin:0 0 12px;color:var(--ink)}
+.pd-stock{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px;border-radius:12px;background:var(--accent-soft);margin:10px 0 6px}
+.pd-stock.low{background:var(--warn-soft, #FFF4E0)}
+.pd-qty{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.pd-qty .n{font-family:var(--f-mono);font-size:2rem;font-weight:700;line-height:1}
+.pd-qty .u{font-weight:600}
+.pd-qty .l{color:var(--muted);font-size:.85rem}
+.pd-sec{border-top:1px solid var(--line);padding:14px 0 4px;margin-top:10px}
+.pd-sec h3{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.pd-sec h3 .ico{width:16px;height:16px}
+.pd-where{display:flex;flex-direction:column;gap:6px}
+.pd-where.out{margin-top:8px}
+.pd-loc{display:flex;align-items:center;gap:12px;padding:8px 10px;border:1px solid var(--line);border-radius:10px}
+.pd-loc .plate,.pd-loc .stat{font-size:1rem}
+.pd-loc .t{flex:1;min-width:0;color:var(--muted);font-size:.85rem}
+.pd-loc .q{font-family:var(--f-mono);font-weight:700;font-size:1.05rem}
+.pd-loc .q small{font-weight:400;color:var(--muted);font-family:inherit}
+.pd-kks{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
+.pd-k{display:flex;align-items:center;gap:10px;padding:4px 0}
+.pd-k .t{flex:1;min-width:0;font-size:.9rem}
+.pd-info{display:grid;grid-template-columns:max-content 1fr;gap:6px 14px;margin:0;font-size:.9rem}
+.pd-info dt{color:var(--muted)}
+.pd-info dd{margin:0;white-space:pre-line}
+.pd-info dd.full{grid-column:1 / -1}
+.pd-hist{display:flex;flex-direction:column;margin-bottom:8px}
+.ph{display:grid;grid-template-columns:5.6em 4em 1fr;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px dashed var(--line);font-size:.88rem}
+.ph .d{font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
+.ph .q{font-family:var(--f-mono);font-weight:700;text-align:right}
+.ph .q.neg{color:var(--bad)}.ph .q.pos{color:var(--ok)}
+.ph .lw{display:block;font-family:var(--f-mono);font-size:.75rem;color:var(--muted)}
 .kgroups{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 .kgrp{border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .kgrp.single{border:0}
@@ -2006,7 +2040,7 @@ function mergeStaff(d, list, full = false){
 function blank(){
   return {version:2, meta:{demo:false}, reglages:{qrBase:'', labelFmt:'sheet'},
     listes:{fournisseurs:[], categories:['Mécanique','Électrique','Instrumentation','Hydraulique','Pneumatique','Consommable'], unites:['pce','jeu','m','l','kg','rouleau','boîte'], types:['Corrective','Préventive','Contrôle','Amélioration'], groupes:['Électricien','Automaticien','Mécanicien','Intendance','Chauffeurs-grutiers','Cadres','Équipe','Administration'], systemes:{}},
-    salles:[], lieux:[], personnes:[], kks:[], pieces:[], interventions:[], mouvements:[], taches:[]};
+    salles:[], lieux:[], personnes:[], kks:[], pieces:[], interventions:[], mouvements:[], taches:[], histo:[]};
 }
 function migrate(d){
   const b = blank();
@@ -2056,7 +2090,7 @@ function save(){
 const SUPABASE_URL = 'https://gzwmoevwapliqremrqpp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_Mslbg2kd3UQp5lhVkhrXkA_XXN2H9vK';
 const SUPABASE_LIB = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js';
-const COLS = ['salles', 'lieux', 'personnes', 'kks', 'pieces', 'interventions', 'mouvements', 'taches'];
+const COLS = ['salles', 'lieux', 'personnes', 'kks', 'pieces', 'interventions', 'mouvements', 'taches', 'histo'];
 const CLOUD = {
   on:false, sb:null, user:null, synced:new Map(), revs:new Map(), pushing:false, again:false, timer:null, state:'ok',
   cfg(){ let c = {}; try { c = JSON.parse(localStorage.getItem('gmao-cloud') || '{}'); } catch(e){} return {url:(SUPABASE_URL || c.url || '').trim(), key:(SUPABASE_KEY || c.key || '').trim(), fixed:!!SUPABASE_URL}; },
@@ -2502,26 +2536,40 @@ VIEWS.pieces = {
   detail(){
     const p = getPiece(S.sel.pieces);
     if (!p) return placeholder('box', 'Choisissez une pièce ou scannez son QR code.');
-    const tab = S.tab.pieces || 'stock', mv = db.mouvements.filter(m => m.pieceId === p.id);
-    let body = '';
-    if (tab === 'stock'){
-      const lines = sortedStock(p);
-      body = lines.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${lines.map(s => `<tr><td>${plate(getLieu(s.lieuId))}</td><td class="num qty">${num(s.qte)} <span class="muted">${esc(p.unite)}</span></td><td class="row-tools" style="width:1%">${!s.qte ? `<button class="link danger" data-act="unlink-lieu" data-piece="${p.id}" data-id="${s.lieuId}">Retirer</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-line">Rangée nulle part pour l’instant.</p>';
-    } else if (tab === 'kks'){
-      const ks = p.kks.map(getKks).filter(Boolean);
-      body = (ks.length ? `<ul class="kks-list">${ks.map(k => `<li>${kksTag(k)}<span>${esc(k.designation)}</span><button class="icon-btn" data-act="unlink-kks" data-piece="${p.id}" data-id="${k.id}" aria-label="Retirer ${esc(k.code)}" title="Retirer">×</button></li>`).join('')}</ul>` : '<p class="empty-line">Aucun repère lié.</p>')
-        + `<form class="inline-form" data-form="link-kks" data-piece="${p.id}"><input name="kks" list="dl-kks" placeholder="Lier un repère KKS" aria-label="Repère KKS à lier" autocomplete="off"><button class="btn">Lier</button></form>`;
-    } else body = mvTable(mv, false);
-    const mp = mainPlace(p);
-    return `<div class="d-head"><div class="d-title"><span class="ref">${esc(p.ref)}</span><h2>${esc(p.designation)}</h2>${p.fabricant || p.refFab ? `<p class="muted">${esc([p.fabricant, p.refFab].filter(Boolean).join(' · '))}</p>` : ''}${p.fournisseur && p.fournisseur !== p.fabricant ? `<p class="muted">Fournisseur : ${esc(p.fournisseur)}</p>` : ''}</div>
-      <dl class="facts" style="margin:0"><div><dt>En magasin</dt><dd><span class="qty big">${num(dispo(p))}</span> ${esc(p.unite)}</dd></div><div><dt>Emplacement</dt><dd>${mp ? plate(mp) : '—'}</dd></div>
-        ${horsMag(p).length ? `<div class="wide"><dt>Hors magasin</dt><dd class="places">${horsMag(p).map(s => `${plate(getLieu(s.lieuId))} <span class="qty">${num(s.qte)}</span>`).join(' ')}</dd></div>` : ''}</dl>
-      <div class="d-actions"><button class="btn primary" data-act="move" data-id="${p.id}" data-type="sortie">${icon('move')}Mouvement de stock</button><button class="btn" data-act="labels-one" data-id="${p.id}">${icon('qr')}Étiquette</button><button class="btn" data-act="print-piece" data-id="${p.id}">${icon('printer')}Fiche A4</button>
-        ${menu([['edit-piece', 'Modifier la pièce et ses KKS', 'edit', {id:p.id}], ['add-place', 'Ranger à un autre emplacement', 'shelf', {id:p.id}]])}</div></div>
-      ${tabs([['stock', 'Stock', null], ['kks', 'Repères KKS', p.kks.length || null], ['hist', 'Historique', null]], tab)}
-      <div class="tabpanel">${body}</div>`;
+    const lines = sortedStock(p), phys = lines.filter(x => !isStatut(getLieu(x.lieuId))), out = horsMag(p);
+    const ks = p.kks.map(getKks).filter(Boolean);
+    const hist = pieceHistory(p), showAll = S.histAll === p.id;
+    const salleOf = l => { const sa = l && getSalle(l.salleId); return sa && sa.nom ? sa.nom : ''; };
+    const noteRows = String(p.notes || '').split('\n').reduce((acc, ln) => { const m = ln.match(/^([^:]{2,30}?)\s:\s(.*)$/); if (m) acc.push([m[1], m[2]]); else if (ln.trim()) { if (acc.length && acc[acc.length - 1][0] !== '') acc[acc.length - 1][1] += '\n' + ln; else acc.push(['', ln]); } return acc; }, []);
+    const low = p.stockMin > 0 && dispo(p) < p.stockMin;
+    return `<div class="pd-head"><span class="pd-id">ID ${esc(p.ref)}</span><div class="pd-tools"><button class="btn small" data-act="edit-piece" data-id="${p.id}">${icon('edit')}Modifier</button>${menu([['labels-one', 'Étiquette QR', 'qr', {id:p.id}], ['print-piece', 'Fiche A4', 'printer', {id:p.id}], ['add-place', 'Ranger à un autre emplacement', 'shelf', {id:p.id}]], 'Plus', 'cog', 'small')}</div></div>
+      <h2 class="pd-title">${esc(p.designation)}</h2>
+      ${p.fabricant || p.refFab ? `<p class="pd-sub">${esc(p.fabricant || '')}${p.refFab ? ` <span class="muted">· réf.</span> <span class="mono">${esc(p.refFab)}</span>` : ''}</p>` : ''}
+      <div class="pd-stock ${low ? 'low' : ''}">
+        <div class="pd-qty"><span class="n">${num(dispo(p))}</span><span class="u">${esc(p.unite)}</span><span class="l">en magasin${p.stockMin ? ` · min ${num(p.stockMin)}` : ''}</span></div>
+        <button class="btn primary" data-act="move" data-id="${p.id}" data-type="sortie">${icon('move')}Mouvement de stock</button>
+      </div>
+      <section class="pd-sec"><h3>${icon('shelf')}Où la trouver</h3>
+        ${phys.length ? `<div class="pd-where">${phys.map(x => { const l = getLieu(x.lieuId); return `<div class="pd-loc">${plate(l)}<span class="t">${esc(salleOf(l))}</span><span class="q">${num(x.qte)} <small>${esc(p.unite)}</small></span>${!x.qte ? `<button class="link danger" data-act="unlink-lieu" data-piece="${p.id}" data-id="${x.lieuId}" title="Retirer cet emplacement">×</button>` : ''}</div>`; }).join('')}</div>` : '<p class="empty-line">Rangée nulle part pour l’instant.</p>'}
+        ${out.length ? `<div class="pd-where out">${out.map(x => `<div class="pd-loc">${plate(getLieu(x.lieuId))}<span class="t">hors magasin</span><span class="q">${num(x.qte)} <small>${esc(p.unite)}</small></span></div>`).join('')}</div>` : ''}</section>
+      <section class="pd-sec"><h3>${icon('plant')}Équipements (KKS)</h3>
+        ${ks.length ? `<div class="pd-kks">${ks.map(k => `<span class="pd-k">${kksTag(k)}<span class="t">${esc(k.designation)}</span><button class="icon-btn" data-act="unlink-kks" data-piece="${p.id}" data-id="${k.id}" aria-label="Retirer ${esc(k.code)}" title="Retirer">×</button></span>`).join('')}</div>` : '<p class="empty-line">Aucun équipement lié.</p>'}
+        <form class="inline-form" data-form="link-kks" data-piece="${p.id}"><input name="kks" list="dl-kks" placeholder="Lier un équipement (code KKS)" aria-label="Repère KKS à lier" autocomplete="off"><button class="btn">Lier</button></form></section>
+      ${p.fournisseur && p.fournisseur !== p.fabricant || noteRows.length ? `<section class="pd-sec"><h3>${icon('list')}Informations</h3><dl class="pd-info">
+        ${p.fournisseur && p.fournisseur !== p.fabricant ? `<dt>Fournisseur</dt><dd>${esc(p.fournisseur)}</dd>` : ''}
+        ${noteRows.map(([k, v]) => k ? `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>` : `<dd class="full">${esc(v)}</dd>`).join('')}</dl></section>` : ''}
+      <section class="pd-sec"><h3>${icon('repeat')}Historique <span class="muted">${hist.length || ''}</span></h3>
+        ${hist.length ? `<div class="pd-hist">${(showAll ? hist : hist.slice(0, 8)).map(h => `<div class="ph"><span class="d">${fmtD(h.date)}</span><span class="q ${h.neutral ? '' : h.qte < 0 ? 'neg' : 'pos'}">${h.neutral ? '' : h.qte > 0 ? '+' : h.qte < 0 ? '−' : ''}${num(Math.abs(h.qte))}</span><span class="m">${esc(h.motif)}${h.who ? ` <span class="muted">· ${esc(h.who)}</span>` : ''}${h.lieu ? `<span class="lw">${esc(h.lieu)}</span>` : ''}</span></div>`).join('')}</div>
+          ${hist.length > 8 ? `<button class="link" data-act="hist-all" data-id="${p.id}">${showAll ? 'Réduire' : `Voir les ${hist.length} mouvements`}</button>` : ''}` : '<p class="empty-line">Aucun mouvement enregistré.</p>'}</section>`;
   }
 };
+
+/* Historique d'une pièce : mouvements TriFlow + historique repris de CareOffice */
+function pieceHistory(p){
+  const own = db.mouvements.filter(m => m.pieceId === p.id).map(m => ({date:m.date, qte:m.qte, motif:m.motif + (m.ref ? ' ' + m.ref : ''), lieu:getLieu(m.lieuId) ? lieuCode(getLieu(m.lieuId)) : '', who:m.who || ''}));
+  const old = (get('histo', p.id)?.l || []).map(h => ({date:h.d, qte:h.q, neutral:!!h.n, motif:h.t, lieu:h.lieu || '', who:h.w || ''}));
+  return [...own, ...old].sort((a, b) => String(b.date).localeCompare(String(a.date)));
+}
 
 /* ---------- Emplacements (consultation) ---------- */
 /* Arborescence d'une salle : chaque niveau du chemin devient un groupe, les emplacements sont des boutons. */
@@ -3203,10 +3251,10 @@ function importPiecesDialog(){
   dialog({title:'Importer des pièces depuis CareOffice', saveLabel:'Importer', wide:true,
     body:`<p>Choisissez le fichier <span class="mono">pieces-triflow.json</span>. Chaque pièce garde son ID CareOffice ; une pièce dont l’ID existe déjà est mise à jour (désignation, fournisseur, stock, repères KKS). Les emplacements et repères KKS manquants sont créés.</p>
       <label>Fichier<input type="file" name="file" accept=".json,application/json"></label><p class="hint" data-prev></p>`,
-    onOpen(f, d){ f.elements.file.addEventListener('change', async () => { try { const j = JSON.parse(await f.elements.file.files[0].text()); d._data = j; $('[data-prev]', d).textContent = `${(j.pieces || []).length} pièce(s), ${(j.pieces || []).reduce((a, p) => a + (p.stock || []).length, 0)} ligne(s) de stock, ${(j.newKks || []).length} repère(s) KKS à créer.`; } catch(e){ d._data = null; $('[data-prev]', d).textContent = 'Fichier illisible.'; } }); },
+    onOpen(f, d){ f.elements.file.addEventListener('change', async () => { try { const j = JSON.parse(await f.elements.file.files[0].text()); d._data = j; $('[data-prev]', d).textContent = `${(j.pieces || []).length} pièce(s), ${(j.pieces || []).reduce((a, p) => a + (p.stock || []).length, 0)} ligne(s) de stock, ${(j.newKks || []).length} repère(s) KKS à créer, historique de ${Object.keys(j.histo || {}).length} pièce(s).`; } catch(e){ d._data = null; $('[data-prev]', d).textContent = 'Fichier illisible.'; } }); },
     onSave(f, d){
       const j = d._data; if (!j || !Array.isArray(j.pieces)) throw new Error('Choisissez le fichier pieces-triflow.json.');
-      let add = 0, upd = 0, nk = 0; const nl0 = db.lieux.length;
+      let add = 0, upd = 0, nk = 0, nh = 0; const nl0 = db.lieux.length;
       tx(() => {
         const kByCode = new Map(db.kks.map(k => [k.code.replace(/\s+/g, '').toUpperCase(), k]));
         for (const k of j.newKks || []){ const c = normCode(k.code); if (!kByCode.has(c.replace(/\s+/g, ''))){ const n = {id:uid(), code:c, designation:k.designation || c, aic:''}; db.kks.push(n); kByCode.set(c.replace(/\s+/g, ''), n); nk++; } }
@@ -3223,8 +3271,9 @@ function importPiecesDialog(){
           else { const n = {id:uid(), ...data, stock, kks}; db.pieces.push(n); byRef.set(ref, n); add++; }
         }
         db.listes.fournisseurs.sort(coll.compare);
+        for (const [ref, l] of Object.entries(j.histo || {})){ const pc = byRef.get(String(ref).toUpperCase()); if (!pc) continue; const ex = db.histo.find(h => h.id === pc.id); if (ex) ex.l = l; else db.histo.push({id:pc.id, l}); nh++; }
       });
-      render(); toast(`${add} pièce(s) ajoutée(s), ${upd} mise(s) à jour · ${db.lieux.length - nl0} emplacement(s) et ${nk} repère(s) KKS créés`);
+      render(); toast(`${add} pièce(s) ajoutée(s), ${upd} mise(s) à jour · ${db.lieux.length - nl0} emplacement(s) et ${nk} repère(s) KKS créés${nh ? ` · historique de ${nh} pièce(s)` : ''}`);
     }});
 }
 function expandAny(s){ const t = String(s || '').trim(); if (!t) return ['']; return /[A-Za-z]/.test(t) ? expandLetters(t) : expandNums(t); }
@@ -3647,6 +3696,7 @@ const ACT = {
   'edit-piece': d => pieceDialog(getPiece(d.id)),
   move: d => moveDialog(getPiece(d.id), d.type),
   'add-place': d => addPlaceDialog(getPiece(d.id)),
+  'hist-all'(d){ S.histAll = S.histAll === d.id ? null : d.id; fillDetail(); },
   'unlink-lieu'(d){ const p = getPiece(d.piece); tx(() => p.stock = p.stock.filter(s => !(s.lieuId === d.id && !s.qte))); fillList(); fillDetail(); toast('Emplacement retiré de la pièce'); },
   'unlink-kks'(d){ const p = getPiece(d.piece), k = getKks(d.id); tx(() => p.kks = p.kks.filter(id => id !== d.id)); fillList(); fillDetail(); toast(`Lien ${p.ref} ↔ ${k?.code || ''} retiré`); },
   'new-salle': () => salleDialog(),
