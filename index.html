@@ -2270,7 +2270,7 @@ function addStock(p, lieuId, delta, motif, ref = ''){
   s.qte = next;
   if (delta) db.mouvements.unshift({id:uid(), date:new Date().toISOString(), pieceId:p.id, lieuId, qte:round(delta), motif, ref});
 }
-function nextRef(){ const n = Math.max(0, ...db.pieces.map(p => +(String(p.ref).match(/^P-(\d+)$/i) || [0,0])[1])); return 'P-' + String(n + 1).padStart(5, '0'); }
+function nextRef(){ let n = 0; for (const p of db.pieces){ const v = /^\d+$/.test(String(p.ref)) ? +p.ref : 0; if (v > n) n = v; } return String(n + 1); }
 function nextNum(date){
   const y = String(date || todayISO()).slice(0, 4);
   const n = Math.max(0, ...db.interventions.map(i => { const m = String(i.num).match(/^INT-(\d{4})-(\d+)$/); return m && m[1] === y ? +m[2] : 0; }));
@@ -2483,14 +2483,15 @@ function filteredPieces(){
 }
 VIEWS.pieces = {
   shell: () => `<header class="page-head"><h1>Pièces</h1><div class="tools">${searchBox('pieces', 'Rechercher une pièce…')}<button class="btn primary" data-act="new-piece">${icon('plus')}Nouvelle pièce</button>
-    ${menu([['labels-list', 'Étiquettes QR de la liste', 'qr', {}], ['toggle-low', S.lowOnly ? 'Afficher toutes les pièces' : 'Pièces sous le stock minimum', 'list', {}]])}</div></header>
+    ${menu([['labels-list', 'Étiquettes QR de la liste', 'qr', {}], ['import-pieces', 'Importer depuis CareOffice (fichier)', 'save', {}], ['toggle-low', S.lowOnly ? 'Afficher toutes les pièces' : 'Pièces sous le stock minimum', 'list', {}]])}</div></header>
     ${S.lowOnly ? `<p class="tools" style="margin:-6px 0 14px"><span class="chip warn">Sous le stock minimum<button class="icon-btn" style="width:20px;height:20px;font-size:1rem;color:inherit" data-act="toggle-low" aria-label="Afficher toutes les pièces">×</button></span></p>` : ''}
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list(){
     const rows = filteredPieces();
     if (!db.pieces.length) return empty('Aucune pièce', '<p>Créez la première avec « Nouvelle pièce ».</p>');
     if (!rows.length) return empty('Aucune pièce ne correspond', '');
-    return `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Pièce</th><th class="hide-sm">Emplacement</th><th class="num">Stock</th></tr></thead><tbody>${rows.map(p => {
+    const more = rows.length > 300 ? `<p class="list-note">${rows.length} pièces : les 300 premières sont affichées, utilisez la recherche pour affiner.</p>` : '';
+    return `${more}<div class="tbl-wrap"><table class="tbl"><thead><tr><th>ID · Pièce</th><th class="hide-sm">Emplacement</th><th class="num">Stock</th></tr></thead><tbody>${rows.slice(0, 300).map(p => {
       const mp = mainPlace(p), n = sortedStock(p).length;
       return `<tr data-act="select" data-id="${p.id}" class="${S.sel.pieces === p.id ? 'sel' : ''}" tabindex="0">
         <td><span class="ref">${esc(p.ref)}</span><span class="des">${esc(p.designation)}</span></td>
@@ -2965,7 +2966,7 @@ function pieceDialog(p, kksId){
   const v = p || {ref:nextRef(), designation:'', categorie:'', fabricant:'', refFab:'', fournisseur:'', unite:'pce', stockMin:'', notes:''};
   dialog({
     title: isNew ? 'Nouvelle pièce' : 'Modifier la pièce', wide:true,
-    body: `<div class="grid3"><label>Référence interne<input name="ref" value="${esc(v.ref)}" required></label><label>Catégorie<select name="categorie">${optList(db.listes.categories, v.categorie, '—')}</select></label><label>Unité<select name="unite">${optList(db.listes.unites, v.unite)}</select></label></div>
+    body: `<div class="grid3"><label>ID<input name="ref" value="${esc(v.ref)}" required></label><label>Catégorie<select name="categorie">${optList(db.listes.categories, v.categorie, '—')}</select></label><label>Unité<select name="unite">${optList(db.listes.unites, v.unite)}</select></label></div>
       <label>Désignation<input name="designation" value="${esc(v.designation)}" required placeholder="ex. Roulement à billes 6205-2RS"></label>
       <fieldset><legend>Marque et fournisseur</legend>
         <div class="grid2"><label>Marque<input name="fabricant" list="dl-marques" value="${esc(v.fabricant)}" autocomplete="off" placeholder="ex. SKF"></label><label>Réf. de la marque<input name="refFab" value="${esc(v.refFab)}" placeholder="ex. 6205-2RSH"></label></div>
@@ -3006,8 +3007,8 @@ function pieceDialog(p, kksId){
     onSave(f, d){
       if (!d._kadd()) throw new Error('Un repère KKS saisi n’existe pas dans la liste.');
       const ref = val(f, 'ref').toUpperCase(), designation = val(f, 'designation'), min = val(f, 'stockMin');
-      if (!ref) throw new Error('Indiquez une référence interne.');
-      if (db.pieces.some(x => x.ref.toUpperCase() === ref && x !== p)) throw new Error(`La référence ${ref} existe déjà.`);
+      if (!ref) throw new Error('Indiquez un ID.');
+      if (db.pieces.some(x => x.ref.toUpperCase() === ref && x !== p)) throw new Error(`L’ID ${ref} existe déjà.`);
       if (!designation) throw new Error('Indiquez une désignation.');
       if (min && !(+min >= 0)) throw new Error('Le stock minimum doit être un nombre positif.');
       const data = {ref, designation, categorie:val(f, 'categorie'), fabricant:val(f, 'fabricant'), refFab:val(f, 'refFab'), fournisseur:f.elements.fsame.checked ? val(f, 'fabricant') : val(f, 'fournisseur'), unite:val(f, 'unite'), stockMin:min ? +min : 0, notes:val(f, 'notes'), kks:[...d._kks]};
@@ -3190,6 +3191,42 @@ function importLieuxDialog(){
       render(); toast(`${nl} emplacement(s) et ${ns} local(aux) créés${bad.length ? ` · ${bad.length} ligne(s) ignorée(s)` : ''}`);
     }});
 }
+/* Retrouve un emplacement à partir de son code, en créant le local et l'emplacement s'ils manquent (à appeler dans tx) */
+function ensureLieu(codeTxt){
+  const c = parseCode(codeTxt); if (!c) return null;
+  const ex = findLieuExact(c); if (ex) return ex;
+  let s = findSalle(c.local);
+  if (!s){ s = c.libre ? {id:uid(), code:c.local, nom:'', ...(STATUT_RE.test(c.local) ? {statut:true} : {})} : {id:uid(), batiment:c.batiment, etage:c.etage, numero:c.numero, nom:''}; db.salles.push(s); }
+  const l = {id:uid(), salleId:s.id, chemin:c.chemin, note:''}; db.lieux.push(l); return l;
+}
+function importPiecesDialog(){
+  dialog({title:'Importer des pièces depuis CareOffice', saveLabel:'Importer', wide:true,
+    body:`<p>Choisissez le fichier <span class="mono">pieces-triflow.json</span>. Chaque pièce garde son ID CareOffice ; une pièce dont l’ID existe déjà est mise à jour (désignation, fournisseur, stock, repères KKS). Les emplacements et repères KKS manquants sont créés.</p>
+      <label>Fichier<input type="file" name="file" accept=".json,application/json"></label><p class="hint" data-prev></p>`,
+    onOpen(f, d){ f.elements.file.addEventListener('change', async () => { try { const j = JSON.parse(await f.elements.file.files[0].text()); d._data = j; $('[data-prev]', d).textContent = `${(j.pieces || []).length} pièce(s), ${(j.pieces || []).reduce((a, p) => a + (p.stock || []).length, 0)} ligne(s) de stock, ${(j.newKks || []).length} repère(s) KKS à créer.`; } catch(e){ d._data = null; $('[data-prev]', d).textContent = 'Fichier illisible.'; } }); },
+    onSave(f, d){
+      const j = d._data; if (!j || !Array.isArray(j.pieces)) throw new Error('Choisissez le fichier pieces-triflow.json.');
+      let add = 0, upd = 0, nk = 0; const nl0 = db.lieux.length;
+      tx(() => {
+        const kByCode = new Map(db.kks.map(k => [k.code.replace(/\s+/g, '').toUpperCase(), k]));
+        for (const k of j.newKks || []){ const c = normCode(k.code); if (!kByCode.has(c.replace(/\s+/g, ''))){ const n = {id:uid(), code:c, designation:k.designation || c, aic:''}; db.kks.push(n); kByCode.set(c.replace(/\s+/g, ''), n); nk++; } }
+        const byRef = new Map(db.pieces.map(p => [String(p.ref).toUpperCase(), p]));
+        for (const x of j.pieces){
+          const ref = String(x.ref).toUpperCase(); if (!ref) continue;
+          const kks = (x.kks || []).map(c => kByCode.get(String(c).replace(/\s+/g, '').toUpperCase())?.id).filter(Boolean);
+          const stock = []; for (const s of x.stock || []){ const l = ensureLieu(s.lieu); if (!l) continue; const e = stock.find(y => y.lieuId === l.id); if (e) e.qte = round(e.qte + (+s.qte || 0)); else stock.push({lieuId:l.id, qte:+s.qte || 0}); }
+          const data = {ref, designation:x.designation || ref, categorie:x.categorie || '', fabricant:x.fabricant || '', refFab:x.refFab || '', fournisseur:x.fournisseur || x.fabricant || '', unite:x.unite || 'pce', stockMin:+x.stockMin || 0, notes:x.notes || ''};
+          for (const nm of [data.fabricant, data.fournisseur]) if (nm && !db.listes.fournisseurs.some(y => norm(y) === norm(nm))) db.listes.fournisseurs.push(nm);
+          if (data.unite && !db.listes.unites.includes(data.unite)) db.listes.unites.push(data.unite);
+          const ex = byRef.get(ref);
+          if (ex){ Object.assign(ex, data, {stock, kks:[...new Set([...(ex.kks || []), ...kks])]}); upd++; }
+          else { const n = {id:uid(), ...data, stock, kks}; db.pieces.push(n); byRef.set(ref, n); add++; }
+        }
+        db.listes.fournisseurs.sort(coll.compare);
+      });
+      render(); toast(`${add} pièce(s) ajoutée(s), ${upd} mise(s) à jour · ${db.lieux.length - nl0} emplacement(s) et ${nk} repère(s) KKS créés`);
+    }});
+}
 function expandAny(s){ const t = String(s || '').trim(); if (!t) return ['']; return /[A-Za-z]/.test(t) ? expandLetters(t) : expandNums(t); }
 function seriesDialog(salleId){
   if (!db.salles.length){ toast('Créez d’abord une salle.', 'bad'); return salleDialog(); }
@@ -3240,7 +3277,7 @@ function pieceLabelsDialog(ids){
   if (!pick && !ps.length){ toast('Aucune pièce à imprimer.', 'bad'); return; }
   dialog({title: pick ? 'Étiquettes QR du matériel' : `Imprimer ${ps.length > 1 ? ps.length + ' étiquettes QR' : 'l’étiquette QR de ' + esc(ps[0].ref)}`, saveLabel:'Imprimer',
     body:`${pick ? `<fieldset><legend>Quelles pièces ?</legend><div class="seg">${[['one', 'Une pièce'], ['place', 'Tout un emplacement ou une salle'], ['all', 'Toutes les pièces']].map(([v, t], i) => `<label><input type="radio" name="which" value="${v}" ${i === 0 ? 'checked' : ''}>${t}</label>`).join('')}</div>
-      <input name="piece" list="dl-pieces" placeholder="Référence ou désignation" aria-label="Pièce" autocomplete="off" data-w="one"><input name="place" list="dl-lieux" placeholder="ex. E1.11 ou E1.11 C40" aria-label="Emplacement ou salle" autocomplete="off" data-w="place" hidden><p class="hint" data-count></p></fieldset>` : ''}
+      <input name="piece" list="dl-pieces" placeholder="ID ou désignation" aria-label="Pièce" autocomplete="off" data-w="one"><input name="place" list="dl-lieux" placeholder="ex. E1.11 ou E1.11 C40" aria-label="Emplacement ou salle" autocomplete="off" data-w="place" hidden><p class="hint" data-count></p></fieldset>` : ''}
       ${fmtBody()}`,
     onOpen(f, d){
       fmtOpen(f, d, () => (pick ? choose(f) : ps).map(pieceLabelHTML));
@@ -3458,7 +3495,7 @@ function reportHTML(i){
       <tr><th>Durée</th><td>${i.duree ? num(i.duree) + ' h' : ''}</td><th>Date</th><td>${fmtD(i.date)}</td></tr></table>
     <h2>Constat / demande</h2><div class="rpt-box">${esc(i.constat)}</div>
     <h2>Travaux réalisés</h2><div class="rpt-box tall">${esc(i.travaux)}</div>
-    <h2>Pièces consommées</h2>${i.pieces.length ? `<table class="rpt-tbl"><thead><tr><th>Réf.</th><th>Désignation</th><th>Prélevé en</th><th class="n">Qté</th></tr></thead><tbody>${i.pieces.map(x => { const p = getPiece(x.pieceId); return `<tr><td class="mono">${esc(p?.ref || '')}</td><td>${esc(p?.designation || '(pièce supprimée)')}</td><td class="mono">${esc(lieuCode(getLieu(x.lieuId)))}</td><td class="n">${num(x.qte)} ${esc(p?.unite || '')}</td></tr>`; }).join('')}</tbody></table>` : '<p>Aucune pièce consommée.</p>'}
+    <h2>Pièces consommées</h2>${i.pieces.length ? `<table class="rpt-tbl"><thead><tr><th>ID</th><th>Désignation</th><th>Prélevé en</th><th class="n">Qté</th></tr></thead><tbody>${i.pieces.map(x => { const p = getPiece(x.pieceId); return `<tr><td class="mono">${esc(p?.ref || '')}</td><td>${esc(p?.designation || '(pièce supprimée)')}</td><td class="mono">${esc(lieuCode(getLieu(x.lieuId)))}</td><td class="n">${num(x.qte)} ${esc(p?.unite || '')}</td></tr>`; }).join('')}</tbody></table>` : '<p>Aucune pièce consommée.</p>'}
     <div class="rpt-sign"><div><span>Intervenant(s)</span><div class="sigbox"></div><small>Nom, date, signature</small></div><div><span>Responsable</span><div class="sigbox"></div><small>Nom, date, visa</small></div></div>
     <footer class="rpt-foot">Imprimé le ${fmtDT(new Date().toISOString())} · TriFlow</footer></article>`;
 }
@@ -3548,7 +3585,7 @@ function download(name, text, type){
 const csvCell = v => { const s = String(v ?? ''); return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
 const csv = rows => '﻿' + rows.map(r => r.map(csvCell).join(';')).join('\r\n');
 function exportStock(){
-  const rows = [['Réf.', 'Désignation', 'Catégorie', 'Marque', 'Réf. marque', 'Fournisseur', 'Emplacement', 'Salle', 'Quantité', 'Unité', 'Stock total', 'Stock minimum', 'Repères KKS']];
+  const rows = [["ID", 'Désignation', 'Catégorie', 'Marque', 'Réf. marque', 'Fournisseur', 'Emplacement', 'Salle', 'Quantité', 'Unité', 'Stock total', 'Stock minimum', 'Repères KKS']];
   for (const p of [...db.pieces].sort((a, b) => coll.compare(a.ref, b.ref))){
     const kk = p.kks.map(id => getKks(id)?.code).filter(Boolean).join(', ');
     const lines = p.stock.length ? p.stock : [null];
@@ -3565,7 +3602,7 @@ function exportInts(){
   download(`triflow-rapports-${todayISO()}.csv`, csv(rows), 'text/csv;charset=utf-8'); toast('Export des interventions téléchargé');
 }
 function exportKksLinks(){
-  const rows = [['Repère KKS', 'Équipement', 'Zone', 'Réf. pièce', 'Désignation pièce', 'Stock']];
+  const rows = [['Repère KKS', 'Équipement', "Système", "ID pièce", 'Désignation pièce', 'Stock']];
   for (const k of [...db.kks].sort((a, b) => coll.compare(a.code, b.code))){
     const ps = db.pieces.filter(p => p.kks.includes(k.id));
     if (!ps.length) rows.push([k.code, k.designation, sysLabel(k.code), '', '', '']);
@@ -3642,6 +3679,7 @@ const ACT = {
   'new-kks': () => kksDialog(),
   'edit-kks': d => kksDialog(getKks(d.id)),
   'import-kks': () => importKksDialog(),
+  'import-pieces': () => importPiecesDialog(),
   'new-pers': () => persDialog(),
   async logout(){ await CLOUD.sb.auth.signOut(); location.reload(); },
   'cloud-off'(){ confirmDialog('Revenir aux données du navigateur', 'Ce poste n’utilisera plus la base partagée. Les données de la base ne sont pas supprimées.', 'Revenir', () => { try { localStorage.removeItem('gmao-cloud'); } catch(e){} location.reload(); }); },
