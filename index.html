@@ -52,7 +52,7 @@ html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
 h1,h2,h3{font-family:var(--f-display);font-weight:700;line-height:1.15;margin:0;text-wrap:balance;letter-spacing:.01em}
-h1{font-size:2rem}
+h1{font-size:1.7rem}
 h2{font-size:1.35rem}
 h3{font-size:.95rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
 p{margin:0}
@@ -85,7 +85,7 @@ p{margin:0}
 .topbar{position:sticky;top:0;z-index:15;background:var(--bg);padding-block:12px}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:16;background:var(--bg)}
 main{min-width:0;padding-block:8px 24px}
-.page-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 20px;margin-bottom:18px}
+.page-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 20px;margin-bottom:14px}
 .page-head .tools{flex:1 1 420px;justify-content:flex-end}
 .eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.11em;color:var(--muted);margin-bottom:4px}
 .tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -366,7 +366,7 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .tnode .chev.open{transform:rotate(90deg)}
 .tnode .tdot{width:16px;flex:none}
 .tnode .t{display:flex;gap:10px;align-items:baseline}
-.code{font-family:var(--f-mono);font-weight:700;color:var(--accent);letter-spacing:.02em;flex:none}
+.code{font-family:var(--f-mono);font-weight:700;color:var(--steel);letter-spacing:.02em;flex:none}
 .tnode.l1 .code{min-width:1.4em}.tnode.l2 .code{min-width:1.9em}.tnode.l3 .code{min-width:2.6em}
 .tnode.l1{font-size:.95rem}
 .tnode.l3{font-weight:400}
@@ -396,10 +396,38 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .prow .pq b{font-family:var(--f-mono);font-size:1.15rem;color:var(--ink)}
 .prow .pq small{color:var(--muted);font-size:.75rem}
 .ro{background:var(--sunk) !important;color:var(--muted) !important;cursor:default;font-family:var(--f-mono)}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.kpi{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:12px;align-items:center;padding:14px 16px;border-radius:12px;background:var(--surface);border:1px solid var(--line);transition:border-color .15s,transform .15s}
+.kpi:hover{border-color:var(--accent);transform:translateY(-1px)}
+.kpi:focus-visible{outline:2px solid var(--accent)}
+.kpi .ki{grid-row:1 / 3;display:grid;place-items:center;width:40px;height:40px;border-radius:10px;background:var(--sunk);color:var(--muted)}
+.kpi .kn{font-family:var(--f-mono);font-size:1.6rem;font-weight:700;line-height:1;color:var(--ink)}
+.kpi .kt{font-size:.82rem;color:var(--muted)}
+.kpi.warn .ki{background:var(--warn-soft);color:var(--warn)}.kpi.warn .kn{color:var(--warn)}
+.kpi.bad .ki{background:var(--bad-soft);color:var(--bad)}.kpi.bad .kn{color:var(--bad)}
+.kpi.info .ki{background:var(--info-soft);color:var(--info)}
+.kpi.calm .ki{background:var(--ok-soft);color:var(--ok)}
+.quick .qa{padding:10px 14px}
+.prow .pq.low b{color:var(--warn)}.prow .pq.low small{color:var(--warn);font-weight:600}
+.prow .pq.zero b{color:var(--bad)}.prow .pq.zero small{color:var(--bad);font-weight:600}
+.pd-mbar{display:none}
+.m-only{display:none}
+.back-list{margin-bottom:10px}.back-list .ico{transform:rotate(180deg)}
+.fill{display:inline-flex;align-items:center;gap:8px;margin-left:auto;font-size:.8rem}
+.fill-bar{width:70px;height:6px;border-radius:99px;background:var(--sunk);overflow:hidden;display:inline-block}
+.fill-bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.slot.filled{background:var(--plate);border-color:var(--plate-line);color:var(--plate-ink)}
+.slot.filled small{color:var(--plate-ink);font-weight:700}
+.slot:not(.filled):not(.sel){opacity:.7}
+.slot.sel{background:var(--accent);color:#fff;border-color:var(--accent);opacity:1}
+.slot.sel small{color:#fff}
+#detail > *{animation:fadein .18s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){#detail > *{animation:none}.kpi{transition:none}}
 .back-nav{margin:0 0 10px}
 .back-nav .ico{transform:rotate(180deg)}
 .pd-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
-.pd-id{font-family:var(--f-mono);font-size:.85rem;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:3px 10px;border-radius:999px}
+.pd-id{font-family:var(--f-mono);font-size:.85rem;font-weight:700;color:var(--muted);background:var(--sunk);padding:3px 10px;border-radius:999px}
 .pd-tools{display:flex;gap:6px;align-items:center}
 .pd-title{margin:4px 0 2px;font-size:1.35rem;line-height:1.25}
 .pd-sub{margin:0 0 12px;color:var(--ink)}
@@ -549,7 +577,20 @@ dialog.dlg::backdrop{background:rgba(12,18,21,.55)}
   .syn-flow{grid-template-columns:repeat(2,minmax(0,1fr) 26px) minmax(0,1fr);row-gap:10px}
   .syn-flow > :nth-child(6){display:none}
 }
+@media (max-width:700px){
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pd-mbar{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:sticky;bottom:10px;z-index:5;margin:10px 0}
+  .pd-mbar .btn{min-height:56px;font-size:1.1rem;font-weight:700;border-radius:14px;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+  .pd-mbar .big-out{background:var(--bad);border-color:var(--bad);color:#fff}
+  .pd-mbar .big-in{background:var(--ok);border-color:var(--ok);color:#fff}
+  .pd-stock .btn{display:none}
+  .prow{padding:12px 14px}
+  .fill-bar{width:44px}
+}
 @media (max-width:980px){
+  .m-only{display:inline-flex}
+  .split.has-sel #list{display:none}
+
   .split,.cols{grid-template-columns:minmax(0,1fr)}
   .pane.detail{position:static;max-height:none}
   .opt{grid-template-columns:minmax(0,1fr)}
@@ -2336,7 +2377,8 @@ const statutLabel = l => { const s = getSalle(l.salleId); return [s ? salleCode(
 const isLow = p => +p.stockMin > 0 && dispo(p) <= +p.stockMin;
 const stockAt = (p, lieuId) => (p.stock.find(s => s.lieuId === lieuId) || {qte:0}).qte;
 const lieuSort = (a, b) => coll.compare(salleCode(getSalle(a.salleId) || {etage:'', numero:''}), salleCode(getSalle(b.salleId) || {etage:'', numero:''})) || coll.compare(pathOf(a).join('\u0001'), pathOf(b).join('\u0001'));
-const contentsOf = lieuId => db.pieces.flatMap(p => p.stock.filter(s => s.lieuId === lieuId).map(s => ({p, qte:s.qte})));
+let contIdx = null;
+const contentsOf = lieuId => { if (!contIdx){ contIdx = new Map(); for (const p of db.pieces) for (const s of p.stock){ if (!contIdx.has(s.lieuId)) contIdx.set(s.lieuId, []); contIdx.get(s.lieuId).push({p, qte:s.qte}); } } return contIdx.get(lieuId) || []; };
 const usedInInterventions = pieceId => db.interventions.filter(i => i.pieces.some(l => l.pieceId === pieceId));
 const sortedStock = p => [...p.stock].filter(s => getLieu(s.lieuId)).sort((a, b) => lieuSort(getLieu(a.lieuId), getLieu(b.lieuId)));
 const mainPlace = p => { const l = [...p.stock].filter(s => getLieu(s.lieuId)).sort((a, b) => (isStatut(getLieu(a.lieuId)) - isStatut(getLieu(b.lieuId))) || (b.qte - a.qte))[0]; return l ? getLieu(l.lieuId) : null; };
@@ -2472,7 +2514,7 @@ let db = CLOUD.cfg().url ? migrate(blank()) : load();
 if (!db){ db = seed(); save(); }
 
 /* ---------------- État d'affichage ---------------- */
-const S = {pour:'', tvue:'afaire', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:''}, lowOnly:false, psort:'iddesc', plimit:300, back:[], statut:'actives', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux'};
+const S = {pour:'', tvue:'afaire', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:''}, lowOnly:false, zeroOnly:false, psort:'iddesc', plimit:300, back:[], statut:'actives', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux'};
 
 function toast(msg, kind = ''){
   const t = $('#toast'); t.textContent = msg; t.className = 'show ' + kind;
@@ -2493,6 +2535,7 @@ function refreshCounts(){
 }
 function hydrateIcons(root = document){ $$('[data-icon]', root).forEach(el => { el.outerHTML = icon(el.dataset.icon); }); }
 function render(){
+  contIdx = null;
   refreshDatalists(); refreshCounts();
   $$('#nav button').forEach(b => b.setAttribute('aria-current', b.dataset.view === S.view ? 'page' : 'false'));
   const bk = S.back[S.back.length - 1], VN = {accueil:'l’accueil', pieces:'la pièce', kks:'l’installation', lieux:'les emplacements', interventions:'le rapport', taches:'la tâche', options:'les options'};
@@ -2500,8 +2543,8 @@ function render(){
   $('#main').innerHTML = (bk ? `<button class="btn small back-nav" data-act="nav-back">${icon('chev')}Retour à ${esc(bl)}</button>` : '') + VIEWS[S.view].shell();
   fillList(); fillDetail();
 }
-function fillList(){ const el = $('#list'); if (el) el.innerHTML = VIEWS[S.view].list(); }
-function fillDetail(){ const el = $('#detail'); if (el) el.innerHTML = VIEWS[S.view].detail(); }
+function fillList(){ contIdx = null; const el = $('#list'); if (el) el.innerHTML = VIEWS[S.view].list(); }
+function fillDetail(){ contIdx = null; const el = $('#detail'); if (el) el.innerHTML = VIEWS[S.view].detail(); $('#main .split')?.classList.toggle('has-sel', S.view === 'pieces' && !!getPiece(S.sel.pieces)); }
 function go(view, id){
   S.view = view; if (id !== undefined) S.sel[view] = id;
   closeSearch(); render();
@@ -2543,6 +2586,9 @@ VIEWS.accueil = {
     const qa = (act, type, ic, t) => `<button class="qa" data-act="${act}" ${type ? `data-type="${type}"` : ''}><span class="qi">${icon(ic)}</span><strong>${t}</strong></button>`;
     return `${db.meta.demo ? `<div class="notice"><p><strong>Données d'exemple.</strong> Elles sont fictives et servent à essayer l'outil.</p><button class="btn" data-act="clear-demo">Effacer les exemples</button></div>` : ''}
     <header class="page-head"><h1>Accueil</h1></header>
+    ${(() => { const low = db.pieces.filter(isLow).length, zero = db.pieces.filter(p => p.stock.length && dispo(p) <= 0).length, late = db.taches.filter(t => t.actif !== false && daysTo(t.prochaine) < 0).length;
+      const k = (act, n, t, ic, tone, extra = '') => `<button class="kpi ${n ? tone : 'calm'}" data-act="${act}" ${extra}><span class="ki">${icon(ic)}</span><span class="kn">${num(n)}</span><span class="kt">${t}</span></button>`;
+      return `<div class="kpis">${k('show-low', low, 'Sous le stock minimum', 'box', 'warn')}${k('show-zero', zero, 'Pièces à zéro', 'box', 'bad')}${k('nav', late, 'Tâches en retard', 'repeat', 'bad', 'data-view="taches"')}${k('nav', open.length, 'Rapports ouverts', 'report', 'info', 'data-view="interventions"')}</div>`; })()}
     <div class="quick">${qa('quick-move', 'sortie', 'move', 'Mouvement de stock')}${qa('new-int', '', 'report', 'Nouveau rapport')}${qa('labels-pick', '', 'qr', 'Étiquettes QR')}</div>
     <div class="cols">
       <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
@@ -2561,6 +2607,7 @@ function filteredPieces(){
   const q = norm(S.q.pieces);
   let rows = db.pieces.filter(p => !q || norm([p.ref, p.designation, p.fabricant, p.refFab, p.categorie, ...p.kks.map(id => getKks(id)?.code), ...p.stock.map(s => lieuCode(getLieu(s.lieuId)))].join(' ')).includes(q));
   if (S.lowOnly) rows = rows.filter(isLow);
+  if (S.zeroOnly) rows = rows.filter(p => p.stock.length && dispo(p) <= 0);
   const idn = p => /^\d+$/.test(p.ref) ? +p.ref : Infinity;
   if (S.psort === 'alpha') return rows.sort((a, b) => coll.compare(a.designation, b.designation));
   if (S.psort === 'recent' || S.psort === 'old'){
@@ -2575,6 +2622,7 @@ function filteredPieces(){
 VIEWS.pieces = {
   shell: () => `<header class="page-head"><h1>Pièces</h1><div class="tools">${searchBox('pieces', 'Rechercher une pièce…')}<button class="btn primary" data-act="new-piece">${icon('plus')}Nouvelle pièce</button>
     ${menu([['labels-list', 'Étiquettes QR de la liste', 'qr', {}], ['import-pieces', 'Importer depuis CareOffice (fichier)', 'save', {}], ['toggle-low', S.lowOnly ? 'Afficher toutes les pièces' : 'Pièces sous le stock minimum', 'list', {}]])}</div></header>
+    ${S.zeroOnly ? `<p class="tools" style="margin:-6px 0 14px"><span class="chip bad">Pièces à zéro<button class="icon-btn" style="width:20px;height:20px;font-size:1rem;color:inherit" data-act="toggle-zero" aria-label="Afficher toutes les pièces">×</button></span></p>` : ''}
     ${S.lowOnly ? `<p class="tools" style="margin:-6px 0 14px"><span class="chip warn">Sous le stock minimum<button class="icon-btn" style="width:20px;height:20px;font-size:1rem;color:inherit" data-act="toggle-low" aria-label="Afficher toutes les pièces">×</button></span></p>` : ''}
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list(){
@@ -2587,7 +2635,7 @@ VIEWS.pieces = {
       return `<button class="prow ${S.sel.pieces === p.id ? 'sel' : ''}" data-act="select" data-id="${p.id}">
         <span class="pm"><span class="pdes" title="${esc(p.designation)}">${esc(p.designation)}</span>
           <span class="ploc"><span class="pid">${esc(p.ref)}</span>${mp ? plate(mp, false) + (n > 1 ? ` <span class="muted">+${n - 1}</span>` : '') : '<span class="muted">Sans emplacement</span>'}${hm.length ? ` <span class="muted" style="color:var(--stat)">+${num(hm.reduce((a, s) => a + s.qte, 0))} hors magasin</span>` : ''}</span></span>
-        <span class="pq"><b>${num(dispo(p))}</b><small>${esc(p.unite)}</small></span></button>`;
+        <span class="pq ${p.stock.length && dispo(p) <= 0 ? 'zero' : isLow(p) ? 'low' : ''}"><b>${num(dispo(p))}</b><small>${p.stock.length && dispo(p) <= 0 ? 'épuisé' : isLow(p) ? 'stock bas' : esc(p.unite)}</small></span></button>`;
     }).join('')}</div>`;
   },
   detail(){
@@ -2599,13 +2647,14 @@ VIEWS.pieces = {
     const salleOf = l => { const sa = l && getSalle(l.salleId); return sa && sa.nom ? sa.nom : ''; };
     const noteRows = String(p.notes || '').split('\n').reduce((acc, ln) => { const m = ln.match(/^([^:]{2,30}?)\s:\s(.*)$/); if (m) acc.push([m[1], m[2]]); else if (ln.trim()) { if (acc.length && acc[acc.length - 1][0] !== '') acc[acc.length - 1][1] += '\n' + ln; else acc.push(['', ln]); } return acc; }, []);
     const low = p.stockMin > 0 && dispo(p) < p.stockMin;
-    return `<div class="pd-head"><span class="pd-id">ID ${esc(p.ref)}</span><div class="pd-tools"><button class="btn small" data-act="edit-piece" data-id="${p.id}">${icon('edit')}Modifier</button>${menu([['labels-one', 'Étiquette QR', 'qr', {id:p.id}], ['print-piece', 'Fiche A4', 'printer', {id:p.id}], ['add-place', 'Ranger à un autre emplacement', 'shelf', {id:p.id}]], 'Plus', 'cog', 'small')}</div></div>
+    return `<button class="btn small m-only back-list" data-act="desel">${icon('chev')}Liste des pièces</button><div class="pd-head"><span class="pd-id">ID ${esc(p.ref)}</span><div class="pd-tools"><button class="btn small" data-act="edit-piece" data-id="${p.id}">${icon('edit')}Modifier</button>${menu([['labels-one', 'Étiquette QR', 'qr', {id:p.id}], ['print-piece', 'Fiche A4', 'printer', {id:p.id}], ['add-place', 'Ranger à un autre emplacement', 'shelf', {id:p.id}]], 'Plus', 'cog', 'small')}</div></div>
       <h2 class="pd-title">${esc(p.designation)}</h2>
       ${p.fabricant || p.refFab ? `<p class="pd-sub">${esc(p.fabricant || '')}${p.refFab ? ` <span class="muted">· réf.</span> <span class="mono">${esc(p.refFab)}</span>` : ''}</p>` : ''}
       <div class="pd-stock ${low ? 'low' : ''}">
         <div class="pd-qty"><span class="n">${num(dispo(p))}</span><span class="u">${esc(p.unite)}</span><span class="l">en magasin${p.stockMin ? ` · min ${num(p.stockMin)}` : ''}</span></div>
         <button class="btn primary" data-act="move" data-id="${p.id}" data-type="sortie">${icon('move')}Mouvement de stock</button>
       </div>
+      <div class="pd-mbar"><button class="btn big-out" data-act="move" data-id="${p.id}" data-type="sortie">− Sortir</button><button class="btn big-in" data-act="move" data-id="${p.id}" data-type="entree">+ Entrer</button></div>
       <section class="pd-sec"><h3>${icon('shelf')}Où la trouver</h3>
         ${phys.length ? `<div class="pd-where">${phys.map(x => { const l = getLieu(x.lieuId); return `<div class="pd-loc">${plate(l)}<span class="t">${esc(salleOf(l))}</span><span class="q">${num(x.qte)} <small>${esc(p.unite)}</small></span>${!x.qte ? `<button class="link danger" data-act="unlink-lieu" data-piece="${p.id}" data-id="${x.lieuId}" title="Retirer cet emplacement">×</button>` : ''}</div>`; }).join('')}</div>` : '<p class="empty-line">Rangée nulle part pour l’instant.</p>'}
         ${out.length ? `<div class="pd-where out">${out.map(x => `<div class="pd-loc">${plate(getLieu(x.lieuId))}<span class="t">hors magasin</span><span class="q">${num(x.qte)} <small>${esc(p.unite)}</small></span></div>`).join('')}</div>` : ''}</section>
@@ -2656,7 +2705,8 @@ VIEWS.lieux = {
       if (q && !salleMatch) ls = ls.filter(l => norm(lieuCode(l) + ' ' + l.note + ' ' + contentsOf(l.id).map(x => x.p.designation + ' ' + x.p.ref).join(' ')).includes(q));
       if (q && !salleMatch && !ls.length) continue;
       if (s.statut && !statHead){ statHead = true; out.push(`<div class="stat-head">${icon('out')}<div><strong>Hors magasin</strong><span>Pièces sorties du stock mais suivies : en prêt, en révision, en attente…</span></div></div>`); }
-      out.push(`<div class="room ${s.statut ? 'is-stat' : ''}"><div class="room-head">${s.statut ? `<span class="stat">${icon('out')}${esc(salleCode(s))}</span>` : `<span class="plate">${esc(salleCode(s))}</span>`}<strong>${esc(s.nom)}</strong><span class="muted">${ls.length} empl.</span></div>
+      const full = ls.filter(l => contentsOf(l.id).some(x => x.qte > 0)).length, pct = ls.length ? Math.round(full / ls.length * 100) : 0;
+      out.push(`<div class="room ${s.statut ? 'is-stat' : ''}"><div class="room-head">${s.statut ? `<span class="stat">${icon('out')}${esc(salleCode(s))}</span>` : `<span class="plate">${esc(salleCode(s))}</span>`}<strong>${esc(s.nom)}</strong><span class="fill" title="${full} case(s) occupée(s) sur ${ls.length}"><span class="fill-bar"><i style="width:${pct}%"></i></span><span class="muted">${full}/${ls.length} occupées</span></span></div>
         ${lieuTree(ls, 'select', S.sel.lieux)}
         ${!ls.length ? '<p class="empty-line">Aucun emplacement dans cette salle.</p>' : ''}</div>`);
     }
@@ -3731,6 +3781,7 @@ const ACT = {
     l.querySelector('button')?.focus();
   },
   nav: d => { S.back = []; go(d.view); },
+  desel(){ S.sel[S.view] = null; fillList(); fillDetail(); window.scrollTo(0, 0); },
   'nav-back'(){ const b = S.back.pop(); if (!b) return; Object.assign(S, {view:b.view, sel:b.sel, q:b.q, sys:b.sys, sysExp:b.sysExp, psort:b.psort, plimit:b.plimit}); closeSearch(); render();
     requestAnimationFrame(() => { const l = $('#list'); if (l) l.scrollTop = b.ls; window.scrollTo(0, b.y); const si = document.querySelector('.page-head input[type=search]'); if (si && b.q[si.dataset.search]) { /* recherche conservée */ } }); },
   select(d){ S.sel[S.view] = d.id; fillList(); fillDetail(); scrollDetail(); },
@@ -3749,7 +3800,9 @@ const ACT = {
   'kks-back'(){ S.sel.kks = null; fillList(); fillDetail(); },
   'zone-clear'(){ S.zone = ''; render(); },
   opt(d){ S.opt = d.sec; go('options'); },
-  'show-low'(){ S.lowOnly = true; go('pieces'); },
+  'show-low'(){ S.lowOnly = true; S.zeroOnly = false; S.back = []; go('pieces'); },
+  'show-zero'(){ S.zeroOnly = true; S.lowOnly = false; S.back = []; go('pieces'); },
+  'toggle-zero'(){ S.zeroOnly = !S.zeroOnly; render(); },
   'toggle-low'(){ S.lowOnly = !S.lowOnly; render(); },
   'quick-move': d => moveDialog(null, d.type),
   'new-piece': () => pieceDialog(),
