@@ -2126,6 +2126,12 @@ function cleanNotes(notes, codes){
   }
   return out.join('\n');
 }
+/* Retire des notes les attributs réduits à un seul chiffre et tout ce qui concerne un prix */
+function cleanMisc(notes){
+  if (!notes) return notes;
+  const out = String(notes).split('\n').filter(l => !/^Attribut\s*\d+\s*:\s*\d\s*$/i.test(l.trim()) && !/\bprix\b|\bCHF\b|\bEUR\b|€/i.test(l));
+  return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
 function cleanPieceNotes(d, p){ const codes = new Set((p.kks || []).map(id => d.kks.find(k => k.id === id)?.code.replace(/\s+/g, '').toUpperCase()).filter(Boolean)); const n = cleanNotes(p.notes, codes); if (n !== p.notes) p.notes = n; }
 function migrate(d){
   const b = blank();
@@ -2155,7 +2161,8 @@ function migrate(d){
   for (const p of d.pieces) for (const n of [p.fabricant, p.fournisseur]) if (n && !d.listes.fournisseurs.some(x => norm(x) === norm(n))) d.listes.fournisseurs.push(n);
   d.listes.fournisseurs.sort(coll.compare);
   for (const l of d.lieux) if (!Array.isArray(l.chemin)){ l.chemin = [(l.rayonnage || '') + (l.niveau || ''), l.bac || ''].filter(Boolean); delete l.rayonnage; delete l.niveau; delete l.bac; }
-  { const byId = new Map(d.kks.map(k => [k.id, k])); for (const p of d.pieces) if (p.notes && p.kks?.length){ const codes = new Set(p.kks.map(id => byId.get(id)?.code.replace(/\s+/g, '').toUpperCase()).filter(Boolean)); const n = cleanNotes(p.notes, codes); if (n !== p.notes) p.notes = n; } }
+  { const byId = new Map(d.kks.map(k => [k.id, k])); for (const p of d.pieces) if (p.notes && p.kks?.length){ const codes = new Set(p.kks.map(id => byId.get(id)?.code.replace(/\s+/g, '').toUpperCase()).filter(Boolean)); const n = cleanNotes(p.notes, codes); if (n !== p.notes) p.notes = n; }
+    for (const p of d.pieces) if (p.notes){ const n = cleanMisc(p.notes); if (n !== p.notes) p.notes = n; } }
   for (const k of d.kks) if (!k.aic){ const m = String(k.designation || '').match(/^(.*\S)\s+(\d{2}\s?[A-Z]{2,3}\s?[A-Z]?\d)$/); if (m){ k.designation = m[1]; k.aic = m[2]; } }
   if (!d.meta.statutV){ for (const x of d.salles) if (x.code && STATUT_RE.test(x.code.trim())) x.statut = true; d.meta.statutV = 1; }
   ensureSnaps(d);
@@ -3389,7 +3396,7 @@ function importPiecesDialog(){
           const ex = byRef.get(ref);
           if (ex){ Object.assign(ex, data, {stock, kks:[...new Set([...(ex.kks || []), ...kks])]}); upd++; }
           else { const n = {id:uid(), ...data, stock, kks}; db.pieces.push(n); byRef.set(ref, n); add++; }
-          const pc = byRef.get(ref); pc.notes = cleanNotes(pc.notes, new Set(pc.kks.map(id => db.kks.find(k => k.id === id)?.code.replace(/\s+/g, '').toUpperCase()).filter(Boolean)));
+          const pc = byRef.get(ref); pc.notes = cleanMisc(pc.notes); pc.notes = cleanNotes(pc.notes, new Set(pc.kks.map(id => db.kks.find(k => k.id === id)?.code.replace(/\s+/g, '').toUpperCase()).filter(Boolean)));
         }
         db.listes.fournisseurs.sort(coll.compare);
         for (const [ref, l] of Object.entries(j.histo || {})){ const pc = byRef.get(String(ref).toUpperCase()); if (!pc) continue; const ex = db.histo.find(h => h.id === pc.id); if (ex) ex.l = l; else db.histo.push({id:pc.id, l}); nh++; }
