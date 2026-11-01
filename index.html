@@ -433,6 +433,18 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .back-nav{margin:0 0 10px}
 .back-nav .ico{transform:rotate(180deg)}
 .pd-info.rep{margin-top:6px}
+@media (max-width:980px){ .help-btn{position:absolute !important;top:14px;right:16px} }
+.help-btn{all:unset;cursor:pointer;position:relative;flex:none;z-index:3;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.18);color:#fff;font-weight:800;border:1px solid rgba(255,255,255,.35)}
+.help-btn:hover{background:rgba(255,255,255,.3)}
+.help details{border:1px solid var(--line);border-radius:10px;margin-bottom:8px}
+.help summary{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;font-weight:600;list-style:none}
+.help summary::-webkit-details-marker{display:none}
+.help summary .ico{width:18px;height:18px;color:var(--accent)}
+.help ol{margin:0;padding:0 18px 12px 40px;display:flex;flex-direction:column;gap:6px;line-height:1.45}
+.welcome{display:flex;flex-direction:column;gap:14px;padding-left:20px;line-height:1.5}
+.welcome .btn{margin-top:6px}
+.byline{display:flex;align-items:center;gap:6px;margin:14px 0 0;font-size:.78rem;color:var(--muted)}
+.byline .ico{width:13px;height:13px}
 .pwrap{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:14px;align-items:start}
 .pside{background:var(--surface);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;max-height:calc(100vh - 230px);position:sticky;top:10px}
 .ps-h{padding:12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
@@ -941,6 +953,7 @@ body.land .plan-sheet{page:land}
     <div class="hero-stripe"></div>
     <div class="hero-inner">
       <div class="hero-copy"><h1>TriFlow</h1><p>Maintenance Tridel · pièces, tâches et rapports</p></div>
+      <button class="help-btn" data-act="help" title="Aide" aria-label="Aide">?</button>
       <nav class="nav" id="nav" aria-label="Sections">
         <button data-act="nav" data-view="accueil" title="Accueil"><span data-icon="home"></span><span class="nl">Accueil</span></button>
         <button data-act="nav" data-view="pieces" title="Pièces"><span data-icon="box"></span><span class="nl">Pièces</span></button>
@@ -2499,6 +2512,14 @@ function save(){
 const SUPABASE_URL = 'https://gzwmoevwapliqremrqpp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_Mslbg2kd3UQp5lhVkhrXkA_XXN2H9vK';
 const SUPABASE_LIB = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js';
+/* Copie locale de la base (IndexedDB) : le site s'ouvre tout de suite, puis ne télécharge que ce qui a changé */
+const IDB = {
+  h:null,
+  open(){ return this.h || (this.h = new Promise((ok, ko) => { const r = indexedDB.open('triflow-cache', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); })); },
+  async get(k){ try { const d = await this.open(); return await new Promise(ok => { const r = d.transaction('kv').objectStore('kv').get(k); r.onsuccess = () => ok(r.result || null); r.onerror = () => ok(null); }); } catch(e){ return null; } },
+  async set(k, v){ try { const d = await this.open(); await new Promise(ok => { const t = d.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = ok; t.onerror = ok; }); } catch(e){} },
+  async del(k){ try { const d = await this.open(); await new Promise(ok => { const t = d.transaction('kv', 'readwrite'); t.objectStore('kv').delete(k); t.oncomplete = ok; t.onerror = ok; }); } catch(e){} }
+};
 const COLS = ['salles', 'lieux', 'personnes', 'kks', 'pieces', 'interventions', 'mouvements', 'taches', 'histo', 'plan'];
 const CLOUD = {
   on:false, sb:null, user:null, synced:new Map(), revs:new Map(), pushing:false, again:false, timer:null, state:'ok',
@@ -2510,15 +2531,34 @@ const CLOUD = {
     return m;
   },
   status(st){ this.state = st || this.state; const el = $('#sync'); if (!el) return;
-    el.textContent = {ok:'Enregistré', saving:'Enregistrement…', offline:'Hors ligne : modifications en attente', error:'Erreur d’enregistrement'}[this.state] || ''; el.dataset.state = this.state; },
+    el.textContent = {sync:'Mise à jour…', ok:'Enregistré', saving:'Enregistrement…', offline:'Hors ligne : modifications en attente', error:'Erreur d’enregistrement'}[this.state] || ''; el.dataset.state = this.state; },
   schedule(){ clearTimeout(this.timer); this.status('saving'); this.timer = setTimeout(() => this.push(), 120); },
-  async loadAll(){
+  cacheKey(){ return 'snap:' + (this.cfg().url || '') + ':' + (this.user?.email || ''); },
+  async fetchAll(cols){
     const rows = []; let from = 0;
     for (;;){
-      const {data, error} = await this.sb.from('docs').select('collection,id,data,rev').range(from, from + 999);
+      const {data, error} = await this.sb.from('docs').select(cols).order('collection').order('id').range(from, from + 999);
       if (error) throw error;
       rows.push(...data); if (data.length < 1000) break; from += 1000;
     }
+    return rows;
+  },
+  async loadAll(){
+    const cache = await IDB.get(this.cacheKey()); let rows;
+    if (cache && Array.isArray(cache.rows) && cache.rows.length){
+      const idx = await this.fetchAll('collection,id,rev'), cm = new Map(cache.rows.map(r => [r.collection + '|' + r.id, r]));
+      const need = idx.filter(r => cm.get(r.collection + '|' + r.id)?.rev !== r.rev), got = new Map();
+      const byCol = new Map(); for (const r of need){ if (!byCol.has(r.collection)) byCol.set(r.collection, []); byCol.get(r.collection).push(r.id); }
+      for (const [c, ids] of byCol) for (let i = 0; i < ids.length; i += 150){
+        const {data, error} = await this.sb.from('docs').select('collection,id,data,rev').eq('collection', c).in('id', ids.slice(i, i + 150));
+        if (error) throw error; for (const r of data) got.set(r.collection + '|' + r.id, r);
+      }
+      rows = idx.map(r => got.get(r.collection + '|' + r.id) || cm.get(r.collection + '|' + r.id)).filter(Boolean);
+    } else rows = await this.fetchAll('collection,id,data,rev');
+    IDB.set(this.cacheKey(), {rows, at:Date.now()});
+    return this.build(rows);
+  },
+  build(rows){
     const d = blank(); let cfg = null;
     this.synced.clear(); this.revs.clear();
     for (const r of rows){
@@ -2529,6 +2569,8 @@ const CLOUD = {
     d.mouvements.sort((a, b) => b.date.localeCompare(a.date));
     return {d, empty:!rows.length};
   },
+  /* Affichage immédiat depuis la copie locale (lecture seule le temps de la mise à jour) */
+  async fromCache(){ const c = await IDB.get(this.cacheKey()); if (!c || !Array.isArray(c.rows) || !c.rows.length) return null; const b = this.build(c.rows); this.synced.clear(); this.revs.clear(); return b.d; },
   async push(){
     if (this.pushing){ this.again = true; return; }
     this.pushing = true;
@@ -2536,7 +2578,7 @@ const CLOUD = {
       do {
         this.again = false;
         const cur = this.docsOf(db), changes = [];
-        for (const [k, v] of cur){ const j = JSON.stringify(v); if (this.synced.get(k) !== j) changes.push({k, j, v}); }
+        for (const [k, v] of cur){ const j = JSON.stringify(v); if (this.synced.get(k) !== j){ if (!k.startsWith('config|') && this.user?.email){ v._by = this.user.email; v._at = new Date().toISOString(); } changes.push({k, j:JSON.stringify(v), v}); } }
         for (const k of this.synced.keys()) if (!cur.has(k)) changes.push({k, del:true});
         if (!changes.length) break;
         for (let i = 0; i < changes.length; i += 400){
@@ -2613,16 +2655,19 @@ async function bootCloud(){
 async function startCloud(){
   showGate('<p class="muted">Chargement des données…</p>');
   try {
+    const {data:ss} = await CLOUD.sb.auth.getSession(); CLOUD.user = ss?.session?.user || null;
+    const cached = CLOUD.user ? await CLOUD.fromCache() : null;
+    if (cached){ db = migrate(cached); CLOUD.warming = true; hideGate(); applyHash(); render(); CLOUD.status('sync'); }
     const {data:u} = await CLOUD.sb.auth.getUser(); CLOUD.user = u?.user || null;
-    if (!CLOUD.user) return loginForm();
+    if (!CLOUD.user){ CLOUD.warming = false; return loginForm(); }
     const {d, empty} = await CLOUD.loadAll();
-    CLOUD.on = true;
+    CLOUD.on = true; CLOUD.warming = false;
     db = migrate(d); if (empty) db.meta.demo = false;
-    hideGate(); applyHash(); render(); CLOUD.status('ok');
+    hideGate(); if (!cached) applyHash(); if (!document.querySelector('dialog[open]')) render(); CLOUD.status('ok');
     const ft = $('#foot-txt'); if (ft) ft.textContent = `Base partagée · ${CLOUD.user.email || ''} ·`;
     CLOUD.schedule();
     CLOUD.sb.channel('docs').on('postgres_changes', {event:'*', schema:'public', table:'docs'}, ev => CLOUD.applyRemote(ev)).subscribe();
-    syncPlanning();
+    syncPlanning(); setTimeout(maybeWelcome, 400);
     if (empty && localStorage.getItem(KEY)) toast('La base est vide : vous pouvez y envoyer les données de ce navigateur depuis Options › Connexion.');
   } catch(e){
     showGate(`<p>Chargement impossible : ${esc(e.message || e)}</p><button class="btn primary" onclick="location.reload()">Réessayer</button>`);
@@ -2630,7 +2675,7 @@ async function startCloud(){
 }
 /* Toute modification passe par tx() : si une étape échoue, rien n'est enregistré. */
 let REV = 0, LASTTX = null;
-function tx(fn){ const snap = JSON.stringify(db); try { const r = fn(); REV++; LASTTX = {snap, rev:REV}; save(); return r; } catch(e){ db = JSON.parse(snap); throw e; } }
+function tx(fn){ if (CLOUD.warming) throw new Error('Un instant : mise à jour des données en cours…'); const snap = JSON.stringify(db); try { const r = fn(); REV++; LASTTX = {snap, rev:REV}; save(); return r; } catch(e){ db = JSON.parse(snap); throw e; } }
 /* Annule la dernière modification (si rien d'autre n'a été modifié depuis) */
 function undoLast(rev){ if (!LASTTX || LASTTX.rev !== rev){ toast('Impossible d’annuler : d’autres changements ont eu lieu depuis.', 'bad'); return; } db = JSON.parse(LASTTX.snap); LASTTX = null; REV++; save(); render(); toast('Modification annulée'); }
 
@@ -2691,11 +2736,38 @@ function intFor(i, pour){
   const id = pour.slice(2), g = getPers(id)?.groupe || '';
   return i.intervenants.includes(id) || (g && ps.some(x => x.groupe === g)) || (i.tacheId && get('taches', i.tacheId) ? forWho(get('taches', i.tacheId), pour) : false);
 }
+/* ---------- Aide ---------- */
+const HELP = [
+  ['report', 'Faire un rapport', ['Appuyez sur <b>+</b> (téléphone) ou <b>Nouveau rapport</b>.', 'Remplissez <b>Quoi ?</b>, <b>Où ?</b> (le KKS) et <b>Ce qui a été fait</b> : le bouton micro permet de dicter.', 'Ajoutez les intervenants : vous êtes déjà dedans. Les entreprises sont dans l’onglet « Entreprises ».', 'Pièces utilisées, durée, type : dans « Plus de détails ». <b>Enregistrer</b>.']],
+  ['check', 'Faire une tâche', ['Sur l’accueil, « Mes tâches » montre ce qui est à faire pour vous et votre groupe.', 'Cliquez sur <b>✓</b> au bout de la ligne : le rapport s’ouvre déjà rempli.', 'À l’enregistrement, la tâche passe à sa prochaine échéance.']],
+  ['move', 'Sortir ou rentrer une pièce', ['Scannez l’étiquette QR de la pièce, ou cherchez-la dans <b>Pièces</b>.', 'Sur sa fiche : <b>− Sortir</b> ou <b>+ Entrer</b>, la quantité, l’emplacement.', 'Une erreur ? Le message en bas propose <b>Annuler</b> pendant quelques secondes.']],
+  ['scan', 'Trouver une pièce', ['<b>Scanner un QR</b> (accueil ou bouton à côté de la recherche) ouvre directement la fiche.', 'Sinon, tapez un mot, un ID, une référence ou un KKS dans la recherche des Pièces.', 'La fiche indique où elle est rangée, sur quels équipements elle va et dans quels rapports elle a servi.']],
+  ['calendar', 'Planifier la semaine', ['Onglet <b>Planning</b> : une ligne par personne, avec ses présences (R, RM, VA…).', 'Glissez une tâche de la colonne « À planifier » dans une case, ou cliquez dans la case pour écrire le travail.', 'Imprimer la semaine : ⋯ Plus › Imprimer.']],
+  ['person', 'Ce que je vois', ['Choisissez votre nom une fois (accueil ou Options › Connexion).', 'Tâches, rapports et accueil sont alors filtrés sur vous et votre groupe. Pour tout voir : « Tout le monde ».', 'Les archives ne sont jamais filtrées.']],
+  ['archive', 'Archiver et retrouver', ['Rien ne se supprime par erreur : « Archiver » retire un élément des listes.', 'Pour le retrouver : ⋯ Plus › Archives, puis <b>Restaurer</b>.']]
+];
+function helpDialog(open = 0){
+  dialog({title:'Aide', saveLabel:'Fermer', wide:true, body:`<div class="help">${HELP.map(([ic, t, steps], i) => `<details ${i === open ? 'open' : ''}><summary>${icon(ic)}${t}</summary><ol>${steps.map(x => `<li>${x}</li>`).join('')}</ol></details>`).join('')}</div><p class="hint">Une question, une idée ? Parlez-en à Thomas Bonnant (informatique).</p>`, onSave(){}});
+}
+function maybeWelcome(){
+  let seen = null; try { seen = localStorage.getItem('tf-welcome'); } catch(e){ return; }
+  if (seen || document.querySelector('dialog[open]') || (CLOUD.cfg().url && !CLOUD.on)) return;
+  try { localStorage.setItem('tf-welcome', '1'); } catch(e){}
+  const d = dialog({title:'Bienvenue dans TriFlow', saveLabel:'C’est parti', body:`<ol class="welcome">
+    <li><b>Dites-nous qui vous êtes.</b> Vous verrez vos tâches et celles de votre groupe.${meId() ? '' : ` <button type="button" class="btn small primary" data-w-me>${icon('person')}Choisir mon nom</button>`}</li>
+    <li><b>Un rapport, une sortie de stock, un scan :</b> le bouton <b>+</b> en bas à droite sur téléphone, ou les raccourcis de l’accueil.</li>
+    <li><b>Perdu ?</b> Le bouton <b>?</b> en haut ouvre l’aide, en quelques lignes.</li></ol>`, onSave(){},
+    onOpen(f, dd){ const b = $('[data-w-me]', dd); if (b) b.onclick = () => { dd.close(); meDialog(); }; }});
+  return d;
+}
 function meDialog(){
   const ps = db.personnes.filter(p => live(p) && p.actif !== false).sort(persSort), cur = meId();
   dialog({title:'Qui êtes-vous ?', saveLabel:'Valider', body:`<p class="hint">L’accueil affichera d’abord vos tâches et celles de votre corps de métier.</p><label>Je suis<select name="me"><option value="">— personne en particulier —</option>${db.listes.groupes.filter(g => ps.some(p => p.groupe === g)).map(g => `<optgroup label="${esc(g)}">${ps.filter(p => p.groupe === g).map(p => opt(p.id, persName(p), cur)).join('')}</optgroup>`).join('')}</select></label>`,
     onSave(f){ setMe(val(f, 'me')); S.pour = ''; S.pourInit = false; render(); toast(val(f, 'me') ? `Bonjour ${persName(getPers(val(f, 'me')))}` : 'Accueil pour tout le monde'); }});
 }
+/* « Modifié par … » : chaque fiche enregistrée garde l'adresse de la personne et l'heure */
+function byWho(email){ const id = db.reglages.moi?.[String(email || '').toLowerCase()]; const p = id && getPers(id); return p ? persName(p) : String(email || '').split('@')[0]; }
+const byLine = x => x && x._by ? `<p class="byline">${icon('edit')}Modifié par ${esc(byWho(x._by))} · ${esc(fmtDT(x._at))}</p>` : '';
 const FOUR_GRP = 'Entreprise externe';
 const fourSnap = n => ({nom:n, prenom:'', groupe:FOUR_GRP});
 const isFourId = id => String(id).startsWith('four:');
@@ -3061,7 +3133,7 @@ VIEWS.pieces = {
         return `<section class="pd-sec"><h3>${icon('report')}Utilisée dans les rapports <span class="muted">${ints.length}</span></h3>${intTable(all ? ints : ints.slice(0, 5))}${ints.length > 5 ? `<button class="link" data-act="p-all" data-id="${p.id}">${all ? 'Réduire' : `Voir les ${ints.length} rapports`}</button>` : ''}</section>`; })()}
       <section class="pd-sec"><h3>${icon('repeat')}Historique <span class="muted">${hist.length || ''}</span></h3>
         ${hist.length ? `<div class="pd-hist">${(showAll ? hist : hist.slice(0, 8)).map(h => `<div class="ph"><span class="d">${fmtD(h.date)}</span><span class="q ${h.neutral ? '' : h.qte < 0 ? 'neg' : 'pos'}">${h.neutral ? '' : h.qte > 0 ? '+' : h.qte < 0 ? '−' : ''}${num(Math.abs(h.qte))}</span><span class="m">${esc(h.motif)}${h.who ? ` <span class="muted">· ${esc(h.who)}</span>` : ''}${h.lieu ? `<span class="lw">${esc(h.lieu)}</span>` : ''}</span></div>`).join('')}</div>
-          ${hist.length > 8 ? `<button class="link" data-act="hist-all" data-id="${p.id}">${showAll ? 'Réduire' : `Voir les ${hist.length} mouvements`}</button>` : ''}` : '<p class="empty-line">Aucun mouvement enregistré.</p>'}</section>`;
+          ${hist.length > 8 ? `<button class="link" data-act="hist-all" data-id="${p.id}">${showAll ? 'Réduire' : `Voir les ${hist.length} mouvements`}</button>` : ''}` : '<p class="empty-line">Aucun mouvement enregistré.</p>'}</section>${byLine(p)}`;
   }
 };
 
@@ -3247,7 +3319,7 @@ VIEWS.taches = {
       ${off || t.arch || run ? '' : '<p class="hint" style="margin:4px 0 0">« C’est fait » ouvre le rapport déjà rempli ; à l’enregistrement, la date passe à l’échéance suivante.</p>'}
       ${k ? `<section class="pd-sec"><h3>${icon('plant')}Équipement</h3><div class="pd-k">${kksTag(k)}<span class="t">${esc(k.designation)}</span></div></section>` : ''}
       ${t.description ? `<section class="pd-sec"><h3>${icon('list')}Ce qu’il faut faire</h3><p class="pre">${esc(t.description)}</p></section>` : ''}
-      <section class="pd-sec"><h3>${icon('report')}Historique <span class="muted">${done.length || ''}</span></h3>${intTable(done)}</section>`;
+      <section class="pd-sec"><h3>${icon('report')}Historique <span class="muted">${done.length || ''}</span></h3>${intTable(done)}</section>${byLine(t)}`;
   }
 };
 function tacheDialog(t, kksId){
@@ -3346,7 +3418,7 @@ VIEWS.interventions = {
         <dt>Intervenants</dt><dd>${pills ? `<span class="pps">${pills}</span>` : '—'}</dd></dl>
       ${i.constat ? `<section class="pd-sec"><h3>${icon('report')}Constat / demande</h3><p class="pre">${esc(i.constat)}</p></section>` : ''}
       ${i.travaux ? `<section class="pd-sec"><h3>${icon('wrench')}Travaux réalisés</h3>${travauxHTML(i.travaux)}</section>` : ''}
-      ${i.pieces.length ? `<section class="block"><h3>Pièces utilisées</h3><div class="tbl-wrap"><table class="tbl compact"><tbody>${i.pieces.map(x => { const p = getPiece(x.pieceId), s = lineInfo(x, i); return `<tr ${p ? `data-act="goto" data-view="pieces" data-id="${p.id}" tabindex="0"` : ''}><td><span class="ref">${esc(s.ref)}</span> ${esc(s.designation)}${s.lieu ? `<span class="sub">${esc(s.lieu)}</span>` : ''}</td><td class="num qty">${num(x.qte)} ${esc(s.unite || '')}</td></tr>`; }).join('')}</tbody></table></div></section>` : ''}`;
+      ${byLine(i)}${i.pieces.length ? `<section class="block"><h3>Pièces utilisées</h3><div class="tbl-wrap"><table class="tbl compact"><tbody>${i.pieces.map(x => { const p = getPiece(x.pieceId), s = lineInfo(x, i); return `<tr ${p ? `data-act="goto" data-view="pieces" data-id="${p.id}" tabindex="0"` : ''}><td><span class="ref">${esc(s.ref)}</span> ${esc(s.designation)}${s.lieu ? `<span class="sub">${esc(s.lieu)}</span>` : ''}</td><td class="num qty">${num(x.qte)} ${esc(s.unite || '')}</td></tr>`; }).join('')}</tbody></table></div></section>` : ''}`;
   }
 };
 
@@ -4665,6 +4737,7 @@ const ACT = {
   'plan-copy'(){ const mon = S.pweek, prev = isoAdd(mon, -7); const src = db.plan.filter(x => x.date >= prev && x.date < mon && !x.tacheId && x.text); if (!src.length){ toast('Aucun texte libre la semaine précédente.'); return; }
     tx(() => { for (const x of src){ const dd = isoAdd(x.date, 7); if (!db.plan.some(y => y.who === x.who && y.date === dd && y.text === x.text)) db.plan.push({id:uid(), date:dd, who:x.who, text:x.text}); } }); render(); toast(`${src.length} ligne(s) reprise(s)`, '', true); },
   me: () => meDialog(),
+  help: () => helpDialog(),
   'relink-kks'(){ const r = tx(() => linkPartialKks(db)); render(); toast(r.nl ? `${r.nl} lien(s) pièce ↔ KKS ajouté(s)${r.nc ? ` · ${r.nc} repère(s) KKS créé(s)` : ''}` : 'Aucun nouveau repère KKS trouvé dans les pièces', '', !!r.nl); },
   'p-all'(d){ S.pAll = S.pAll === d.id ? null : d.id; fillDetail(); },
   'pour-all'(){ S.pour = ''; S.ryear = null; render(); },
@@ -4768,7 +4841,7 @@ const ACT = {
   'import-travaux': () => importTravauxDialog(),
   'int-all'(){ S.statut = 'toutes'; render(); },
   'new-pers': () => persDialog(),
-  async logout(){ await CLOUD.sb.auth.signOut(); location.reload(); },
+  async logout(){ await IDB.del(CLOUD.cacheKey()); await CLOUD.sb.auth.signOut(); location.reload(); },
   'cloud-off'(){ confirmDialog('Revenir aux données du navigateur', 'Ce poste n’utilisera plus la base partagée. Les données de la base ne sont pas supprimées.', 'Revenir', () => { try { localStorage.removeItem('gmao-cloud'); } catch(e){} location.reload(); }); },
   'push-local'(){
     let d = null; try { d = JSON.parse(localStorage.getItem(KEY)); } catch(e){}
@@ -4877,7 +4950,7 @@ function applyHash(){
 window.addEventListener('hashchange', () => { if (applyHash()) { render(); scrollDetail(); } });
 hydrateIcons();
 if (CLOUD.cfg().url){ bootCloud(); }
-else { applyHash(); render(); syncPlanning(); }
+else { applyHash(); render(); syncPlanning(); setTimeout(maybeWelcome, 400); }
 </script>
 </body>
 </html>
