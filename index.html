@@ -2280,6 +2280,49 @@ function cleanMisc(notes){
   const out = String(notes).split('\n').filter(l => !/^Attribut\s*\d+\s*:\s*\d\s*$/i.test(l.trim()) && !/\bprix\b|\bCHF\b|\bEUR\b|€/i.test(l));
   return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
+/* Repères KKS écrits en abrégé dans les pièces : « 1ETG30 » (groupe), « 0ETG30/40/70AF001/02 », « 1 / 2 HTQ30AA310 »…
+   Chaque code trouvé est relié à la pièce comme objet KKS ; s'il n'existe pas encore, il est créé quand son système est connu. */
+const KKS_BASE = 'ABCEGHLMNPQSUZ';
+const KKS_RX2 = /(?<![A-Z0-9])((?:[0-2]\s*(?:\/|\+|ET|,|-)\s*)*[0-2])\s?([A-Z]{3})\s?(\d{2}(?:\s*\/\s*\d{2}(?![0-9]))*)(?:\s?([A-Z]{2})\s?(\d{3}(?:\s*\/\s*\d{2,3}(?![0-9]))*))?(-[A-Z]\d{2})?(?![0-9])/g;
+function kksScan(txt, has){
+  const out = [];
+  for (const m of String(txt || '').toUpperCase().matchAll(KKS_RX2)){
+    if (!KKS_BASE.includes(m[2][0])) continue;
+    const us = m[1].match(/[0-2]/g), nns = m[3].match(/\d{2}/g), codes = [];
+    let nums = []; if (m[4]){ const raw = m[5].match(/\d+/g), f = raw[0]; nums = [f, ...raw.slice(1).map(x => f.slice(0, 3 - x.length) + x)]; }
+    for (const u of us) for (const nn of nns){ if (m[4]) for (const n of nums){ let c = u + m[2] + nn + m[4] + n; if (m[6] && has(c + m[6])) c += m[6]; codes.push(c); } else codes.push(u + m[2] + nn); }
+    out.push({tok:m[0], codes});
+  }
+  return out;
+}
+function linkPartialKks(d){
+  const key = c => String(c).replace(/\s+/g, '').toUpperCase();
+  const byCode = new Map(d.kks.map(k => [key(k.code), k])); const codes = [...byCode.keys()];
+  const SYS = {...SYS_DEFAULT, ...(d.listes.systemes || {})};
+  const grpName = c => { const kids = codes.filter(x => x.startsWith(c) && x !== c).map(x => byCode.get(x)).filter(k => !/^\(repris/.test(k.designation || '')); const cand = kids.filter(k => /\d$/.test(k.code) && !/BR\d{3}$/.test(key(k.code))); const pool = cand.length ? cand : kids; return pool.map(k => k.designation || '').sort((a, b) => b.length - a.length)[0] || ''; };
+  let nl = 0, nc = 0;
+  for (const p of d.pieces){
+    const txt = [p.designation, p.notes, p.refFab].join(' '); if (!/\d\s?[A-Z]{3}\s?\d{2}/i.test(txt)) continue;
+    let notes = p.notes || '';
+    for (const {tok, codes:cs} of kksScan(txt, c => byCode.has(c))){
+      let all = true;
+      for (const c of cs){
+        let k = byCode.get(c);
+        if (!k){
+          const sys = c.slice(1, 4), known = SYS[sys] || codes.some(x => x.slice(1, 4) === sys);
+          if (!known){ all = false; continue; }
+          const app = (String(p.notes || '').match(/Application\s*:\s*([^\n]+)/) || [])[1];
+          const des = (c.length === 6 ? grpName(c) : '') || (app ? app.trim() : '') || SYS[sys] || c;
+          k = {id:uid(), code:c, designation:des, aic:''}; d.kks.push(k); byCode.set(c, k); codes.push(c); nc++;
+        }
+        if (!p.kks.includes(k.id)){ p.kks.push(k.id); nl++; }
+      }
+      if (all && notes.toUpperCase().includes(tok)){ const i = notes.toUpperCase().indexOf(tok); notes = notes.slice(0, i) + notes.slice(i + tok.length); }
+    }
+    if (notes !== (p.notes || '')) p.notes = notes.split('\n').map(l => l.replace(/[ \t]{2,}/g, ' ').trimEnd()).filter(l => !/^\s*(N°\s*\/\s*repère|Repère|N° repère|KKS)\s*:?\s*$/i.test(l)).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+  return {nl, nc};
+}
 function cleanPieceNotes(d, p){ const codes = new Set((p.kks || []).map(id => d.kks.find(k => k.id === id)?.code.replace(/\s+/g, '').toUpperCase()).filter(Boolean)); const n = cleanNotes(p.notes, codes); if (n !== p.notes) p.notes = n; }
 function migrate(d){
   const b = blank();
@@ -2324,6 +2367,7 @@ function migrate(d){
       i.intervenants = [...new Set(i.intervenants)]; }
     d.meta.fourIntV = 1;
   }
+  if (!d.meta.kksPartV && d.pieces.length){ linkPartialKks(d); d.meta.kksPartV = 1; }
   if (d.meta.demo && !d.meta.tachesV){ seedTaches(d); }
   d.meta.tachesV = 1;
   d.version = 2; return d;
@@ -2843,7 +2887,7 @@ function filteredPieces(){
 }
 VIEWS.pieces = {
   shell: () => `<header class="page-head"><h1>Pièces</h1><div class="tools">${searchBox('pieces', 'Rechercher une pièce…')}<button class="btn icon-only" data-act="scan" title="Scanner un QR code" aria-label="Scanner un QR code">${icon('scan')}</button><button class="btn primary" data-act="new-piece">${icon('plus')}Nouvelle pièce</button>
-    ${menu([['labels-list', 'Étiquettes QR de la liste', 'qr', {}], ['toggle-low', S.lowOnly ? 'Afficher toutes les pièces' : 'Pièces sous le stock minimum', 'list', {}], ['xl-pieces', 'Exporter la liste (Excel)', 'excel', {}], '-', ['dups', 'Rechercher les doublons', 'merge', {}], archItem('pieces'), '-', ['import-pieces', 'Importer depuis CareOffice (fichier)', 'save', {}]])}</div></header>
+    ${menu([['labels-list', 'Étiquettes QR de la liste', 'qr', {}], ['toggle-low', S.lowOnly ? 'Afficher toutes les pièces' : 'Pièces sous le stock minimum', 'list', {}], ['xl-pieces', 'Exporter la liste (Excel)', 'excel', {}], '-', ['dups', 'Rechercher les doublons', 'merge', {}], ['relink-kks', 'Relier les repères KKS cités dans les notes', 'plant', {}], archItem('pieces'), '-', ['import-pieces', 'Importer depuis CareOffice (fichier)', 'save', {}]])}</div></header>
     ${S.zeroOnly ? `<p class="tools" style="margin:-6px 0 14px"><span class="chip bad">Pièces à zéro<button class="icon-btn" style="width:20px;height:20px;font-size:1rem;color:inherit" data-act="toggle-zero" aria-label="Afficher toutes les pièces">×</button></span></p>` : ''}
     ${S.lowOnly ? `<p class="tools" style="margin:-6px 0 14px"><span class="chip warn">Sous le stock minimum<button class="icon-btn" style="width:20px;height:20px;font-size:1rem;color:inherit" data-act="toggle-low" aria-label="Afficher toutes les pièces">×</button></span></p>` : ''}
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
@@ -3845,6 +3889,7 @@ function importPiecesDialog(){
         db.listes.fournisseurs.sort(coll.compare);
         for (const [ref, l] of Object.entries(j.histo || {})){ const pc = byRef.get(String(ref).toUpperCase()); if (!pc) continue; const ex = db.histo.find(h => h.id === pc.id); if (ex) ex.l = l; else db.histo.push({id:pc.id, l}); nh++; }
       });
+      tx(() => linkPartialKks(db));
       render(); toast(`${add} pièce(s) ajoutée(s), ${upd} mise(s) à jour · ${db.lieux.length - nl0} emplacement(s) et ${nk} repère(s) KKS créés${nh ? ` · historique de ${nh} pièce(s)` : ''}`);
     }});
 }
@@ -4308,6 +4353,7 @@ function exportKksLinks(){
 const ACT = {
   scan: () => scanDialog(),
   me: () => meDialog(),
+  'relink-kks'(){ const r = tx(() => linkPartialKks(db)); render(); toast(r.nl ? `${r.nl} lien(s) pièce ↔ KKS ajouté(s)${r.nc ? ` · ${r.nc} repère(s) KKS créé(s)` : ''}` : 'Aucun nouveau repère KKS trouvé dans les pièces', '', !!r.nl); },
   'p-all'(d){ S.pAll = S.pAll === d.id ? null : d.id; fillDetail(); },
   'home-all'(){ S.homeAll = !S.homeAll; render(); },
   'my-tasks'(){ const me = meId(); if (me) S.pour = 'p:' + me; S.pourInit = true; go('taches'); },
