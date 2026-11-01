@@ -458,7 +458,8 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .ps-t.drag{opacity:.5}
 .ps-f{padding:8px 12px;margin:0;border-top:1px solid var(--line)}
 .pc.drop{outline:2px dashed var(--accent);outline-offset:-3px;background:var(--accent-soft)}
-@media (max-width:1100px){ .pwrap{grid-template-columns:minmax(0,1fr)} .pside{display:none} }
+@media (max-width:1100px){ .pwrap{grid-template-columns:minmax(0,1fr)} .pside{order:-1;position:static;max-height:330px} }
+@media (max-width:760px){ .pside,.side-tg{display:none} }
 .ptd{display:flex;align-items:center;gap:8px;width:100%}
 .ptd .pit{flex:1}
 .ptd.done .pit{opacity:.6;text-decoration:line-through}
@@ -897,6 +898,7 @@ dialog.dlg::backdrop{background:rgba(12,18,21,.55)}
 @page landa3{size:A3 landscape;margin:12mm}
 body.land .plan-sheet{page:land}
 body.a3 .plan-sheet{page:landa3}
+body.land:not(.a3) .xtbl{font-size:9pt} body.land:not(.a3) .xls .xt{font-size:16pt}
 body.a3 .plan-tbl{font-size:9.5pt}
 body.a3 .plan-tbl th,body.a3 .plan-tbl td{padding:1mm 2mm}
 body.a3 .plan-tbl th:first-child{width:42mm}
@@ -1021,6 +1023,28 @@ tr.grp.old th{color:var(--muted)}
   .help-btn{background:rgba(8,28,16,.55)}
 }
 @media (max-width:980px){ .ptip-row .plegend{display:none} }
+/* Feuille de planning imprimée, façon Excel */
+.plan-sheet.xls{font-family:Calibri,Carlito,'Segoe UI',Arial,sans-serif;color:#000;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.xls .xt{font-size:22pt;font-weight:700;text-align:center;margin:0 0 5mm;font-family:inherit;letter-spacing:0}
+.xtbl{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11pt}
+.xtbl col.xcn{width:17%}
+.xtbl th,.xtbl td{border:.5pt solid #000;padding:.8mm 1.6mm;vertical-align:middle}
+.xtbl .xs{text-align:left;font-size:13pt;font-weight:700;border:0;border-bottom:1.5pt solid #000}
+.xtbl .xs2{text-align:left;font-size:9pt;font-weight:400;border:0}
+.xtbl .xd{color:#0000FF;font-size:13pt;font-weight:700;text-align:center;border:1.5pt solid #000;border-bottom:.5pt solid #000}
+.xtbl .xd2{font-size:9pt;font-weight:400;text-align:center;border:1.5pt solid #000;border-top:0}
+.xtbl .xn{text-align:left;font-weight:700;font-size:12pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:1.5pt solid #000;border-right:1.5pt solid #000}
+.xtbl td.xc{border-left:1.5pt solid #000;border-right:1.5pt solid #000;height:6.2mm}
+.xtbl td.xcode{text-align:center;font-weight:700}
+.xtbl td.xw{background:#fff;vertical-align:top;font-size:10.5pt;line-height:1.25}
+.xtbl .xtag{float:right;margin:0 0 .5mm 1.5mm;padding:0 1.4mm;font-size:8.5pt;font-weight:700;border:.5pt solid #000}
+.xtbl .xi + .xi{margin-top:.6mm}
+.xtbl .xk{font-family:var(--f-mono);font-size:8.5pt}
+.xtbl tr.xg > *{border-top:1.5pt solid #000}
+.xtbl tr.xsep td{height:2.2mm;padding:0;background:#fff;border-left:0;border-right:0}
+.xtbl tr.xo th,.xtbl tr.xo td{height:9mm}
+.xtbl tbody tr:last-child > *{border-bottom:1.5pt solid #000}
+.xls .xf{margin-top:2mm;font-size:8pt;color:#555}
 .nav-sep{width:1px;align-self:stretch;margin:6px 4px;background:rgba(255,255,255,.2)}
 .nav .nav-sec{color:#B9D3C2;font-weight:500}
 .nav .nav-sec .ico{width:16px;height:16px}
@@ -1055,7 +1079,7 @@ body.placing .wkgrid .pc{cursor:copy}
 .wkgrid .pc.drop{box-shadow:inset 0 0 0 2px var(--accent) !important;background:var(--accent-soft)}
 .pwrap.noside{grid-template-columns:minmax(0,1fr)}
 .side-tg.on{background:var(--accent-soft);border-color:var(--accent-line)}
-@media (max-width:1100px){ .side-tg{display:none} }
+
 .pinl{display:flex;flex-direction:column;gap:3px;cursor:auto}
 .pinl textarea{width:100%;min-height:0;resize:none;overflow:hidden;font:inherit;font-size:.82rem;line-height:1.3;padding:5px 7px;border-radius:7px;border:1.5px solid var(--accent);background:var(--surface);color:var(--ink);box-shadow:0 0 0 3px var(--accent-soft)}
 .pinl textarea:focus{outline:none}
@@ -1084,7 +1108,6 @@ body.placing .wkgrid .pc{cursor:copy}
         <button data-act="nav" data-view="pieces" title="Pièces"><span data-icon="box"></span><span class="nl">Pièces</span></button>
         <button class="nav-more" data-act="nav" data-view="planning" title="Planning"><span data-icon="calendar"></span><span class="nl">Planning</span></button>
         <span class="nav-sep nav-more" aria-hidden="true"></span>
-        <button class="nav-more nav-sec" data-act="nav" data-view="kks" title="Installation : fiche de chaque équipement (KKS)"><span data-icon="plant"></span><span class="nl">Installation</span></button>
         <button class="nav-more nav-sec" data-act="nav" data-view="options" title="Options"><span data-icon="cog"></span><span class="nl">Options</span></button>
         <button class="nav-plus" data-act="navplus" title="Plus" aria-expanded="false"><span data-icon="more"></span><span class="nl">Plus</span></button>
       </nav>
@@ -1105,7 +1128,7 @@ body.placing .wkgrid .pc{cursor:copy}
 </div>
 <div id="print"></div>
 <div id="toast" role="status" aria-live="polite"></div>
-<div class="navsheet" id="navsheet" hidden><button data-act="nav" data-view="planning"><span data-icon="calendar"></span>Planning</button><button data-act="nav" data-view="kks"><span data-icon="plant"></span>Installation</button><button data-act="nav" data-view="options"><span data-icon="cog"></span>Options</button></div>
+<div class="navsheet" id="navsheet" hidden><button data-act="nav" data-view="planning"><span data-icon="calendar"></span>Planning</button><button data-act="nav" data-view="options"><span data-icon="cog"></span>Options</button></div>
 <div class="fab" id="fab"><div class="fab-menu" hidden><button data-act="new-int"><span data-icon="report"></span>Nouveau rapport</button><button data-act="quick-move" data-type="sortie"><span data-icon="move"></span>Mouvement de stock</button><button data-act="scan"><span data-icon="scan"></span>Scanner un QR</button></div><button class="fab-btn" data-act="fab" aria-label="Ajouter" aria-expanded="false">+</button></div>
 <input type="file" id="file-json" accept=".json,application/json" hidden>
 <datalist id="dl-lieux"></datalist>
@@ -3103,7 +3126,7 @@ let db = CLOUD.cfg().url ? migrate(blank()) : load();
 if (!db){ db = seed(); save(); }
 
 /* ---------------- État d'affichage ---------------- */
-const S = {psf:'semaine', ppick:null, pside:(() => { try { return localStorage.getItem('tf-pside') === '1'; } catch(e){ return false; } })(), pour:'', tf:'', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:'', optfour:''}, lowOnly:false, zeroOnly:false, psort:'iddesc', plimit:200, rlimit:300, back:[], statut:'toutes', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux', arch:{}};
+const S = {psf:'semaine', ppick:null, pside:(() => { try { return localStorage.getItem('tf-pside') !== '0'; } catch(e){ return true; } })(), pour:'', tf:'', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:'', optfour:''}, lowOnly:false, zeroOnly:false, psort:'iddesc', plimit:200, rlimit:300, back:[], statut:'toutes', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux', arch:{}};
 
 function toast(msg, kind = '', undo = false){
   const t = $('#toast'); t.textContent = msg; t.className = 'show ' + kind + (undo ? ' undo' : '');
@@ -3134,7 +3157,7 @@ function fabMenu(){
 function render(){
   contIdx = null; initPour(); fabMenu();
   refreshDatalists(); refreshCounts();
-  $$('#nav button').forEach(b => b.setAttribute('aria-current', b.dataset.view === S.view || (b.classList.contains('nav-plus') && ['planning', 'kks', 'options'].includes(S.view)) ? 'page' : 'false')); { const ns = $('#navsheet'); if (ns) ns.hidden = true; }
+  $$('#nav button').forEach(b => b.setAttribute('aria-current', b.dataset.view === S.view || (b.dataset.view === 'options' && S.view === 'kks') || (b.classList.contains('nav-plus') && ['planning', 'kks', 'options'].includes(S.view)) ? 'page' : 'false')); { const ns = $('#navsheet'); if (ns) ns.hidden = true; }
   const bk = S.back[S.back.length - 1], VN = {planning:'le planning', accueil:'l’accueil', pieces:'la pièce', kks:'l’installation', lieux:'les emplacements', interventions:'le rapport', taches:'la tâche', options:'les options'};
   const bl = bk ? (bk.view === 'pieces' && getPiece(bk.sel.pieces) ? `la pièce ${getPiece(bk.sel.pieces).ref}` : bk.view === 'pieces' && bk.q.pieces ? `la recherche « ${bk.q.pieces} »` : bk.view === 'kks' && getKks(bk.sel.kks) ? getKks(bk.sel.kks).code : VN[bk.view] || 'la page précédente') : '';
   const am = S.arch[S.view] ? `<div class="arch-mode">${icon('archive')}<span><strong>Archives</strong> · éléments retirés des listes, restaurables à tout moment.</span><button class="btn small" data-act="arch-view" data-v="${S.view}">Revenir à la liste</button></div>` : '';
@@ -3877,15 +3900,33 @@ function planDialog(who, date, item, pre = ''){
       render(); toast(`${ws.length * ds.length} case(s) remplie(s)`, '', true);
     }});
 }
+/* Feuille imprimée : reprend la mise en page et les couleurs du modèle Excel « Planification de la maintenance » */
+const XLS_GRP = [['equipe', '#FCD5B5'], ['elect', '#FFC000'], ['autom', '#558ED5'], ['meca', '#FFFF00'], ['intend', '#B7DEE8'], ['chauff', '#CCC1DA'], ['admin', '#4BACC6'], ['cadre', '#D99694']];
+const xlsGrp = g => { const n = norm(g || ''); return (XLS_GRP.find(([k]) => n.startsWith(k)) || [null, '#FFFFFF'])[1]; };
+const XLS_CODE = {R:['#92D050', '#000'], VA:['#FF0000', '#000'], RA:['#0070C0', '#fff'], RN:['#FFC000', '#000'], RM:['#D99694', '#000'], GR:['#00B0F0', '#000'], C1:['#F79646', '#000'], C2:['#B3A2C7', '#000']};
+const xlsCode = c => !c ? ['#808080', '#808080'] : /FE/i.test(c) ? ['#7030A0', '#fff'] : XLS_CODE[c] || ['#fff', '#000'];
 function planSheetHTML(){
   const mon = S.pweek, nd = S.pwe ? 7 : 5, days = Array.from({length:nd}, (_, i) => isoAdd(mon, i)), ppl = planPeople();
-  const cell = (w, d, p) => { const pr = p ? presOf(p, d) : null; const its = db.plan.filter(x => x.who === w && x.date === d).map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null, k = t ? getKks(t.kksId) : null; return `<div>• ${esc(t ? t.titre : x.text)}${k ? ` <span class="mono">${esc(k.code)}</span>` : ''}${t && x.text ? ` — ${esc(x.text)}` : ''}</div>`; }).join(''); return `<td>${pr && pr.code ? `<span class="pc-code ${PCODE[pr.code]?.[1] === 'abs' ? 'abs' : ''}">${esc(pr.code)}</span>` : ''}${its}</td>`; };
-  let lg = null, body = '';
-  for (const p of ppl){ if (p.groupe !== lg){ body += `<tr><th colspan="${nd + 1}" class="g">${esc(p.groupe === 'Équipe' ? 'Équipes de rotation' : p.groupe || '')}</th></tr>`; lg = p.groupe; } body += `<tr><th>${esc(persName(p))}</th>${days.map(d => cell(p.id, d, p)).join('')}</tr>`; }
-  body += PLAN_ROWS.map(([w, t]) => `<tr><th>${t}</th>${days.map(d => cell(w, d, null)).join('')}</tr>`).join('');
-  return `<article class="rpt plan-sheet"><header class="rpt-head"><div><div class="rpt-org">Tridel · Maintenance</div><h1>Planification de la semaine ${isoWeek(mon)}</h1></div><div class="rpt-num"><div>${fmtD(days[0])} – ${fmtD(days[nd - 1])}</div></div></header>
-    <table class="rpt-tbl plan-tbl"><thead><tr><th></th>${days.map((d, i) => `<th>${DAYN[i]} ${+d.slice(8)}.${d.slice(5, 7)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>
-    <footer class="rpt-foot">Imprimé le ${fmtDT(new Date().toISOString())} · TriFlow</footer></article>`;
+  const items = (w, d) => db.plan.filter(x => x.who === w && x.date === d).map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null, k = t ? getKks(t.kksId) : null; return `<div class="xi">${esc(t ? t.titre : x.text)}${k ? ` <span class="xk">${esc(k.code)}</span>` : ''}${t && x.text ? ` – ${esc(x.text)}` : ''}</div>`; }).join('');
+  const cell = (w, d, p) => { const pr = p ? presOf(p, d) : null, code = pr ? pr.code || '' : '', its = items(w, d);
+    if (!p) return `<td class="xc xw">${its}</td>`;
+    const [bg, fg] = xlsCode(code);
+    return its ? `<td class="xc xw">${code ? `<span class="xtag" style="background:${bg};color:${fg}">${esc(code)}</span>` : ''}${its}</td>` : `<td class="xc xcode" style="background:${bg};color:${fg}">${esc(code)}</td>`; };
+  let body = '', lg, lastEq = null;
+  for (const p of ppl){
+    const g = p.groupe || '', eq = g === 'Équipe' ? EQUIPE_NO[String(p.nom).toUpperCase()] || '' : '';
+    if (g === 'Équipe' && eq && lastEq !== null && eq !== lastEq) body += `<tr class="xsep"><td colspan="${nd + 1}"></td></tr>`;
+    const first = g !== lg; lg = g; lastEq = eq || lastEq;
+    body += `<tr class="${first ? 'xg' : ''}"><th class="xn" style="background:${xlsGrp(g)}">${esc(persName(p))}</th>${days.map(d => cell(p.id, d, p)).join('')}</tr>`;
+  }
+  body += PLAN_ROWS.map(([w, t], i) => `<tr class="xo ${i ? '' : 'xg'}"><th class="xn">${t}</th>${days.map(d => cell(w, d, null)).join('')}</tr>`).join('');
+  const d0 = days[0], d1 = days[nd - 1];
+  return `<article class="plan-sheet xls"><h1 class="xt">Planification des tâches pour le personnel en maintenance et les chauffeurs de réserve</h1>
+    <table class="xtbl"><colgroup><col class="xcn">${days.map(() => '<col>').join('')}</colgroup>
+      <thead><tr><th class="xs">Semaine ${isoWeek(mon)}</th>${days.map((d, i) => `<th class="xd">${DAYN[i]}</th>`).join('')}</tr>
+      <tr><th class="xs2">${fmtD(d0)} – ${fmtD(d1)}</th>${days.map(d => `<th class="xd2">${+d.slice(8)}.${d.slice(5, 7)}.${d.slice(0, 4)}</th>`).join('')}</tr></thead>
+      <tbody>${body}</tbody></table>
+    <p class="xf">Imprimé le ${fmtDT(new Date().toISOString())} · TriFlow</p></article>`;
 }
 
 const OPT_SECS = [['lieux', 'Emplacements', 'shelf'], ['kks', 'Équipements (KKS)', 'plant'], ['personnes', 'Personnes', 'person'], ['fournisseurs', 'Fournisseurs', 'truck'], ['listes', 'Listes', 'list'], ['etiquettes', 'Étiquettes & QR', 'qr'], ['donnees', 'Sauvegarde', 'save'], ['connexion', 'Connexion', 'person']];
@@ -4028,7 +4069,7 @@ OPT.donnees = () => `<section class="opt-sec"><div class="head"><h2>Sauvegarde</
     <div class="tools">${db.meta.demo ? '<button class="btn" data-act="clear-demo">Effacer les exemples</button>' : '<button class="btn danger-ghost" data-act="clear-all">Tout effacer…</button>'}<button class="btn" data-act="load-demo">Recharger les exemples</button></div></div></section>`;
 VIEWS.options = {
   shell: () => `<header class="page-head"><h1>Options</h1></header>
-    <div class="opt"><nav class="opt-nav" aria-label="Sections des options">${OPT_SECS.map(([k, t, ic]) => `<button data-act="opt" data-sec="${k}" aria-current="${S.opt === k}">${icon(ic)}${t}</button>`).join('')}</nav>
+    <div class="opt"><nav class="opt-nav" aria-label="Sections des options"><button data-act="nav" data-view="kks" title="Fiche de chaque équipement : rapports, tâches et pièces">${icon('plant')}Installation</button>${OPT_SECS.map(([k, t, ic]) => `<button data-act="opt" data-sec="${k}" aria-current="${S.opt === k}">${icon(ic)}${t}</button>`).join('')}</nav>
     <div class="opt-body">${OPT[S.opt]()}</div></div>`,
   list: () => '', detail: () => ''
 };
@@ -4571,7 +4612,7 @@ function fitSheet(html, wmm, hmm){
   const m = document.createElement('div'); m.style.cssText = `position:absolute;left:-99999px;top:0;width:${wmm}mm;background:#fff;color:#000`; m.innerHTML = html; document.body.append(m);
   const h = m.firstElementChild.getBoundingClientRect().height, avail = hmm * 96 / 25.4; m.remove();
   if (h <= avail) return html; const z = Math.max(.5, avail / h * .97);
-  return html.replace('class="rpt plan-sheet"', `class="rpt plan-sheet" style="zoom:${z.toFixed(3)}"`);
+  return html.replace('class="plan-sheet xls"', `class="plan-sheet xls" style="zoom:${z.toFixed(3)}"`);
 }
 function endPrintLand(){ document.body.classList.remove('land', 'a3'); }
 function doPrint(html){ setTimeout(endPrintLand, 3000); $('#print').innerHTML = html; document.body.classList.add('printing'); setTimeout(() => { window.print(); setTimeout(endPrint, 500); }, 60); }
