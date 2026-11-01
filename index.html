@@ -433,6 +433,30 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .back-nav{margin:0 0 10px}
 .back-nav .ico{transform:rotate(180deg)}
 .pd-info.rep{margin-top:6px}
+.ychips{display:flex;gap:6px;overflow-x:auto;padding:10px 12px;border-bottom:1px solid var(--line);scrollbar-width:thin}
+.ychip{all:unset;cursor:pointer;flex:none;padding:5px 11px;border-radius:999px;font-size:.85rem;font-weight:600;color:var(--muted);background:var(--sunk)}
+.ychip small{font-weight:500;opacity:.75;margin-left:2px}
+.ychip[aria-selected=true]{background:var(--accent);color:var(--accent-ink)}
+.ychip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.rlist{display:flex;flex-direction:column}
+.rmonth{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;align-items:baseline;padding:7px 16px;background:var(--sunk);border-bottom:1px solid var(--line);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.rmonth small{font-weight:600;letter-spacing:0}
+.rrow{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;padding:8px 16px;border-bottom:1px solid var(--line);width:100%}
+.rrow:hover{background:var(--sunk)}
+.rrow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.rrow.sel{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.rrow .rday{flex:none;width:38px;display:flex;flex-direction:column;align-items:center;line-height:1.05}
+.rrow .rday b{font-family:var(--f-mono);font-size:1.15rem;color:var(--ink)}
+.rrow .rday small{font-size:.68rem;color:var(--muted);text-transform:uppercase}
+.rrow .pm{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.rrow .pdes{font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.rrow .ploc{display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--ink);min-width:0;overflow:hidden;white-space:nowrap}
+.rrow .ploc .kks{font-size:.72rem;padding:0 5px}
+.rrow .rwho{overflow:hidden;text-overflow:ellipsis}
+.pp.four{background:var(--steel-soft)}
+.pp .ico{width:13px;height:13px;align-self:center}
+.pbtn.four{display:inline-flex;align-items:center;gap:6px}
+.pbtn.four .ico{width:14px;height:14px}
 .itbl td.ref{white-space:nowrap;width:1%}
 .page-head .tools > .menu:not(:last-child){margin-left:0}
 .pd-head{flex-wrap:wrap}
@@ -2260,6 +2284,12 @@ function migrate(d){
     const K = new Map(d.kks.map(k => [k.id, k])), Tm = new Map((d.taches || []).map(t => [t.id, t]));
     for (const i of d.interventions) if (i.statut === 'terminee'){ if (!i.ks && K.get(i.kksId)){ const k = K.get(i.kksId); i.ks = {code:k.code, designation:k.designation, aic:k.aic || ''}; } if (!i.ts && Tm.get(i.tacheId)){ const t = Tm.get(i.tacheId); i.ts = {titre:t.titre, description:t.description || '', freq:freqLabel(t.freq), assign:t.assign?.type === 'personne' ? (d.personnes.find(p => p.id === t.assign.v)?.nom || '') : (t.assign?.v || '')}; } }
     for (const i of d.interventions) for (const x of i.pieces || []) if (!x.s){ const p = P.get(x.pieceId), l = Lm.get(x.lieuId); if (p){ const sa = l && d.salles.find(z => z.id === l.salleId); x.s = {ref:p.ref, designation:p.designation, unite:p.unite, lieu:l && sa ? [sa.code || `${sa.batiment || 'E'}${sa.etage}.${sa.numero}`, ...(l.chemin || [])].join(' / ') : ''}; } } }
+  if (!d.meta.fourIntV){
+    for (const i of d.interventions){ if (!i.intervenants.some(id => String(id).startsWith('ext:'))) continue;
+      i.intervenants = i.intervenants.map(id => { if (!String(id).startsWith('ext:')) return id; const f = fourMatch(i.snap?.[id]?.nom || '', d.listes.fournisseurs); if (!f) return id; const nid = 'four:' + f; i.snap = i.snap || {}; i.snap[nid] = fourSnap(f); delete i.snap[id]; return nid; });
+      i.intervenants = [...new Set(i.intervenants)]; }
+    d.meta.fourIntV = 1;
+  }
   if (d.meta.demo && !d.meta.tachesV){ seedTaches(d); }
   d.meta.tachesV = 1;
   d.version = 2; return d;
@@ -2452,7 +2482,22 @@ function parseCode(str){
 const persName = p => p ? `${p.prenom || ''} ${p.nom}`.trim() : '(supprimé)';
 /* Intervenants d'un rapport : figés tels qu'ils étaient lors du rapport (nom + groupe). */
 const persSnap = p => ({nom:p.nom, prenom:p.prenom || '', groupe:p.groupe || ''});
-const intPers = i => i.intervenants.map(id => ({id, ...((i.statut !== 'terminee' && getPers(id) ? persSnap(getPers(id)) : null) || i.snap?.[id] || (getPers(id) ? persSnap(getPers(id)) : {nom:'(supprimé)', prenom:'', groupe:''}))}));
+/* Entreprises externes (liste des fournisseurs) comme intervenants : id « four:Nom » */
+const FOUR_GRP = 'Entreprise externe';
+const fourSnap = n => ({nom:n, prenom:'', groupe:FOUR_GRP});
+const isFourId = id => String(id).startsWith('four:');
+const fourCore = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\b(ag|sa|gmbh|sarl|ltd|inc|co|kg|sas|bv|spa|ab|oy)\b\.?/g, '').replace(/[^a-z0-9]/g, '');
+function fourMatch(name, list){
+  const c = fourCore(name); if (c.length < 3) return null;
+  let best = null;
+  for (const f of list){ const fc = fourCore(f); if (fc === c) return f; if (!best && c.length >= 4 && fc.startsWith(c)) best = f; }
+  if (best) return best;
+  const W = x => [...new Set(String(x).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length >= 2))];
+  const toks = W(name); if (!toks.length) return null;
+  const hit = list.filter(f => { const ws = W(f); return toks.length === 1 ? (/^[A-Z0-9]{3,5}$/.test(String(name).trim()) && ws.includes(toks[0])) : toks.every(t => ws.some(w => w === t || (w.length >= 4 && t.length >= 4 && (w.startsWith(t) || t.startsWith(w))))); });
+  return hit.length === 1 ? hit[0] : null;
+}
+const intPers = i => i.intervenants.map(id => ({id, ...(isFourId(id) ? (i.snap?.[id] || fourSnap(id.slice(5))) : null) || ((i.statut !== 'terminee' && getPers(id) ? persSnap(getPers(id)) : null) || i.snap?.[id] || (getPers(id) ? persSnap(getPers(id)) : {nom:'(supprimé)', prenom:'', groupe:''}))}));
 const snapLabel = x => persName(x) + (x.groupe ? ` (${x.groupe})` : '');
 function ensureSnaps(d){ for (const i of d.interventions){ if (i.snap) continue; i.snap = {}; for (const id of i.intervenants){ const p = d.personnes.find(x => x.id === id); if (p) i.snap[id] = persSnap(p); } } }
 const grpIdx = g => { const i = db.listes.groupes.indexOf(g); return i < 0 ? 999 : i; };
@@ -3020,20 +3065,34 @@ VIEWS.interventions = {
     <button class="btn primary" data-act="new-int">${icon('plus')}Nouveau rapport</button>${menu([['xl-ints', 'Exporter la liste (Excel)', 'excel', {}], archItem('interventions'), '-', ['import-travaux', 'Importer depuis CareOffice (fichier)', 'save', {}]])}</div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list(){
-    const rows = filteredInts();
+    const all = filteredInts();
     if (!db.interventions.length) return empty('Aucun rapport', '<p>Créez le premier avec « Nouveau rapport ».</p>');
-    if (!rows.length && S.arch.interventions) return empty('Aucun rapport archivé', '');
-    if (!rows.length) return empty(S.statut === 'actives' ? 'Aucun rapport en cours' : 'Aucun rapport ne correspond', S.statut !== 'toutes' ? `<p><button class="btn small" data-act="int-all">Afficher les ${db.interventions.length} rapports</button></p>` : '');
-    return `<div class="list-bar"><span class="muted">${rows.length} rapport(s)${rows.length > S.rlimit ? ` · ${S.rlimit} affichés` : ''}</span><span class="lb-r"><label>Afficher<select class="mini" data-change="rlimit" aria-label="Nombre de rapports affichés">${[[300, '300'], [500, '500'], [1000, '1000'], [1e9, 'Tous']].map(([v, t]) => `<option value="${v}" ${S.rlimit === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label></span></div><div class="plist">${rows.slice(0, S.rlimit).map(i => { const k = kInfo(i); return `<button class="prow ${S.sel.interventions === i.id ? 'sel' : ''}" data-act="select" data-id="${i.id}">
-        <span class="pm"><span class="pdes">${esc(i.titre)}</span><span class="ploc"><span class="pid">${fmtD(i.date)}</span>${k ? `<span class="kks">${esc(k.code)}</span>` : ''}${i.type ? `<span class="muted">${esc(i.type)}</span>` : ''}</span></span>
-        ${i.statut !== 'terminee' ? statutChip(i.statut) : ''}</button>`; }).join('')}${rows.length > 400 ? `<p class="list-note">${rows.length - 400} autre(s) : utilisez la recherche.</p>` : ''}</div>`;
+    if (!all.length && S.arch.interventions) return empty('Aucun rapport archivé', '');
+    if (!all.length) return empty(S.statut === 'actives' ? 'Aucun rapport en cours' : 'Aucun rapport ne correspond', S.statut !== 'toutes' ? `<p><button class="btn small" data-act="int-all">Afficher les ${db.interventions.length} rapports</button></p>` : '');
+    const yc = new Map(); for (const i of all){ const y = (i.date || '').slice(0, 4) || '—'; yc.set(y, (yc.get(y) || 0) + 1); }
+    const years = [...yc.keys()].sort().reverse();
+    const searching = !!norm(S.q.interventions);
+    let y = S.ryear && (S.ryear === 'all' || yc.has(S.ryear)) ? S.ryear : (searching || all.length <= 150 ? 'all' : years[0]);
+    const rows = y === 'all' ? all : all.filter(i => (i.date || '').startsWith(y));
+    const MO = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'], MS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+    const lim = S.rmore === y + norm(S.q.interventions) ? 1e9 : 400, shown = rows.slice(0, lim);
+    const groups = []; for (const i of shown){ const k = (i.date || '').slice(0, 7); if (!groups.length || groups[groups.length - 1].k !== k) groups.push({k, list:[]}); groups[groups.length - 1].list.push(i); }
+    const mcount = new Map(); for (const i of rows){ const k = (i.date || '').slice(0, 7); mcount.set(k, (mcount.get(k) || 0) + 1); }
+    const chips = years.length > 1 ? `<div class="ychips" role="tablist" aria-label="Année">${years.length > 1 ? `<button role="tab" class="ychip" data-act="ryear" data-y="all" aria-selected="${y === 'all'}">Toutes <small>${all.length}</small></button>` : ''}${years.map(x => `<button role="tab" class="ychip" data-act="ryear" data-y="${x}" aria-selected="${y === x}">${x} <small>${yc.get(x)}</small></button>`).join('')}</div>` : '';
+    const row = i => { const k = kInfo(i), d = i.date || '', who = intPers(i).slice(0, 3).map(x => x.nom).join(', ') + (i.intervenants.length > 3 ? ` +${i.intervenants.length - 3}` : '');
+      return `<button class="rrow ${S.sel.interventions === i.id ? 'sel' : ''}" data-act="select" data-id="${i.id}"><span class="rday"><b>${+d.slice(8, 10) || ''}</b><small>${MS[+d.slice(5, 7) - 1] || ''}</small></span>
+        <span class="pm"><span class="pdes">${esc(i.titre || '(sans titre)')}</span><span class="ploc">${k?.code ? `<span class="kks">${esc(k.code)}</span>` : ''}${i.type ? `<span>${esc(i.type)}</span>` : ''}${who ? `<span class="muted rwho">${esc(who)}</span>` : ''}</span></span>
+        ${i.statut !== 'terminee' ? statutChip(i.statut) : ''}</button>`; };
+    return `${chips}${years.length > 1 ? '' : `<div class="list-bar"><span class="muted">${rows.length} rapport(s)</span></div>`}
+      <div class="rlist">${groups.map(g => `<div class="rmonth"><span>${g.k ? MO[+g.k.slice(5, 7) - 1] + ' ' + g.k.slice(0, 4) : 'Sans date'}</span><small>${mcount.get(g.k) || g.list.length}</small></div>${g.list.map(row).join('')}`).join('')}
+      ${rows.length > shown.length ? `<p class="list-note"><button class="link" data-act="rmore" data-k="${esc(y + norm(S.q.interventions))}">Afficher les ${rows.length - shown.length} autres</button></p>` : ''}</div>`;
   },
   detail(){
     const i = getInt(S.sel.interventions);
     if (!i) return placeholder('report', 'Choisissez un rapport.');
     const k = kInfo(i), T = tInfo(i);
     const names = intPers(i).map(x => `${getPers(x.id) ? `<button class="link" data-act="pers-ints" data-id="${x.id}">${esc(persName(x))}</button>` : esc(persName(x))}${x.groupe ? ` <span class="muted">(${esc(x.groupe)})</span>` : ''}`).join(', ');
-    const pills = intPers(i).map(x => `<span class="pp">${getPers(x.id) ? `<button class="link" data-act="pers-ints" data-id="${x.id}">${esc(persName(x))}</button>` : esc(persName(x))}${x.groupe ? `<small>${esc(x.groupe)}</small>` : ''}</span>`).join('');
+    const pills = intPers(i).map(x => `<span class="pp ${isFourId(x.id) ? 'four' : ''}">${isFourId(x.id) ? icon('truck') : ''}${getPers(x.id) ? `<button class="link" data-act="pers-ints" data-id="${x.id}">${esc(persName(x))}</button>` : esc(persName(x))}${x.groupe ? `<small>${esc(x.groupe)}</small>` : ''}</span>`).join('');
     return `${archBanner('interventions', i)}<div class="pd-head"><span class="pd-id">${esc(i.num)}</span><div class="pd-tools">${i.statut !== 'terminee' ? statutChip(i.statut) : ''}<button class="btn small" data-act="edit-int" data-id="${i.id}">${icon('edit')}${i.statut === 'terminee' ? 'Modifier' : 'Compléter'}</button><button class="btn small" data-act="print-int" data-id="${i.id}">${icon('printer')}Imprimer</button></div></div>
       <h2 class="pd-title">${esc(i.titre)}</h2>
       <p class="pd-sub">${fmtD(i.date)}${i.type ? ` · ${esc(i.type)}` : ''}${i.duree ? ` · ${num(i.duree)} h` : ''}${i.statut === 'terminee' ? ' · <span style="color:var(--ok)">terminé</span>' : ''}</p>
@@ -3171,13 +3230,14 @@ OPT.fournisseurs = () => {
   const q = norm(S.q.optfour || '');
   const cnt = new Map(); for (const p of db.pieces){ const set = new Set([p.fabricant, p.fournisseur, ...(p.fours || [])].filter(Boolean).map(norm)); for (const k of set) cnt.set(k, (cnt.get(k) || 0) + 1); }
   const rows = [...db.listes.fournisseurs].filter(n => !q || norm(n).includes(q)).sort(coll.compare);
+  const rc = new Map(); if (S.fourOpen) for (const i of db.interventions) for (const id of i.intervenants) if (isFourId(id)) rc.set(id.slice(5), (rc.get(id.slice(5)) || 0) + 1);
   return `<section class="opt-sec"><div class="head"><h2>Fournisseurs <span class="muted" style="font-family:var(--f-mono);font-size:.9rem">${db.listes.fournisseurs.length}</span></h2><div class="tools">${menu([['new-four', 'Un fournisseur', 'plus'], ['import-four', 'Importer depuis CareOffice (fichier)', 'save'], ['link-four', 'Relier les pièces aux fournisseurs', 'repeat']], 'Ajouter', 'plus', 'primary')}</div></div>
     <div class="pad"><p class="hint">Une pièce est reliée à un fournisseur quand son nom apparaît dans sa marque, son fournisseur, sa désignation ou ses notes.</p>
     <input type="search" data-search="optfour" data-opt4="1" placeholder="Filtrer…" value="${esc(S.q.optfour || '')}" aria-label="Filtrer les fournisseurs" style="max-width:320px"></div>
     <div id="opt-four">${rows.length ? `<div class="tbl-wrap"><table class="tbl compact"><thead><tr><th>Nom</th><th class="num">Pièces</th></tr></thead><tbody>${rows.map(n => { const open = S.fourOpen === n, c = cnt.get(norm(n)) || 0;
       const ps = open ? db.pieces.filter(p => [p.fabricant, p.fournisseur, ...(p.fours || [])].some(x => x && norm(x) === norm(n))).sort((a, b) => coll.compare(a.designation, b.designation)) : [];
       return `<tr class="four-row ${open ? 'open' : ''}" data-act="four-open" data-name="${esc(n)}" tabindex="0"><td><span class="chev ${open ? 'open' : ''}">${icon('chev')}</span>${esc(n)}</td><td class="num qty">${c || ''}</td></tr>
-      ${open ? `<tr class="four-sub"><td colspan="2"><div class="four-tools"><button class="btn small" data-act="four-pieces" data-name="${esc(n)}">${icon('box')}Ouvrir dans Pièces</button><button class="btn small" data-act="edit-four" data-name="${esc(n)}">${icon('edit')}Renommer</button><button class="btn small ghost" data-act="four-arch" data-name="${esc(n)}">${icon('archive')}Archiver</button></div>
+      ${open ? `<tr class="four-sub"><td colspan="2"><div class="four-tools"><button class="btn small" data-act="four-pieces" data-name="${esc(n)}">${icon('box')}Ouvrir dans Pièces</button>${(rc.get(n) || 0) ? `<button class="btn small" data-act="four-ints" data-name="${esc(n)}">${icon('report')}${rc.get(n)} rapport(s)</button>` : ''}<button class="btn small" data-act="edit-four" data-name="${esc(n)}">${icon('edit')}Renommer</button><button class="btn small ghost" data-act="four-arch" data-name="${esc(n)}">${icon('archive')}Archiver</button></div>
         ${ps.length ? `<div class="four-list">${ps.slice(0, 200).map(p => { const mp = mainPlace(p); return `<button class="four-p" data-act="goto" data-view="pieces" data-id="${p.id}"><span class="pid">${esc(p.ref)}</span><span class="t">${esc(p.designation)}</span>${mp ? plate(mp, false) : ''}<span class="q">${num(dispo(p))} <small>${esc(p.unite)}</small></span></button>`; }).join('')}${ps.length > 200 ? `<p class="list-note">${ps.length - 200} autre(s) : « Ouvrir dans Pièces » pour tout voir.</p>` : ''}</div>` : '<p class="empty-line" style="padding:8px 0">Aucune pièce reliée.</p>'}</td></tr>` : ''}`; }).join('')}</tbody></table></div>` : `<div class="pad">${empty('Aucun fournisseur', '')}</div>`}</div>
     ${db.listes.fournArch.length ? `<details class="arch-sec"><summary>${icon('archive')}Fournisseurs archivés <span class="muted">${db.listes.fournArch.length}</span></summary>${[...db.listes.fournArch].sort(coll.compare).map(n => `<div class="arch-line"><span class="t">${esc(n)}</span><button class="btn small" data-act="four-unarch" data-name="${esc(n)}">Restaurer</button><button class="link danger" data-act="four-del" data-name="${esc(n)}">Supprimer</button></div>`).join('')}</details>` : ''}</section>`;
 };
@@ -3227,7 +3287,8 @@ function fourDialog(name){
       if (db.listes.fournisseurs.some(x => x !== name && norm(x) === norm(n))) throw new Error(`« ${n} » est déjà dans la liste.`);
       tx(() => {
         if (isNew) db.listes.fournisseurs.push(n);
-        else { db.listes.fournisseurs = db.listes.fournisseurs.map(x => x === name ? n : x); for (const p of db.pieces){ if (p.fabricant === name) p.fabricant = n; if (p.fournisseur === name) p.fournisseur = n; if (p.fours?.includes(name)) p.fours = p.fours.map(x => x === name ? n : x); } }
+        else { db.listes.fournisseurs = db.listes.fournisseurs.map(x => x === name ? n : x); for (const i of db.interventions) if (i.intervenants.includes('four:' + name)){ i.intervenants = i.intervenants.map(x => x === 'four:' + name ? 'four:' + n : x); if (i.snap){ i.snap['four:' + n] = fourSnap(n); delete i.snap['four:' + name]; } }
+        for (const p of db.pieces){ if (p.fabricant === name) p.fabricant = n; if (p.fournisseur === name) p.fournisseur = n; if (p.fours?.includes(name)) p.fours = p.fours.map(x => x === name ? n : x); } }
         db.listes.fournisseurs.sort(coll.compare);
       });
       render(); toast(isNew ? 'Fournisseur ajouté' : 'Fournisseur renommé');
@@ -3670,7 +3731,7 @@ function importTravauxDialog(){
         for (const r of j.rapports){
           if (have.has(r.num)) continue; have.add(r.num);
           const k = kOf(r.kks), ids = [], snap = {};
-          for (const name of r.inter || []){ const p = pers(name); const id = p ? p.id : 'ext:' + n0(name).replace(/ /g, '-'); if (ids.includes(id)) continue; ids.push(id); snap[id] = p ? persSnap(p) : {nom:name, prenom:'', groupe:'Externe'}; }
+          for (const name of r.inter || []){ const p = pers(name); const f = p ? null : fourMatch(name, db.listes.fournisseurs); const id = p ? p.id : f ? 'four:' + f : 'ext:' + n0(name).replace(/ /g, '-'); if (ids.includes(id)) continue; ids.push(id); snap[id] = p ? persSnap(p) : f ? fourSnap(f) : {nom:name, prenom:'', groupe:'Externe'}; }
           if (r.type && !db.listes.types.includes(r.type)) db.listes.types.push(r.type);
           const tk = r.tache ? tKey.get(r.tache) : null;
           db.interventions.push({id:uid(), num:r.num, date:r.date, type:r.type, statut:'terminee', titre:r.titre, kksId:k ? k.id : '', constat:r.constat || '', travaux:r.travaux || '', duree:r.duree || '', intervenants:ids, snap, pieces:[],
@@ -3848,9 +3909,11 @@ function interventionDialog(it, kksId, tache){
     : {num:nextNum(), date:todayISO(), type:db.listes.types[0] || '', statut:'ouverte', kksId:kksId || '', titre:'', constat:'', travaux:'', duree:'', intervenants:[], pieces:[]});
   const k = getKks(v.kksId);
   const people = db.personnes.filter(p => (p.actif !== false && live(p)) || v.intervenants.includes(p.id)).sort(persSort);
-  const snapFor = id => (it?.snap?.[id]) || (getPers(id) ? persSnap(getPers(id)) : {nom:'(supprimé)', prenom:'', groupe:''});
+  const snapFor = id => (it?.snap?.[id]) || (isFourId(id) ? fourSnap(id.slice(5)) : getPers(id) ? persSnap(getPers(id)) : {nom:'(supprimé)', prenom:'', groupe:''});
+  const fUse = new Map(); for (const i of db.interventions) for (const id of i.intervenants) if (isFourId(id)) fUse.set(id.slice(5), (fUse.get(id.slice(5)) || 0) + 1);
+  const fTop = [...new Set([...[...fUse].sort((a, b) => b[1] - a[1]).map(x => x[0]).filter(n => db.listes.fournisseurs.includes(n)).slice(0, 24)])];
   const recents = [...new Set(db.interventions.slice().sort((a, b) => b.date.localeCompare(a.date)).flatMap(i => i.intervenants))].filter(id => people.some(p => p.id === id)).slice(0, 12);
-  const tabsP = [...(recents.length ? [['__r', 'Récents']] : []), ...db.listes.groupes.filter(g => people.some(p => p.groupe === g)).map(g => [g, g]), ...(people.some(p => !p.groupe) ? [['', 'Sans groupe']] : [])];
+  const tabsP = [...(recents.length ? [['__r', 'Récents']] : []), ...db.listes.groupes.filter(g => people.some(p => p.groupe === g)).map(g => [g, g]), ...(people.some(p => !p.groupe) ? [['', 'Sans groupe']] : []), ['__f', 'Entreprises']];
   const old = new Map(); (it?.pieces || []).forEach(x => old.set(x.pieceId + '|' + x.lieuId, (old.get(x.pieceId + '|' + x.lieuId) || 0) + x.qte));
   dialog({title: isNew ? 'Nouveau rapport d’intervention' : `Rapport ${esc(v.num)}`, wide:true,
     body:`${T ? `<p class="task-note">${icon('repeat')}<span>Tâche « ${esc(T.titre)} » · ${esc(freqLabel(T.freq))}${T.actif !== false ? ` · prévue le ${fmtD(T.prochaine)}` : ''}. ${it?.tacheFait ? '' : 'Elle passera à l’échéance suivante quand ce rapport sera « Terminé ».'}</span></p>` : ''}
@@ -3860,7 +3923,7 @@ function interventionDialog(it, kksId, tache){
       <label>Constat / demande<textarea name="constat" rows="3">${esc(v.constat)}</textarea></label>
       <label>Travaux réalisés<textarea name="travaux" rows="4">${esc(v.travaux)}</textarea></label>
       <fieldset><legend>Intervenants</legend>${people.length ? `<div class="chips" data-psel></div>
-        <input data-padd placeholder="Ajouter un intervenant : tapez un nom…" aria-label="Ajouter un intervenant">
+        <input data-padd placeholder="Ajouter : une personne ou une entreprise externe…" aria-label="Ajouter un intervenant">
         <div class="ptabs" role="tablist">${tabsP.map(([k, t], i) => `<button type="button" role="tab" data-ptab="${esc(k)}" aria-selected="${i === 0}">${esc(t)}</button>`).join('')}</div>
         <div class="pgrid" data-pgrid></div>` : '<p class="hint">Aucune personne enregistrée.</p>'}</fieldset>
       <fieldset><legend>Pièces consommées</legend><div class="plines"></div><div class="tools"><button type="button" class="btn ghost small" data-addline>${icon('plus')}Ajouter une pièce</button></div><p class="hint">Les quantités sont retirées du stock à l’enregistrement ; modifier ou supprimer une ligne remet la différence en stock.</p></fieldset>`,
@@ -3876,6 +3939,7 @@ function interventionDialog(it, kksId, tache){
         let tab = want && tabsP.some(x => x[0] === want) ? want : tabsP[0][0];
         const drawSel = () => { sel.innerHTML = [...d._pers].map(id => ({id, ...snapFor(id)})).sort(persSort).map(x => `<span class="c">${esc(persName(x))}${x.groupe ? ` <small class="muted">${esc(x.groupe)}</small>` : ''}<button type="button" class="icon-btn" data-prm="${x.id}" aria-label="Retirer ${esc(persName(x))}">×</button></span>`).join('') || '<span class="muted">Aucun intervenant choisi.</span>'; };
         const drawGrid = () => {
+          if (tab === '__f'){ const fs = [...new Set([...fTop, ...[...d._pers].filter(isFourId).map(id => id.slice(5))])]; grid.innerHTML = fs.map(n => `<button type="button" class="pbtn four" data-pid="four:${esc(n)}" aria-pressed="${d._pers.has('four:' + n)}">${icon('truck')}${esc(n)}</button>`).join('') + `<p class="hint" style="grid-column:1/-1;margin:4px 0 0">${fs.length ? 'Les plus utilisées. ' : ''}Pour une autre entreprise, tapez son nom dans le champ ci-dessus (liste Options › Fournisseurs).</p>`; $$('[data-ptab]', d).forEach(b => b.setAttribute('aria-selected', String(b.dataset.ptab === tab))); return; }
           const ps = tab === '__r' ? recents.map(getPers).filter(Boolean) : people.filter(p => (p.groupe || '') === tab);
           grid.innerHTML = ps.map(p => `<button type="button" class="pbtn" data-pid="${p.id}" aria-pressed="${d._pers.has(p.id)}">${esc(persName(p))}</button>`).join('')
             + (tab !== '__r' && ps.length > 1 ? `<button type="button" class="pbtn all" data-pall>${ps.every(p => d._pers.has(p.id)) ? 'Retirer tout le groupe' : 'Tout le groupe'}</button>` : '');
@@ -3888,7 +3952,7 @@ function interventionDialog(it, kksId, tache){
           if (e.target.closest('[data-pall]')){ const ps = people.filter(p => (p.groupe || '') === tab), all = ps.every(p => d._pers.has(p.id)); ps.forEach(p => all ? d._pers.delete(p.id) : d._pers.add(p.id)); drawSel(); drawGrid(); }
         });
         sel.addEventListener('click', e => { const b = e.target.closest('[data-prm]'); if (b){ d._pers.delete(b.dataset.prm); drawSel(); drawGrid(); } });
-        combo($('[data-padd]', d), {keep:false, items: () => people.filter(p => !d._pers.has(p.id)).map(p => ({id:p.id, label:persName(p), search:persName(p) + ' ' + (p.groupe || ''), html:esc(persName(p)), right:p.groupe ? `<span class="muted">${esc(p.groupe)}</span>` : ''})), onPick: it => { d._pers.add(it.id); drawSel(); drawGrid(); }});
+        combo($('[data-padd]', d), {keep:false, items: () => { const q = ($('[data-padd]', d).value || '').trim(); const fl = db.listes.fournisseurs.filter(n => !d._pers.has('four:' + n)).map(n => ({id:'four:' + n, label:n, search:n + ' entreprise externe fournisseur', html:`${icon('truck')} ${esc(n)}`, right:'<span class="muted">Entreprise</span>'})); const add = q.length > 1 && !db.listes.fournisseurs.some(n => norm(n) === norm(q)) && !people.some(p => norm(persName(p)) === norm(q)) ? [{id:'four:' + q, label:q, search:norm(q), html:`${icon('plus')} Ajouter l’entreprise « ${esc(q)} »`, right:'<span class="muted">nouvelle</span>'}] : []; return [...people.filter(p => !d._pers.has(p.id)).map(p => ({id:p.id, label:persName(p), search:persName(p) + ' ' + (p.groupe || ''), html:esc(persName(p)), right:p.groupe ? `<span class="muted">${esc(p.groupe)}</span>` : ''})), ...fl, ...add]; }, onPick: it => { d._pers.add(it.id); drawSel(); drawGrid(); }});
         drawSel(); drawGrid();
       }
       const wrap = $('.plines', d);
@@ -3931,7 +3995,8 @@ function interventionDialog(it, kksId, tache){
       /* Rapport déjà validé : tout reste tel qu'au moment de la validation. Sinon : on reprend les données actuelles (elles seront figées à la validation). */
       const frozen = !!it && it.statut === 'terminee';
       const lines = [...merged].map(([key, qte]) => { const [pieceId, lieuId] = key.split('|'); const prev = (it?.pieces || []).find(x => x.pieceId === pieceId && x.lieuId === lieuId && x.s); return {pieceId, lieuId, qte, s:frozen && prev ? prev.s : pSnap(getPiece(pieceId), getLieu(lieuId))}; });
-      const persSnapFor = id => frozen && it.snap?.[id] ? it.snap[id] : getPers(id) ? persSnap(getPers(id)) : (it?.snap?.[id] || {nom:'(supprimé)', prenom:'', groupe:''});
+      const persSnapFor = id => frozen && it.snap?.[id] ? it.snap[id] : isFourId(id) ? fourSnap(id.slice(5)) : getPers(id) ? persSnap(getPers(id)) : (it?.snap?.[id] || {nom:'(supprimé)', prenom:'', groupe:''});
+      for (const id of d._pers) if (isFourId(id) && !db.listes.fournisseurs.some(n => n === id.slice(5))) { db.listes.fournisseurs.push(id.slice(5)); db.listes.fournisseurs.sort(coll.compare); }
       const tk = get('taches', it ? it.tacheId : tache?.id);
       const data = {date, type:val(f, 'type'), statut:val(f, 'statut'), titre, kksId:kk ? kk.id : '', constat:val(f, 'constat'), travaux:val(f, 'travaux'), duree:duree ? +duree : '', intervenants:[...d._pers], snap:Object.fromEntries([...d._pers].map(id => [id, persSnapFor(id)])), pieces:lines,
         ks:kk ? (frozen && it.ks && it.kksId === kk.id ? it.ks : kSnap(kk)) : null,
@@ -4164,6 +4229,9 @@ function exportKksLinks(){
    ===================================================================== */
 const ACT = {
   scan: () => scanDialog(),
+  ryear(d){ S.ryear = d.y; S.sel.interventions = null; fillList(); fillDetail(); },
+  rmore(d){ S.rmore = d.k; fillList(); },
+  'four-ints'(d){ S.q.interventions = d.name; S.statut = 'toutes'; S.arch.interventions = false; S.ryear = 'all'; go('interventions'); },
   dups: () => dupDialog(),
   'xl-pieces': () => xlPieces(),
   'xl-ints': () => xlInts(),
@@ -4321,7 +4389,7 @@ document.addEventListener('submit', e => {
   try { FORMS[f.dataset.form](f); } catch(x){ toast(x.message, 'bad'); }
 });
 document.addEventListener('input', e => {
-  const k = e.target.dataset?.search; if (!k) return; S.q[k] = e.target.value;
+  const k = e.target.dataset?.search; if (!k) return; S.q[k] = e.target.value; if (k === 'interventions') S.ryear = null;
   if (e.target.dataset.opt4){ render(); const i = document.querySelector('[data-opt4]'); if (i){ i.focus(); i.setSelectionRange(i.value.length, i.value.length); } return; }
   if (e.target.dataset.opt){ const q = norm(S.q.optkks); $('#opt-list').innerHTML = optKksTable(db.kks.filter(x => live(x) && (!q || norm(`${x.code} ${x.designation} ${x.aic || ''}`).includes(q))).sort(kksSort)); }
   else fillList();
