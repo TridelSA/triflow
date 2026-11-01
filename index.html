@@ -500,6 +500,10 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .wkgrid tr.pg th{position:sticky;left:0;background:var(--sunk);text-align:left;padding:6px 10px;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:1px solid var(--line)}
 .wkgrid tr.peq td{height:4px;padding:0;background:var(--sunk)}
 .wkgrid td{padding:0;border-bottom:1px solid var(--line);border-right:1px solid var(--line);vertical-align:top}
+/* La case cliquable occupe toute la hauteur de la ligne, même si une case voisine est plus haute (commentaire, texte long) */
+.wkgrid td{height:1px}
+.wkgrid td > .pc{height:100%;box-sizing:border-box}
+@supports (-moz-appearance:none){ .wkgrid td{height:100%} }
 .wkgrid td.today{background:color-mix(in srgb, var(--accent-soft) 45%, transparent)}
 .pc{position:relative;min-height:46px;padding:5px 6px 6px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
 .pc:hover{background:var(--sunk)}
