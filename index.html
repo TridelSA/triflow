@@ -3872,22 +3872,33 @@ function planInline(pc, who, date, item, pit){
   if (pit){ pit.classList.add('editing'); pit.after(box); } else pc.append(box);
   const ta = box.querySelector('textarea'), fit = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
   ta.addEventListener('input', fit); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); requestAnimationFrame(fit);
-  let done = false;
-  const save = () => { if (done) return false; done = true; const text = ta.value.trim();
-    if (item){ if (text === (item.text || '')) return false; if (!text){ tx(() => { db.plan = db.plan.filter(x => x !== item); }); toast('Retiré du planning', '', true); } else tx(() => { item.text = text; }); return true; }
-    if (!text) return false; tx(() => { db.plan.push({id:uid(), date, who, text}); }); return true; };
+  /* Enregistrement au fur et à mesure : chaque pause de frappe enregistre le texte (rien ne se perd si on ferme la page) */
+  const orig = item ? item.text || '' : '';
+  let done = false, curId = item ? item.id : null, dirty = false, timer = null;
+  const persist = text => { const cur = curId && db.plan.find(x => x.id === curId);
+    if (cur){ if (!text || text === (cur.text || '')) return; tx(() => { cur.text = text; }); dirty = true; return; }
+    if (!text) return; const id = uid(); tx(() => { db.plan.push({id, date, who, text}); }); curId = id; dirty = true; };
+  ta.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => { if (!done) try { persist(ta.value.trim()); } catch(e){} }, 600); });
+  const save = () => { if (done) return false; done = true; clearTimeout(timer); const text = ta.value.trim(), cur = curId && db.plan.find(x => x.id === curId);
+    if (cur && !text){ tx(() => { db.plan = db.plan.filter(x => x.id !== curId); }); toast('Retiré du planning', '', true); return true; }
+    persist(text); return dirty; };
+  box._flush = () => { clearTimeout(timer); if (!done) try { persist(ta.value.trim()); } catch(e){} };
   box._commit = () => { const ch = save(); box.remove(); pit?.classList.remove('editing'); return ch; };
   const next = n => { const nd = S.pwe ? 7 : 5, mon = S.pweek, i = Math.round((new Date(date + 'T12:00:00') - new Date(mon + 'T12:00:00')) / 864e5) + n;
     if (i < 0 || i >= nd) return; const c = $(`.wkgrid .pc[data-who="${CSS.escape(who)}"][data-date="${isoAdd(mon, i)}"]`); if (c) planInline(c, who, isoAdd(mon, i), null); };
   ta.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); save(); render(); }
-    else if (e.key === 'Escape'){ e.preventDefault(); done = true; render(); }
+    else if (e.key === 'Escape'){ e.preventDefault(); done = true; clearTimeout(timer);
+      if (dirty) tx(() => { if (item){ const c = db.plan.find(x => x.id === curId); if (c) c.text = orig; } else db.plan = db.plan.filter(x => x.id !== curId); });
+      render(); }
     else if (e.key === 'Tab'){ e.preventDefault(); const ch = save(); if (ch) render(); else { box.remove(); pit?.classList.remove('editing'); } next(e.shiftKey ? -1 : 1); }
   });
   ta.addEventListener('blur', () => setTimeout(() => { if (done || !box.isConnected) return; if (box.contains(document.activeElement)) return; const ch = save(); if (ch) render(); else { box.remove(); pit?.classList.remove('editing'); } }, 120));
   const more = box.querySelector('[data-more]'); more.addEventListener('mousedown', e => e.preventDefault());
   more.addEventListener('click', () => { done = true; const t = ta.value.trim(); box.remove(); pit?.classList.remove('editing'); planDialog(who, date, item, t); });
 }
+window.addEventListener('pagehide', () => { const b = document.querySelector('.pinl'); if (b && b._flush){ b._flush(); try { CLOUD.push(); } catch(e){} } });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden'){ const b = document.querySelector('.pinl'); if (b && b._flush) b._flush(); } });
 function planDialog(who, date, item, pre = ''){
   const isNew = !item, p = getPers(who), row = PLAN_ROWS.find(r => r[0] === who), mon = mondayOf(date);
   const t0 = item?.tacheId ? get('taches', item.tacheId) : null, pr = p ? presOf(p, date) : null, pc = pr && pr.code ? PCODE[pr.code] : null;
