@@ -2551,7 +2551,7 @@ let db = CLOUD.cfg().url ? migrate(blank()) : load();
 if (!db){ db = seed(); save(); }
 
 /* ---------------- État d'affichage ---------------- */
-const S = {pour:'', tvue:'afaire', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:'', optfour:''}, lowOnly:false, zeroOnly:false, psort:'iddesc', plimit:300, back:[], statut:'actives', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux'};
+const S = {pour:'', tvue:'afaire', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:'', optfour:''}, lowOnly:false, zeroOnly:false, psort:'iddesc', plimit:300, back:[], statut:'toutes', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux'};
 
 function toast(msg, kind = ''){
   const t = $('#toast'); t.textContent = msg; t.className = 'show ' + kind;
@@ -2870,7 +2870,7 @@ VIEWS.interventions = {
     if (q) rows = rows.filter(i => norm([i.num, i.titre, i.type, i.constat, i.travaux, kInfo(i)?.code, kInfo(i)?.designation, ...intPers(i).map(snapLabel)].join(' ')).includes(q));
     rows.sort((a, b) => b.date.localeCompare(a.date) || b.num.localeCompare(a.num));
     if (!db.interventions.length) return empty('Aucun rapport', '<p>Créez le premier avec « Nouveau rapport ».</p>');
-    if (!rows.length) return empty('Aucun rapport ne correspond', '');
+    if (!rows.length) return empty(S.statut === 'actives' ? 'Aucun rapport en cours' : 'Aucun rapport ne correspond', S.statut !== 'toutes' ? `<p><button class="btn small" data-act="int-all">Afficher les ${db.interventions.length} rapports</button></p>` : '');
     return `<div class="tbl-wrap"><table class="tbl"><tbody>${rows.map(i => `<tr data-act="select" data-id="${i.id}" class="${S.sel.interventions === i.id ? 'sel' : ''}" tabindex="0"><td><span class="ref">${esc(i.num)} · ${fmtD(i.date)}</span><span class="des">${esc(i.titre)}</span></td><td class="num">${statutChip(i.statut)}</td></tr>`).join('')}</tbody></table></div>`;
   },
   detail(){
@@ -3467,7 +3467,7 @@ function importTravauxDialog(){
           nr++;
         }
       });
-      render(); toast(`${nr} rapport(s) et ${nt} tâche(s) importés`);
+      S.statut = 'toutes'; render(); toast(`${nr} rapport(s) et ${nt} tâche(s) importés`);
     }});
 }
 function importPiecesDialog(){
@@ -3971,6 +3971,7 @@ const ACT = {
   'four-pieces'(d){ S.back.push({view:S.view, sel:{...S.sel}, q:{...S.q}, sys:S.sys, sysExp:new Set(S.sysExp), psort:S.psort, plimit:S.plimit, y:window.scrollY, ls:0}); S.q.pieces = d.name; S.lowOnly = false; S.zeroOnly = false; go('pieces'); },
   'link-four'(){ let np = 0; tx(() => { np = linkFournisseurs(); }); render(); toast(`${np} pièce(s) reliée(s) à au moins un fournisseur`); },
   'import-travaux': () => importTravauxDialog(),
+  'int-all'(){ S.statut = 'toutes'; render(); },
   'new-pers': () => persDialog(),
   async logout(){ await CLOUD.sb.auth.signOut(); location.reload(); },
   'cloud-off'(){ confirmDialog('Revenir aux données du navigateur', 'Ce poste n’utilisera plus la base partagée. Les données de la base ne sont pas supprimées.', 'Revenir', () => { try { localStorage.removeItem('gmao-cloud'); } catch(e){} location.reload(); }); },
