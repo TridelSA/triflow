@@ -1024,6 +1024,8 @@ tr.grp.old th{color:var(--muted)}
 }
 @media (max-width:980px){ .ptip-row .plegend{display:none} }
 /* Feuille de planning imprimée, façon Excel */
+.pconge{display:flex;align-items:center;gap:6px;margin:10px 2px 0}
+.pconge .ico{width:15px;height:15px;flex:none}
 .plan-sheet.xls{font-family:Calibri,Carlito,'Segoe UI',Arial,sans-serif;color:#000;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .xls .xt{font-size:22pt;font-weight:700;text-align:center;margin:0 0 5mm;font-family:inherit;letter-spacing:0}
 .xtbl{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11pt}
@@ -3731,10 +3733,19 @@ function planHideDialog(){
     onSave(f){ const g = [...f.querySelectorAll('input[name=g]')].filter(x => !x.checked).map(x => x.value), pp = [...f.querySelectorAll('input[name=p]')].filter(x => !x.checked).map(x => x.value);
       tx(() => { db.reglages.planHide = {g, p:pp}; }); render(); toast('Planning mis à jour', '', true); }});
 }
-function planPeople(){
-  const hide = planHide();
-  const P = PLANS[(S.pweek || '').slice(0, 4)], ord = n => P?.order.get(String(n).toUpperCase()) ?? 999;
-  return db.personnes.filter(p => live(p) && p.actif !== false && !hide.g.has(p.groupe || '') && !hide.p.has(p.id)).sort((a, b) => ((a.groupe === 'Équipe' ? -1 : grpIdx(a.groupe)) - (b.groupe === 'Équipe' ? -1 : grpIdx(b.groupe))) || (ord(a.nom) - ord(b.nom)) || coll.compare(a.nom, b.nom));
+/* Congé = vacances et récupérations (même règle que le Planning Tridel : VA, VJ, HOR, HSR, PI). Maladie, accident, formation… ne sont pas des congés. */
+const CONGE = new Set(['VA', 'VJ', 'HOR', 'HSR', 'PI']);
+/* En congé toute la semaine (lundi–vendredi) : au moins un jour de congé, les autres jours vides ou en reprise férié, et rien de planifié */
+function enConge(p, mon){
+  const days = Array.from({length:5}, (_, i) => isoAdd(mon, i)), codes = days.map(d => presOf(p, d)?.code || '');
+  return codes.some(c => CONGE.has(c)) && codes.every(c => CONGE.has(c) || c === '' || c === 'RF') && !db.plan.some(x => x.who === p.id && x.date >= days[0] && x.date <= isoAdd(mon, 6));
+}
+function planPeople(withLeave = false){
+  const hide = planHide(), mon = S.pweek || thisWeek();
+  const P = PLANS[mon.slice(0, 4)], ord = n => P?.order.get(String(n).toUpperCase()) ?? 999;
+  const all = db.personnes.filter(p => live(p) && p.actif !== false && !hide.g.has(p.groupe || '') && !hide.p.has(p.id));
+  planPeople.conge = all.filter(p => enConge(p, mon));
+  return all.filter(p => withLeave || !planPeople.conge.includes(p)).sort((a, b) => ((a.groupe === 'Équipe' ? -1 : grpIdx(a.groupe)) - (b.groupe === 'Équipe' ? -1 : grpIdx(b.groupe))) || (ord(a.nom) - ord(b.nom)) || coll.compare(a.nom, b.nom));
 }
 function planCell(who, iso, p){
   const items = db.plan.filter(x => x.who === who && x.date === iso), pr = p ? presOf(p, iso) : null, pc = pr && pr.code ? PCODE[pr.code] || [pr.code, 'on'] : null;
@@ -3749,7 +3760,7 @@ VIEWS.planning = {
   shell(){
     const mon = S.pweek || (S.pweek = thisWeek()); loadPresence(mon.slice(0, 4)); if (isoAdd(mon, 6).slice(0, 4) !== mon.slice(0, 4)) loadPresence(isoAdd(mon, 6).slice(0, 4));
     const nd = S.pwe ? 7 : 5, days = Array.from({length:nd}, (_, i) => isoAdd(mon, i)), today = todayISO();
-    const ppl = planPeople(), me = meId(), P = PLANS[mon.slice(0, 4)];
+    const ppl = planPeople(), conge = planPeople.conge, me = meId(), P = PLANS[mon.slice(0, 4)];
     const grps = db.listes.groupes.filter(g => db.personnes.some(p => live(p) && p.actif !== false && p.groupe === g));
     const d0 = days[0], d1 = days[nd - 1];
     const range = d0.slice(5, 7) === d1.slice(5, 7) ? `${+d0.slice(8)} – ${+d1.slice(8)} ${MOIS[+d1.slice(5, 7) - 1]} ${d1.slice(0, 4)}` : `${+d0.slice(8)} ${MOIS[+d0.slice(5, 7) - 1]} – ${+d1.slice(8)} ${MOIS[+d1.slice(5, 7) - 1]} ${d1.slice(0, 4)}`;
@@ -3774,6 +3785,7 @@ VIEWS.planning = {
         ${menu([['plan-print', 'Imprimer en A4 paysage', 'printer', {f:'a4'}], ['plan-copy', 'Reprendre le texte libre de la semaine précédente', 'repeat', {}], ['plan-we', S.pwe ? 'Masquer le week-end' : 'Afficher le week-end', 'calendar', {}], '-', ['plan-hide', 'Personnes affichées…', 'person', {}]])}</div></header>
       <div class="ptip-row"><p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez dans une case et tapez le travail à faire : <b>Entrée</b> valide, <b>Tab</b> passe au jour suivant. « Plus… » pour lier une tâche ou remplir plusieurs jours.</p>${planLegend()}</div>
       <div class="pwrap ${S.pside ? '' : 'noside'}"><div class="wkgrid-wrap"><table class="wkgrid"><thead><tr><th></th>${days.map((d, i) => `<th class="${d === today ? 'today' : ''}">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>${S.pside ? planSideHTML(days, ppl) : ''}</div>
+      ${conge.length ? `<p class="hint pconge">${icon('calendar')}En congé cette semaine, masqués du planning : ${conge.sort(persSort).map(p => esc(persName(p))).join(', ')}.</p>` : ''}
       <div class="pmobile">${mobile}</div>`;
   },
   list: () => '', detail: () => ''
