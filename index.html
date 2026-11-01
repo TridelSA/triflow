@@ -460,6 +460,22 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .ph .q{font-family:var(--f-mono);font-weight:700;text-align:right}
 .ph .q.neg{color:var(--bad)}.ph .q.pos{color:var(--ok)}
 .ph .lw{display:block;font-family:var(--f-mono);font-size:.75rem;color:var(--muted)}
+.four-row td:first-child{display:flex;align-items:center;gap:8px}
+.four-row .chev{display:inline-flex;color:var(--muted);transition:transform .15s}
+.four-row .chev.open{transform:rotate(90deg)}
+.four-row.open{background:var(--accent-soft)}
+.four-row.open td{font-weight:600}
+.four-sub > td{padding:6px 14px 14px 36px !important;background:var(--accent-soft)}
+.four-tools{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.four-list{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;max-height:420px;overflow-y:auto}
+.four-p{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line);font-size:.88rem}
+.four-p:last-child{border-bottom:0}
+.four-p:hover,.four-p:focus-visible{background:var(--sunk)}
+.four-p .pid{font-family:var(--f-mono);font-size:.75rem;color:var(--muted);min-width:3.4em}
+.four-p .t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.four-p .q{font-family:var(--f-mono);font-weight:700;white-space:nowrap}
+.four-p .q small{font-weight:400;color:var(--muted)}
+.four-p .plate{font-size:.75rem}
 .kgroups{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 .kgrp{border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .kgrp.single{border:0}
@@ -2385,6 +2401,7 @@ const isStatut = l => !!getSalle(l?.salleId)?.statut;
 const dispo = p => round(p.stock.filter(s => !isStatut(getLieu(s.lieuId))).reduce((a, s) => a + (+s.qte || 0), 0));
 const horsMag = p => p.stock.filter(s => s.qte > 0 && isStatut(getLieu(s.lieuId)));
 const statutLabel = l => { const s = getSalle(l.salleId); return [s ? salleCode(s) : '?', ...pathOf(l)].join(' › '); };
+const isOut = p => p.stock.length > 0 && dispo(p) <= 0 && !horsMag(p).length;
 const isLow = p => +p.stockMin > 0 && dispo(p) <= +p.stockMin;
 const stockAt = (p, lieuId) => (p.stock.find(s => s.lieuId === lieuId) || {qte:0}).qte;
 const lieuSort = (a, b) => coll.compare(salleCode(getSalle(a.salleId) || {etage:'', numero:''}), salleCode(getSalle(b.salleId) || {etage:'', numero:''})) || coll.compare(pathOf(a).join('\u0001'), pathOf(b).join('\u0001'));
@@ -2606,7 +2623,7 @@ VIEWS.accueil = {
     const qa = (act, type, ic, t) => `<button class="qa" data-act="${act}" ${type ? `data-type="${type}"` : ''}><span class="qi">${icon(ic)}</span><strong>${t}</strong></button>`;
     return `${db.meta.demo ? `<div class="notice"><p><strong>Données d'exemple.</strong> Elles sont fictives et servent à essayer l'outil.</p><button class="btn" data-act="clear-demo">Effacer les exemples</button></div>` : ''}
     <header class="page-head"><h1>Accueil</h1></header>
-    ${(() => { const low = db.pieces.filter(isLow).length, zero = db.pieces.filter(p => p.stock.length && dispo(p) <= 0).length, late = db.taches.filter(t => t.actif !== false && daysTo(t.prochaine) < 0).length;
+    ${(() => { const low = db.pieces.filter(isLow).length, zero = db.pieces.filter(p => isOut(p)).length, late = db.taches.filter(t => t.actif !== false && daysTo(t.prochaine) < 0).length;
       const k = (act, n, t, ic, tone, extra = '') => `<button class="kpi ${n ? tone : 'calm'}" data-act="${act}" ${extra}><span class="ki">${icon(ic)}</span><span class="kn">${num(n)}</span><span class="kt">${t}</span></button>`;
       return `<div class="kpis">${k('show-low', low, 'Sous le stock minimum', 'box', 'warn')}${k('show-zero', zero, 'Pièces à zéro', 'box', 'bad')}${k('nav', late, 'Tâches en retard', 'repeat', 'bad', 'data-view="taches"')}${k('nav', open.length, 'Rapports ouverts', 'report', 'info', 'data-view="interventions"')}</div>`; })()}
     <div class="quick">${qa('quick-move', 'sortie', 'move', 'Mouvement de stock')}${qa('new-int', '', 'report', 'Nouveau rapport')}${qa('labels-pick', '', 'qr', 'Étiquettes QR')}</div>
@@ -2625,9 +2642,9 @@ VIEWS.accueil = {
 /* ---------- Pièces ---------- */
 function filteredPieces(){
   const q = norm(S.q.pieces);
-  let rows = db.pieces.filter(p => !q || norm([p.ref, p.designation, p.fabricant, p.refFab, p.categorie, ...p.kks.map(id => getKks(id)?.code), ...p.stock.map(s => lieuCode(getLieu(s.lieuId)))].join(' ')).includes(q));
+  let rows = db.pieces.filter(p => !q || norm([p.ref, p.designation, p.fabricant, p.fournisseur, ...(p.fours || []), p.refFab, p.categorie, ...p.kks.map(id => getKks(id)?.code), ...p.stock.map(s => lieuCode(getLieu(s.lieuId)))].join(' ')).includes(q));
   if (S.lowOnly) rows = rows.filter(isLow);
-  if (S.zeroOnly) rows = rows.filter(p => p.stock.length && dispo(p) <= 0);
+  if (S.zeroOnly) rows = rows.filter(p => isOut(p));
   const idn = p => /^\d+$/.test(p.ref) ? +p.ref : Infinity;
   if (S.psort === 'alpha') return rows.sort((a, b) => coll.compare(a.designation, b.designation));
   if (S.psort === 'recent' || S.psort === 'old'){
@@ -2655,7 +2672,7 @@ VIEWS.pieces = {
       return `<button class="prow ${S.sel.pieces === p.id ? 'sel' : ''}" data-act="select" data-id="${p.id}">
         <span class="pm"><span class="pdes" title="${esc(p.designation)}">${esc(p.designation)}</span>
           <span class="ploc"><span class="pid">${esc(p.ref)}</span>${mp ? plate(mp, false) + (n > 1 ? ` <span class="muted">+${n - 1}</span>` : '') : '<span class="muted">Sans emplacement</span>'}${hm.length ? ` <span class="muted" style="color:var(--stat)">+${num(hm.reduce((a, s) => a + s.qte, 0))} hors magasin</span>` : ''}</span></span>
-        <span class="pq ${p.stock.length && dispo(p) <= 0 ? 'zero' : isLow(p) ? 'low' : ''}"><b>${num(dispo(p))}</b><small>${p.stock.length && dispo(p) <= 0 ? 'épuisé' : isLow(p) ? 'stock bas' : esc(p.unite)}</small></span></button>`;
+        <span class="pq ${isOut(p) ? 'zero' : isLow(p) ? 'low' : ''}"><b>${num(dispo(p))}</b><small>${isOut(p) ? 'épuisé' : isLow(p) ? 'stock bas' : esc(p.unite)}</small></span></button>`;
     }).join('')}</div>`;
   },
   detail(){
@@ -2993,7 +3010,11 @@ OPT.fournisseurs = () => {
   return `<section class="opt-sec"><div class="head"><h2>Fournisseurs <span class="muted" style="font-family:var(--f-mono);font-size:.9rem">${db.listes.fournisseurs.length}</span></h2><div class="tools">${menu([['new-four', 'Un fournisseur', 'plus'], ['import-four', 'Importer depuis CareOffice (fichier)', 'save'], ['link-four', 'Relier les pièces aux fournisseurs', 'repeat']], 'Ajouter', 'plus', 'primary')}</div></div>
     <div class="pad"><p class="hint">Une pièce est reliée à un fournisseur quand son nom apparaît dans sa marque, son fournisseur, sa désignation ou ses notes.</p>
     <input type="search" data-search="optfour" data-opt4="1" placeholder="Filtrer…" value="${esc(S.q.optfour || '')}" aria-label="Filtrer les fournisseurs" style="max-width:320px"></div>
-    <div id="opt-four">${rows.length ? `<div class="tbl-wrap"><table class="tbl compact"><thead><tr><th>Nom</th><th class="num">Pièces</th></tr></thead><tbody>${rows.map(n => `<tr data-act="edit-four" data-name="${esc(n)}" tabindex="0"><td>${esc(n)}</td><td class="num qty">${cnt.get(norm(n)) || ''}</td></tr>`).join('')}</tbody></table></div>` : `<div class="pad">${empty('Aucun fournisseur', '')}</div>`}</div></section>`;
+    <div id="opt-four">${rows.length ? `<div class="tbl-wrap"><table class="tbl compact"><thead><tr><th>Nom</th><th class="num">Pièces</th></tr></thead><tbody>${rows.map(n => { const open = S.fourOpen === n, c = cnt.get(norm(n)) || 0;
+      const ps = open ? db.pieces.filter(p => [p.fabricant, p.fournisseur, ...(p.fours || [])].some(x => x && norm(x) === norm(n))).sort((a, b) => coll.compare(a.designation, b.designation)) : [];
+      return `<tr class="four-row ${open ? 'open' : ''}" data-act="four-open" data-name="${esc(n)}" tabindex="0"><td><span class="chev ${open ? 'open' : ''}">${icon('chev')}</span>${esc(n)}</td><td class="num qty">${c || ''}</td></tr>
+      ${open ? `<tr class="four-sub"><td colspan="2"><div class="four-tools"><button class="btn small" data-act="four-pieces" data-name="${esc(n)}">${icon('box')}Ouvrir dans Pièces</button><button class="btn small" data-act="edit-four" data-name="${esc(n)}">${icon('edit')}Renommer</button></div>
+        ${ps.length ? `<div class="four-list">${ps.slice(0, 200).map(p => { const mp = mainPlace(p); return `<button class="four-p" data-act="goto" data-view="pieces" data-id="${p.id}"><span class="pid">${esc(p.ref)}</span><span class="t">${esc(p.designation)}</span>${mp ? plate(mp, false) : ''}<span class="q">${num(dispo(p))} <small>${esc(p.unite)}</small></span></button>`; }).join('')}${ps.length > 200 ? `<p class="list-note">${ps.length - 200} autre(s) : « Ouvrir dans Pièces » pour tout voir.</p>` : ''}</div>` : '<p class="empty-line" style="padding:8px 0">Aucune pièce reliée.</p>'}</td></tr>` : ''}`; }).join('')}</tbody></table></div>` : `<div class="pad">${empty('Aucun fournisseur', '')}</div>`}</div></section>`;
 };
 /* Relie chaque pièce aux fournisseurs dont le nom apparaît dans sa désignation ou ses notes (à appeler dans tx) */
 function linkFournisseurs(){
@@ -3946,6 +3967,8 @@ const ACT = {
   'import-kks': () => importKksDialog(),
   'import-pieces': () => importPiecesDialog(),
   'import-four': () => importFourDialog(),
+  'four-open'(d){ S.fourOpen = S.fourOpen === d.name ? null : d.name; const y = window.scrollY; render(); window.scrollTo(0, y); },
+  'four-pieces'(d){ S.back.push({view:S.view, sel:{...S.sel}, q:{...S.q}, sys:S.sys, sysExp:new Set(S.sysExp), psort:S.psort, plimit:S.plimit, y:window.scrollY, ls:0}); S.q.pieces = d.name; S.lowOnly = false; S.zeroOnly = false; go('pieces'); },
   'link-four'(){ let np = 0; tx(() => { np = linkFournisseurs(); }); render(); toast(`${np} pièce(s) reliée(s) à au moins un fournisseur`); },
   'import-travaux': () => importTravauxDialog(),
   'new-pers': () => persDialog(),
