@@ -1087,6 +1087,12 @@ body.placing .wkgrid .pc{cursor:copy}
 .pwrap.noside{grid-template-columns:minmax(0,1fr)}
 .side-tg.on{background:var(--accent-soft);border-color:var(--accent-line)}
 
+.pit.task{position:relative;padding-right:20px}
+.pit .pdel{all:unset;position:absolute;top:2px;right:3px;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:.85rem;line-height:1;color:var(--muted);cursor:pointer;opacity:0;-webkit-line-clamp:unset;display:grid}
+.pit:hover .pdel,.pit:focus-visible .pdel{opacity:1}
+.pit .pdel:hover{background:var(--bad);color:#fff}
+@media (hover:none){ .pit .pdel{opacity:.8} }
+.pit span{white-space:pre-line}
 .pinl{display:flex;flex-direction:column;gap:3px;cursor:auto}
 .pinl textarea{width:100%;min-height:0;resize:none;overflow:hidden;font:inherit;font-size:.82rem;line-height:1.3;padding:5px 7px;border-radius:7px;border:1.5px solid var(--accent);background:var(--surface);color:var(--ink);box-shadow:0 0 0 3px var(--accent-soft)}
 .pinl textarea:focus{outline:none}
@@ -3775,7 +3781,7 @@ function planCell(who, iso, p){
   return `<div class="pc ${pc ? 'k-' + pc[1] : (p && pr ? 'k-none' : '')} ${S.pdrop === who + '|' + iso ? 'drop' : ''}" data-act="plan-add" data-who="${esc(who)}" data-date="${iso}">
     ${pc ? `<span class="pcode" title="${esc(pc[0])}${pr.note ? ' · ' + esc(pr.note) : ''}">${esc(pr.code)}</span>` : ''}
     ${items.map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null, k = t ? getKks(t.kksId) : null;
-      return `<button class="pit ${t ? 'task' : ''} ${done(x) ? 'done' : ''}" data-act="plan-edit" data-id="${x.id}" title="${esc(t ? t.titre : x.text)}">${t ? icon(done(x) ? 'check' : 'repeat') : ''}<span>${esc(t ? t.titre : x.text)}</span>${k ? `<small>${esc(k.code)}</small>` : ''}${t && x.text ? `<small>${esc(x.text)}</small>` : ''}</button>`; }).join('')}
+      return `<button class="pit ${t ? 'task' : ''} ${done(x) ? 'done' : ''}" data-act="plan-edit" data-id="${x.id}" title="${esc(t ? t.titre : x.text)}">${t ? icon(done(x) ? 'check' : 'repeat') : ''}<span>${esc(t ? t.titre : x.text)}</span>${k ? `<small>${esc(k.code)}</small>` : ''}${t && x.text ? `<small>${esc(x.text)}</small>` : ''}${t ? `<span class="pdel" data-act="plan-del" data-id="${x.id}" role="button" aria-label="Retirer du planning" title="Retirer du planning">×</span>` : ''}</button>`; }).join('')}
     ${pr && pr.note ? `<span class="pnote">${esc(pr.note)}</span>` : ''}</div>`;
 }
 VIEWS.planning = {
@@ -3912,6 +3918,12 @@ function planInline(pc, who, date, item, pit){
 }
 window.addEventListener('pagehide', () => { const b = document.querySelector('.pinl'); if (b && b._flush){ b._flush(); try { CLOUD.push(); } catch(e){} } });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden'){ const b = document.querySelector('.pinl'); if (b && b._flush) b._flush(); } });
+/* Texte libre d'une case (un seul par case ; s'il y en a plusieurs, ils sont fusionnés) */
+function planTextItem(who, date){
+  const l = db.plan.filter(x => x.who === who && x.date === date && !x.tacheId); if (!l.length) return null;
+  if (l.length > 1){ tx(() => { l[0].text = l.map(x => x.text).filter(Boolean).join('\n'); const rm = new Set(l.slice(1).map(x => x.id)); db.plan = db.plan.filter(x => !rm.has(x.id)); }); render(); }
+  return db.plan.find(x => x.id === l[0].id);
+}
 function planDialog(who, date, item, pre = ''){
   const isNew = !item, p = getPers(who), row = PLAN_ROWS.find(r => r[0] === who), mon = mondayOf(date);
   const t0 = item?.tacheId ? get('taches', item.tacheId) : null, pr = p ? presOf(p, date) : null, pc = pr && pr.code ? PCODE[pr.code] : null;
@@ -5047,7 +5059,13 @@ const ACT = {
   pday(d){ S.pday = +d.i; render(); },
   'plan-pick'(d){ S.ppick = S.ppick === d.id ? null : d.id; render(); },
   'plan-psf'(d){ S.psf = d.f; render(); },
-  'plan-add'(d, t){ if (S.ppick){ placeTask(S.ppick, d.who, d.date); return; } if (PLAN_TYPE()) planInline(t, d.who, d.date, null); else planDialog(d.who, d.date, null); },
+  'plan-add'(d, t){ if (S.ppick){ placeTask(S.ppick, d.who, d.date); return; }
+    /* Un seul texte par case : si la case a déjà du texte, on le modifie au lieu d'ajouter un nouveau bloc */
+    const ex = planTextItem(d.who, d.date);
+    if (ex){ if (PLAN_TYPE()){ const c = $(`.wkgrid .pc[data-who="${CSS.escape(d.who)}"][data-date="${d.date}"]`) || t; planInline(c, d.who, d.date, ex, c.querySelector(`.pit[data-id="${ex.id}"]`)); } else planDialog(d.who, d.date, ex); return; }
+    if (PLAN_TYPE()) planInline(t, d.who, d.date, null); else planDialog(d.who, d.date, null); },
+  'plan-del'(d){ const x = db.plan.find(y => y.id === d.id); if (!x) return; const t = x.tacheId ? get('taches', x.tacheId) : null;
+    tx(() => { db.plan = db.plan.filter(y => y.id !== d.id); }); render(); toast(`${t ? t.titre : 'Texte'} retiré du planning`, '', true); },
   'plan-edit'(d, t){ const x = db.plan.find(y => y.id === d.id); if (!x) return; if (S.ppick){ placeTask(S.ppick, x.who, x.date); return; } if (PLAN_TYPE() && !x.tacheId) planInline(t.closest('.pc'), x.who, x.date, x, t); else planDialog(x.who, x.date, x); },
   'plan-side'(){ S.pside = !S.pside; try { localStorage.setItem('tf-pside', S.pside ? '1' : '0'); } catch(e){} render(); },
   'plan-we'(){ S.pwe = !S.pwe; render(); },
