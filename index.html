@@ -3717,7 +3717,7 @@ function importTravauxDialog(){
       const pers = name => { const nn = n0(name); if (!pm.has(nn)) pm.set(nn, (PS.find(([, pn]) => nn === pn || nn.startsWith(pn + ' ') || nn.endsWith(' ' + pn)) || [])[0]); return pm.get(nn); };
       const kByCode = new Map(db.kks.map(k => [k.code.replace(/\s+/g, '').toUpperCase(), k]));
       const kOf = code => kByCode.get(String(code || '').replace(/\s+/g, '').toUpperCase());
-      let nr = 0, nt = 0;
+      let nr = 0, nt = 0, nu = 0;
       tx(() => {
         const tKey = new Map();
         for (const t of j.taches || []){
@@ -3727,9 +3727,11 @@ function importTravauxDialog(){
           if (!ex){ ex = {id:uid(), coKey:t.key, titre:t.titre || '(sans titre)', description:desc, kksId:k ? k.id : '', assign:p ? {type:'personne', v:p.id} : {type:'groupe', v:''}, freq:t.freq, prochaine:t.prochaine, actif:true, ...(t.derniere ? {derniere:t.derniere} : {}), ...(t.arch ? {arch:todayISO()} : {})}; db.taches.push(ex); nt++; }
           tKey.set(t.key, ex);
         }
-        const have = new Set(db.interventions.map(i => i.num));
+        const have = new Map(db.interventions.map(i => [i.num, i]));
         for (const r of j.rapports){
-          if (have.has(r.num)) continue; have.add(r.num);
+          const ex = have.get(r.num);
+          if (ex){ if (/^CO-/.test(r.num) && r.travaux && !(ex.travaux || '').trim()){ ex.travaux = r.travaux; nu++; } continue; }
+          have.set(r.num, true);
           const k = kOf(r.kks), ids = [], snap = {};
           for (const name of r.inter || []){ const p = pers(name); const f = p ? null : fourMatch(name, db.listes.fournisseurs); const id = p ? p.id : f ? 'four:' + f : 'ext:' + n0(name).replace(/ /g, '-'); if (ids.includes(id)) continue; ids.push(id); snap[id] = p ? persSnap(p) : f ? fourSnap(f) : {nom:name, prenom:'', groupe:'Externe'}; }
           if (r.type && !db.listes.types.includes(r.type)) db.listes.types.push(r.type);
@@ -3739,7 +3741,7 @@ function importTravauxDialog(){
           nr++;
         }
       });
-      S.statut = 'toutes'; render(); toast(`${nr} rapport(s) et ${nt} tâche(s) importés${(j.taches || []).some(t => t.arch) ? ' · les tâches arrêtées dans CareOffice sont dans les archives' : ''}`);
+      S.statut = 'toutes'; render(); toast(`${nr} rapport(s) et ${nt} tâche(s) importés${nu ? ` · ${nu} rapport(s) complété(s) avec leur texte` : ''}${(j.taches || []).some(t => t.arch) ? ' · les tâches arrêtées dans CareOffice sont dans les archives' : ''}`);
     }});
 }
 function importPiecesDialog(){
