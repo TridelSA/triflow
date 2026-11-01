@@ -2648,6 +2648,7 @@ function migrate(d){
     d.meta.fourIntV = 1;
   }
   if (!d.meta.kksPartV && d.pieces.length){ linkPartialKks(d); d.meta.kksPartV = 1; }
+  if (!d.meta.numV && d.interventions.length){ renumberInts(d); d.meta.numV = 1; }
   if (d.meta.demo && !d.meta.tachesV){ seedTaches(d); }
   d.meta.tachesV = 1;
   d.version = 2; return d;
@@ -3007,10 +3008,18 @@ function addStock(p, lieuId, delta, motif, ref = ''){
   if (delta) db.mouvements.unshift({id:uid(), date:new Date().toISOString(), pieceId:p.id, lieuId, qte:round(delta), motif, ref});
 }
 function nextRef(){ let n = 0; for (const p of db.pieces){ const v = /^\d+$/.test(String(p.ref)) ? +p.ref : 0; if (v > n) n = v; } return String(n + 1); }
+/* Numéro de rapport unique et simple : R + année sur 2 chiffres + numéro d'ordre dans l'année (R26-017) */
 function nextNum(date){
-  const y = String(date || todayISO()).slice(0, 4);
-  const n = Math.max(0, ...db.interventions.map(i => { const m = String(i.num).match(/^INT-(\d{4})-(\d+)$/); return m && m[1] === y ? +m[2] : 0; }));
-  return `INT-${y}-${String(n + 1).padStart(4, '0')}`;
+  const y = String(date || todayISO()).slice(2, 4);
+  const n = Math.max(0, ...db.interventions.map(i => { const m = String(i.num).match(/^R(\d{2})-(\d+)$/); return m && m[1] === y ? +m[2] : 0; }));
+  return `R${y}-${String(n + 1).padStart(3, '0')}`;
+}
+/* Renumérote tous les rapports dans l'ordre chronologique, année par année. Le numéro CareOffice est gardé en interne (co) pour éviter les doublons à l'import. */
+function renumberInts(d){
+  for (const i of d.interventions) if (/^CO-/.test(String(i.num))) i.co = i.num;
+  const list = [...d.interventions].sort((a, b) => (a.date || '9').localeCompare(b.date || '9') || String(a.co || '').localeCompare(String(b.co || ''), undefined, {numeric:true}) || String(a.num).localeCompare(String(b.num), undefined, {numeric:true}));
+  const by = new Map();
+  for (const i of list){ const y = (i.date || todayISO()).slice(2, 4), n = (by.get(y) || 0) + 1; by.set(y, n); i.num = `R${y}-${String(n).padStart(3, '0')}`; }
 }
 
 /* ---------------- QR code (pour le matériel) ---------------- */
@@ -4504,7 +4513,7 @@ function importTravauxDialog(){
           if (!ex){ ex = {id:uid(), coKey:t.key, titre:t.titre || '(sans titre)', description:desc, kksId:k ? k.id : '', assign:p ? {type:'personne', v:p.id} : {type:'groupe', v:''}, freq:t.freq, prochaine:t.prochaine, actif:true, ...(t.derniere ? {derniere:t.derniere} : {}), ...(t.arch ? {arch:todayISO()} : {})}; db.taches.push(ex); nt++; }
           tKey.set(t.key, ex);
         }
-        const have = new Map(db.interventions.map(i => [i.num, i]));
+        const have = new Map(db.interventions.map(i => [i.co || i.num, i]));
         for (const r of j.rapports){
           const ex = have.get(r.num);
           if (ex){ if (/^CO-/.test(r.num) && r.travaux && !(ex.travaux || '').trim()){ ex.travaux = r.travaux; nu++; } continue; }
@@ -4513,10 +4522,11 @@ function importTravauxDialog(){
           for (const name of r.inter || []){ const p = pers(name); const f = p ? null : fourMatch(name, db.listes.fournisseurs); const id = p ? p.id : f ? 'four:' + f : 'ext:' + n0(name).replace(/ /g, '-'); if (ids.includes(id)) continue; ids.push(id); snap[id] = p ? persSnap(p) : f ? fourSnap(f) : {nom:name, prenom:'', groupe:'Externe'}; }
           if (r.type && !db.listes.types.includes(r.type)) db.listes.types.push(r.type);
           const tk = r.tache ? tKey.get(r.tache) : null;
-          db.interventions.push({id:uid(), num:r.num, date:r.date, type:r.type, statut:'terminee', titre:r.titre, kksId:k ? k.id : '', constat:r.constat || '', travaux:r.travaux || '', duree:r.duree || '', intervenants:ids, snap, pieces:[],
+          db.interventions.push({id:uid(), num:r.num, co:r.num, date:r.date, type:r.type, statut:'terminee', titre:r.titre, kksId:k ? k.id : '', constat:r.constat || '', travaux:r.travaux || '', duree:r.duree || '', intervenants:ids, snap, pieces:[],
             ks:k ? kSnap(k) : (r.kks || r.obj ? {code:r.kks || '', designation:r.obj || '', aic:''} : null), ...(tk ? {tacheId:tk.id, tacheFait:true, ts:tSnap(tk)} : {})});
           nr++;
         }
+        if (nr){ renumberInts(db); db.meta.numV = 1; }
       });
       S.statut = 'toutes'; render(); toast(`${nr} rapport(s) et ${nt} tâche(s) importés${nu ? ` · ${nu} rapport(s) complété(s) avec leur texte` : ''}${(j.taches || []).some(t => t.arch) ? ' · les tâches arrêtées dans CareOffice sont dans les archives' : ''}`);
     }});
