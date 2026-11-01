@@ -433,6 +433,73 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .back-nav{margin:0 0 10px}
 .back-nav .ico{transform:rotate(180deg)}
 .pd-info.rep{margin-top:6px}
+.pweek{display:flex;align-items:center;gap:6px}
+.pweek .btn.icon-only:first-child .ico{transform:rotate(180deg)}
+.pw-l{display:flex;flex-direction:column;align-items:center;min-width:150px;line-height:1.15}
+.pw-l span{font-size:.8rem;color:var(--muted)}
+.ptip{margin:-6px 0 10px}
+.wkgrid-wrap{overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;max-height:calc(100vh - 230px)}
+.wkgrid{border-collapse:separate;border-spacing:0;width:100%;min-width:900px;table-layout:fixed}
+.wkgrid thead th{position:sticky;top:0;z-index:3;background:var(--surface);padding:8px;border-bottom:1px solid var(--line);font-size:.85rem;text-align:left}
+.wkgrid thead th small{display:block;color:var(--muted);font-weight:500;font-family:var(--f-mono);font-size:.75rem}
+.wkgrid thead th.today{color:var(--accent)}
+.wkgrid th:first-child,.wkgrid td:first-child{width:180px}
+.wkgrid tr.prow2 th.pn{white-space:normal;line-height:1.25}
+.wkgrid th.pn{position:sticky;left:0;z-index:2;background:var(--surface);text-align:left;font-weight:600;font-size:.85rem;padding:6px 10px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wkgrid th.pn small{margin-left:6px;color:var(--muted);font-weight:500;font-size:.72rem}
+.wkgrid th.pn .ico{width:15px;height:15px;vertical-align:-3px;margin-right:6px;color:var(--muted)}
+.wkgrid tr.me th.pn{box-shadow:inset 3px 0 0 var(--accent);background:var(--accent-soft)}
+.wkgrid tr.pg th{position:sticky;left:0;background:var(--sunk);text-align:left;padding:6px 10px;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:1px solid var(--line)}
+.wkgrid tr.peq td{height:4px;padding:0;background:var(--sunk)}
+.wkgrid td{padding:0;border-bottom:1px solid var(--line);border-right:1px solid var(--line);vertical-align:top}
+.wkgrid td.today{background:color-mix(in srgb, var(--accent-soft) 45%, transparent)}
+.pc{position:relative;min-height:46px;padding:5px 6px 6px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.pc:hover{background:var(--sunk)}
+.pc.k-abs{background:repeating-linear-gradient(135deg,var(--bad-soft) 0 6px,transparent 6px 12px)}
+.pc.k-rot{background:var(--steel-soft)}
+.pc.k-none{background:var(--sunk);opacity:.85}
+.pcode{align-self:flex-end;font-family:var(--f-mono);font-size:.68rem;font-weight:700;padding:0 5px;border-radius:4px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.k-abs .pcode{color:var(--bad);border-color:currentColor}
+.k-on .pcode{color:var(--ok)}
+.k-rot .pcode{color:var(--steel)}
+.pnote{font-size:.7rem;color:var(--muted);line-height:1.25}
+.pit{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 6px;padding:4px 7px;border-radius:7px;background:var(--plate);color:var(--plate-ink);font-size:.8rem;line-height:1.25;border:1px solid var(--plate-line);max-width:100%}
+.pit span{overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.pit.task{background:var(--accent-soft);color:var(--ink);border-color:var(--accent-line)}
+.pit.done{opacity:.6;text-decoration:line-through}
+.pit .ico{width:13px;height:13px;flex:none;align-self:center}
+.pit small{font-size:.68rem;opacity:.8;font-family:var(--f-mono)}
+.pit:hover{filter:brightness(.96)}
+.pmobile{display:none}
+.pdays{display:flex;gap:6px;margin-bottom:10px}
+.pday{all:unset;cursor:pointer;flex:1;display:flex;flex-direction:column;align-items:center;padding:6px 0;border-radius:10px;background:var(--surface);border:1px solid var(--line);font-size:.75rem}
+.pday b{font-weight:600;color:var(--muted)}
+.pday span{font-family:var(--f-mono);font-size:1.05rem;font-weight:700}
+.pday.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.pday.on b{color:inherit}
+.pday.today:not(.on){border-color:var(--accent)}
+.pmlist{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.pmg{padding:6px 12px;background:var(--sunk);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;font-weight:700;color:var(--muted)}
+.pmr{display:grid;grid-template-columns:110px minmax(0,1fr);border-top:1px solid var(--line)}
+.pmr .pn{padding:8px 10px;font-weight:600;font-size:.85rem;border-right:1px solid var(--line)}
+.pmr.me .pn{background:var(--accent-soft)}
+@media (max-width:420px){ #nav button{font-size:.6rem;padding:6px 0} #nav .ico{width:17px;height:17px} }
+@media (max-width:760px){ .wkgrid-wrap,.ptip{display:none} .pmobile{display:block} .pweek .pw-l{min-width:120px} }
+.dlg-warn{display:flex;gap:8px;align-items:center;padding:8px 12px;border-radius:10px;background:var(--bad-soft);color:var(--bad);font-weight:600;margin:0}
+.dlg-warn .ico{width:16px;height:16px}
+.pdchk{display:flex;flex-wrap:wrap;gap:6px 14px}
+.pdchk .chk{display:flex !important;flex-direction:row !important;align-items:center;gap:6px;margin:0;font-weight:500}
+.pdchk .chk input{width:auto;min-height:0}
+.pdchk .chk.abs{color:var(--muted)}
+.ptoday{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 16px 10px;padding:8px 10px;border-radius:10px;background:var(--sunk)}
+.ptoday > b{display:flex;align-items:center;gap:6px;font-size:.8rem;width:100%}
+.ptoday .ico{width:15px;height:15px}
+.plan-tbl{font-size:8pt;table-layout:fixed;width:100%}
+.plan-tbl th:first-child{width:30mm}
+.plan-tbl th.g{background:#ddd;text-transform:uppercase;font-size:7pt}
+.plan-tbl td div{margin:0 0 .6mm}
+.pc-code{float:right;font-family:var(--f-mono);font-size:7pt;font-weight:700}
+.pc-code.abs{text-decoration:underline}
 .mini.pour{max-width:230px;flex:0 1 auto}
 .mini.pour.on{border-color:var(--accent);background:var(--accent-soft);color:var(--ink);font-weight:600}
 .who-line{display:block;padding:0 16px 10px;font-size:.85rem;color:var(--muted)}
@@ -777,6 +844,8 @@ dialog.dlg::backdrop{background:rgba(12,18,21,.55)}
 @page{size:A4;margin:14mm 14mm 16mm}
 @page sheet{size:A4;margin:0}
 @page roll{size:62mm 29mm;margin:0}
+@page land{size:A4 landscape;margin:10mm}
+body.land .plan-sheet{page:land}
 @media print{
   body.printing .app, body.printing #toast, body.printing dialog{display:none!important}
   body.printing{background:#fff;color:#000}
@@ -841,6 +910,7 @@ dialog.dlg::backdrop{background:rgba(12,18,21,.55)}
         <button data-act="nav" data-view="kks" title="Installation"><span data-icon="plant"></span><span class="nl">Installation</span></button>
         <button data-act="nav" data-view="taches" title="Tâches"><span data-icon="check"></span><span class="nl">Tâches</span></button>
         <button data-act="nav" data-view="interventions" title="Rapports"><span data-icon="wrench"></span><span class="nl">Rapports</span></button>
+        <button data-act="nav" data-view="planning" title="Planning"><span data-icon="calendar"></span><span class="nl">Planning</span></button>
         <button data-act="nav" data-view="options" title="Options"><span data-icon="cog"></span><span class="nl">Options</span></button>
       </nav>
     </div>
@@ -2178,6 +2248,7 @@ const ICONS = {
   move:'M4 8h13l-3.5-3.5M20 16H7l3.5 3.5',
   more:'M5 12h.01M12 12h.01M19 12h.01',
   archive:'M3 4h18v4H3zM5 8v12h14V8M10 12h4',
+  calendar:'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4M8 14h2M12 14h2M16 14h.01M8 17h2',
   scan:'M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M7 12h10',
   merge:'M6 3v6a6 6 0 006 6h6M15 12l3 3-3 3M6 21v-6',
   excel:'M14 3H6a1 1 0 00-1 1v16a1 1 0 001 1h12a1 1 0 001-1V8zM14 3v5h5M9 12l5 6M14 12l-5 6',
@@ -2255,7 +2326,7 @@ function mergeStaff(d, list, full = false){
 function blank(){
   return {version:2, meta:{demo:false}, reglages:{qrBase:'', labelFmt:'sheet'},
     listes:{fournisseurs:[], fournArch:[], categories:['Mécanique','Électrique','Instrumentation','Hydraulique','Pneumatique','Consommable'], unites:['pce','jeu','m','l','kg','rouleau','boîte'], types:['Corrective','Préventive','Contrôle','Amélioration'], groupes:['Électricien','Automaticien','Mécanicien','Intendance','Chauffeurs-grutiers','Cadres','Équipe','Administration'], systemes:{}},
-    salles:[], lieux:[], personnes:[], kks:[], pieces:[], interventions:[], mouvements:[], taches:[], histo:[]};
+    salles:[], lieux:[], personnes:[], kks:[], pieces:[], interventions:[], mouvements:[], taches:[], histo:[], plan:[]};
 }
 /* Retire des notes d'une pièce les codes KKS déjà liés à la pièce (écrits d'un bloc, avec espaces ou « 1 / 2 HTQ30AA310 ») */
 const KKS_RX = /(^|[^A-Z0-9])((?:[0-2]\s*(?:\/|\+|ET|,|-)\s*)*[0-2])?\s?([A-Z]{3})\s?(\d{2})\s?([A-Z]{2})\s?(\d{3})(-[A-Z0-9.]+)?(?![0-9])/g;
@@ -2388,7 +2459,7 @@ function save(){
 const SUPABASE_URL = 'https://gzwmoevwapliqremrqpp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_Mslbg2kd3UQp5lhVkhrXkA_XXN2H9vK';
 const SUPABASE_LIB = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js';
-const COLS = ['salles', 'lieux', 'personnes', 'kks', 'pieces', 'interventions', 'mouvements', 'taches', 'histo'];
+const COLS = ['salles', 'lieux', 'personnes', 'kks', 'pieces', 'interventions', 'mouvements', 'taches', 'histo', 'plan'];
 const CLOUD = {
   on:false, sb:null, user:null, synced:new Map(), revs:new Map(), pushing:false, again:false, timer:null, state:'ok',
   cfg(){ let c = {}; try { c = JSON.parse(localStorage.getItem('gmao-cloud') || '{}'); } catch(e){} return {url:(SUPABASE_URL || c.url || '').trim(), key:(SUPABASE_KEY || c.key || '').trim(), fixed:!!SUPABASE_URL}; },
@@ -2814,7 +2885,7 @@ function render(){
   contIdx = null; initPour();
   refreshDatalists(); refreshCounts();
   $$('#nav button').forEach(b => b.setAttribute('aria-current', b.dataset.view === S.view ? 'page' : 'false'));
-  const bk = S.back[S.back.length - 1], VN = {accueil:'l’accueil', pieces:'la pièce', kks:'l’installation', lieux:'les emplacements', interventions:'le rapport', taches:'la tâche', options:'les options'};
+  const bk = S.back[S.back.length - 1], VN = {planning:'le planning', accueil:'l’accueil', pieces:'la pièce', kks:'l’installation', lieux:'les emplacements', interventions:'le rapport', taches:'la tâche', options:'les options'};
   const bl = bk ? (bk.view === 'pieces' && getPiece(bk.sel.pieces) ? `la pièce ${getPiece(bk.sel.pieces).ref}` : bk.view === 'pieces' && bk.q.pieces ? `la recherche « ${bk.q.pieces} »` : bk.view === 'kks' && getKks(bk.sel.kks) ? getKks(bk.sel.kks).code : VN[bk.view] || 'la page précédente') : '';
   const am = S.arch[S.view] ? `<div class="arch-mode">${icon('archive')}<span><strong>Archives</strong> · éléments retirés des listes, restaurables à tout moment.</span><button class="btn small" data-act="arch-view" data-v="${S.view}">Revenir à la liste</button></div>` : '';
   $('#main').innerHTML = (bk ? `<button class="btn small back-nav" data-act="nav-back">${icon('chev')}Retour à ${esc(bl)}</button>` : '') + VIEWS[S.view].shell().replace('</header>', '</header>' + am);
@@ -2871,7 +2942,9 @@ VIEWS.accueil = {
       <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
       ${(() => { const me = meId(), mine = !!S.pour; const dueAll = db.taches.filter(t => live(t) && t.actif !== false && daysTo(t.prochaine) <= 7 && forWho(t, S.pour)).sort((a, b) => a.prochaine.localeCompare(b.prochaine)), due = dueAll.slice(0, 5);
         const who = me ? `<span class="who-line">${mine ? `${icon('person')}Filtré pour <b>${esc(pourLabel(S.pour))}</b>${S.pour === 'p:' + me && getPers(me).groupe ? ` et son groupe` : ''} · <button class="link" data-act="pour-all">Voir tout le monde</button>` : `Tout le monde · <button class="link" data-act="pour-me">Seulement mes affaires</button>`} · <button class="link" data-act="me">Changer de nom</button></span>` : `<span class="who-line"><button class="link" data-act="me">${icon('person')}Qui êtes-vous ? Choisissez votre nom pour voir vos tâches</button></span>`;
-        return `<section class="panel"><div class="panel-head"><h2>${mine ? 'Mes tâches' : 'Tâches à faire'}${dueAll.length ? ` <span class="muted" style="font-size:.9rem">${dueAll.length}</span>` : ''}</h2><button class="link" data-act="nav" data-view="taches">${dueAll.length > 5 ? `Voir les ${dueAll.length}` : 'Toutes'}</button></div>${who}${due.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${due.map(t => tacheRow(t, false)).join('')}</tbody></table></div>` : '<div style="padding:0 16px 16px"><p class="empty-line">Rien en retard ni dans les 7 prochains jours.</p></div>'}</section>`; })()}
+        const td = me ? db.plan.filter(x => x.who === me && x.date === todayISO()) : [];
+        const tdH = td.length ? `<div class="ptoday"><b>${icon('calendar')}Aujourd’hui au planning</b>${td.map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null; return `<button class="pit ${t ? 'task' : ''}" data-act="${t ? 'goto' : 'nav'}" data-view="${t ? 'taches' : 'planning'}" ${t ? `data-id="${t.id}"` : ''}>${t ? icon('repeat') : ''}<span>${esc(t ? t.titre : x.text)}</span>${t && x.text ? `<small>${esc(x.text)}</small>` : ''}</button>`; }).join('')}</div>` : '';
+        return `<section class="panel"><div class="panel-head"><h2>${mine ? 'Mes tâches' : 'Tâches à faire'}${dueAll.length ? ` <span class="muted" style="font-size:.9rem">${dueAll.length}</span>` : ''}</h2><button class="link" data-act="nav" data-view="taches">${dueAll.length > 5 ? `Voir les ${dueAll.length}` : 'Toutes'}</button></div>${who}${tdH}${due.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${due.map(t => tacheRow(t, false)).join('')}</tbody></table></div>` : '<div style="padding:0 16px 16px"><p class="empty-line">Rien en retard ni dans les 7 prochains jours.</p></div>'}</section>`; })()}
       <section class="panel"><div class="panel-head"><h2>Rapports en cours</h2><button class="link" data-act="nav" data-view="interventions">Toutes</button></div>${open.length ? intTable(open) : '<div style="padding:0 16px 16px"><p class="empty-line">Aucun rapport en cours.</p></div>'}</section>
       </div>
       <section class="panel"><div class="panel-head"><h2>Installation</h2><button class="link" data-act="nav" data-view="kks">Tout voir</button></div>
@@ -3321,6 +3394,115 @@ VIEWS.kks = {
 };
 
 /* ---------- Options ---------- */
+/* ---------- Planning de la semaine ---------- */
+/* Présences lues dans le Planning Tridel (même fichier que la liste du personnel) ; affectations enregistrées dans la collection « plan » :
+   {id, date:'AAAA-MM-JJ', who:id de personne ou 'row:autres' | 'row:ext' | 'row:nacelle', tacheId?, text} */
+const PLAN_ROWS = [['row:autres', 'Autres tâches à effectuer', 'list'], ['row:ext', 'Entreprises extérieures', 'truck'], ['row:nacelle', 'Réservation nacelles', 'shelf']];
+const EQUIPE_NO = {AQUILLON:1, HODZIC:1, MIGUEL:1, DUC:2, IONITA:2, YILDIRIM:2, GARCIA:3, FELISBERTO:3, BRAHIMI:3, SIMONIN:4, LAUNAZ:4, NAHOUNOU:4, MERMOUD:5, SERRANO:5, 'DA ROCHA':5};
+const PCODE = {R:['Réserve', 'on'], PO:['Portes', 'on'], CA:['Camion', 'on'], EN:['Entretien', 'on'], GR:['Groupe', 'on'], RF:['Reprise férié', 'off'], PIQ:['Piquet', 'piq'], RM:['Rotation matin', 'rot'], RA:['Rotation après-midi', 'rot'], RN:['Rotation nuit', 'rot'],
+  VA:['Vacances', 'abs'], VJ:['Vacances', 'abs'], HOR:['Récupération', 'abs'], HSR:['Récupération', 'abs'], PI:['Reprise de piquet', 'abs'], FE:['Formation externe', 'abs'], MI:['Militaire', 'abs'], PC:['Protection civile', 'abs'], EM:['Enfant malade', 'abs'], AN:['Ancienneté', 'abs'], AP:['Accident', 'abs'], PR:['Personnel', 'abs'], MS:['Maladie', 'abs'], MC:['Maladie', 'abs'], NS:['Naissance', 'abs'], PA:['Congé parental', 'abs'], DE:['Déménagement', 'abs'], DL:['Délégation', 'abs'], DC:['Congé décès', 'abs'], JT:['Congé', 'abs']};
+const PLANS = {};
+async function loadPresence(year){
+  if (PLANS[year]) return PLANS[year];
+  PLANS[year] = {loading:true, byNom:new Map(), order:new Map()};
+  try { const r = await fetch(`${PLANNING_URL}planning-${year}.json`, {cache:'no-store'}); if (r.ok){ const j = await r.json(); (j.employes || []).forEach((e, i) => { const n = String(e.nom || '').trim().toUpperCase(); PLANS[year].byNom.set(n, e); PLANS[year].order.set(n, i); }); } } catch(e){}
+  PLANS[year].loading = false; if (S.view === 'planning') render(); return PLANS[year];
+}
+const presOf = (p, iso) => { const P = PLANS[iso.slice(0, 4)]; if (!P) return null; const e = P.byNom.get(String(p.nom || '').toUpperCase()); if (!e) return null; return {code:e.planning?.[iso] || '', note:e.commentaires?.[iso] || ''}; };
+const isoAdd = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+const mondayOf = iso => { const d = new Date(iso + 'T12:00:00'), w = (d.getDay() + 6) % 7; return isoAdd(iso, -w); };
+const isoWeek = iso => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7); const y = new Date(d.getFullYear(), 0, 4); return 1 + Math.round(((d - y) / 864e5 - 3 + (y.getDay() + 6) % 7) / 7); };
+const DAYN = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'], DAYS = ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'];
+const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+const dayLbl = iso => `${DAYN[(new Date(iso + 'T12:00:00').getDay() + 6) % 7].toLowerCase()} ${+iso.slice(8)} ${MOIS[+iso.slice(5, 7) - 1]}`;
+function planPeople(){
+  const hide = S.phide || (S.phide = new Set(['Cadres', 'Administration']));
+  const P = PLANS[(S.pweek || '').slice(0, 4)], ord = n => P?.order.get(String(n).toUpperCase()) ?? 999;
+  return db.personnes.filter(p => live(p) && p.actif !== false && !hide.has(p.groupe || '')).sort((a, b) => ((a.groupe === 'Équipe' ? -1 : grpIdx(a.groupe)) - (b.groupe === 'Équipe' ? -1 : grpIdx(b.groupe))) || (ord(a.nom) - ord(b.nom)) || coll.compare(a.nom, b.nom));
+}
+function planCell(who, iso, p){
+  const items = db.plan.filter(x => x.who === who && x.date === iso), pr = p ? presOf(p, iso) : null, pc = pr && pr.code ? PCODE[pr.code] || [pr.code, 'on'] : null;
+  const done = x => x.tacheId && db.interventions.some(i => i.tacheId === x.tacheId && i.date === iso);
+  return `<div class="pc ${pc ? 'k-' + pc[1] : (p && pr ? 'k-none' : '')} ${S.pdrop === who + '|' + iso ? 'drop' : ''}" data-act="plan-add" data-who="${esc(who)}" data-date="${iso}">
+    ${pc ? `<span class="pcode" title="${esc(pc[0])}${pr.note ? ' · ' + esc(pr.note) : ''}">${esc(pr.code)}</span>` : ''}
+    ${items.map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null, k = t ? getKks(t.kksId) : null;
+      return `<button class="pit ${t ? 'task' : ''} ${done(x) ? 'done' : ''}" data-act="plan-edit" data-id="${x.id}" title="${esc(t ? t.titre : x.text)}">${t ? icon(done(x) ? 'check' : 'repeat') : ''}<span>${esc(t ? t.titre : x.text)}</span>${k ? `<small>${esc(k.code)}</small>` : ''}${t && x.text ? `<small>${esc(x.text)}</small>` : ''}</button>`; }).join('')}
+    ${pr && pr.note ? `<span class="pnote">${esc(pr.note)}</span>` : ''}</div>`;
+}
+VIEWS.planning = {
+  shell(){
+    const mon = S.pweek || (S.pweek = mondayOf(todayISO())); loadPresence(mon.slice(0, 4)); if (isoAdd(mon, 6).slice(0, 4) !== mon.slice(0, 4)) loadPresence(isoAdd(mon, 6).slice(0, 4));
+    const nd = S.pwe ? 7 : 5, days = Array.from({length:nd}, (_, i) => isoAdd(mon, i)), today = todayISO();
+    const ppl = planPeople(), me = meId(), P = PLANS[mon.slice(0, 4)];
+    const grps = db.listes.groupes.filter(g => db.personnes.some(p => live(p) && p.actif !== false && p.groupe === g));
+    const d0 = days[0], d1 = days[nd - 1];
+    const range = d0.slice(5, 7) === d1.slice(5, 7) ? `${+d0.slice(8)} – ${+d1.slice(8)} ${MOIS[+d1.slice(5, 7) - 1]} ${d1.slice(0, 4)}` : `${+d0.slice(8)} ${MOIS[+d0.slice(5, 7) - 1]} – ${+d1.slice(8)} ${MOIS[+d1.slice(5, 7) - 1]} ${d1.slice(0, 4)}`;
+    const mday = Math.min(S.pday ?? Math.max(0, Math.min(nd - 1, days.indexOf(today))), nd - 1);
+    let rows = '', lastG = null, lastEq = null;
+    for (const p of ppl){
+      const g = p.groupe || 'Sans groupe', eq = g === 'Équipe' ? EQUIPE_NO[String(p.nom).toUpperCase()] || '' : '';
+      if (g !== lastG){ rows += `<tr class="pg"><th colspan="${nd + 1}">${esc(g === 'Équipe' ? 'Équipes de rotation' : g)}</th></tr>`; lastG = g; lastEq = null; }
+      if (eq && eq !== lastEq && lastEq !== null) rows += `<tr class="peq"><td colspan="${nd + 1}"></td></tr>`;
+      lastEq = eq || lastEq;
+      rows += `<tr class="${p.id === me ? 'me' : ''}"><th class="pn">${esc(persName(p))}${eq ? `<small>Éq. ${eq}</small>` : ''}</th>${days.map(d => `<td class="${d === today ? 'today' : ''}">${planCell(p.id, d, p)}</td>`).join('')}</tr>`;
+    }
+    rows += `<tr class="pg"><th colspan="${nd + 1}">Général</th></tr>` + PLAN_ROWS.map(([w, t, ic]) => `<tr class="prow2"><th class="pn">${icon(ic)}${t}</th>${days.map(d => `<td class="${d === today ? 'today' : ''}">${planCell(w, d, null)}</td>`).join('')}</tr>`).join('');
+    const mobile = `<div class="pdays">${days.map((d, i) => `<button class="pday ${i === mday ? 'on' : ''} ${d === today ? 'today' : ''}" data-act="pday" data-i="${i}"><b>${DAYS[i]}</b><span>${+d.slice(8)}</span></button>`).join('')}</div>
+      <div class="pmlist">${(() => { const d = days[mday]; let h = '', lg = null; for (const p of ppl){ const g = p.groupe || 'Sans groupe'; if (g !== lg){ h += `<div class="pmg">${esc(g === 'Équipe' ? 'Équipes de rotation' : g)}</div>`; lg = g; } h += `<div class="pmr ${p.id === me ? 'me' : ''}"><span class="pn">${esc(persName(p))}</span>${planCell(p.id, d, p)}</div>`; }
+        h += '<div class="pmg">Général</div>' + PLAN_ROWS.map(([w, t]) => `<div class="pmr"><span class="pn">${t}</span>${planCell(w, d, null)}</div>`).join(''); return h; })()}</div>`;
+    return `<header class="page-head"><h1>Planning</h1><div class="tools">
+        <div class="pweek"><button class="btn icon-only" data-act="pweek" data-n="-7" aria-label="Semaine précédente">${icon('chev')}</button><div class="pw-l"><b>Semaine ${isoWeek(mon)}</b><span>${range}</span></div><button class="btn icon-only" data-act="pweek" data-n="7" aria-label="Semaine suivante">${icon('chev')}</button></div>
+        ${mon !== mondayOf(today) ? `<button class="btn small" data-act="pweek" data-n="0">Cette semaine</button>` : ''}
+        ${menu([['plan-print', 'Imprimer la semaine (A4 paysage)', 'printer', {}], ['plan-copy', 'Reprendre le texte libre de la semaine précédente', 'repeat', {}], ['plan-we', S.pwe ? 'Masquer le week-end' : 'Afficher le week-end', 'calendar', {}], '-', ...grps.map(g => ['plan-grp', `${S.phide?.has(g) ? 'Afficher' : 'Masquer'} : ${g}`, 'person', {g}])])}</div></header>
+      <p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez dans une case pour attribuer une tâche ou écrire le travail à faire. Les codes (R, RM, VA…) viennent du Planning Tridel.</p>
+      <div class="wkgrid-wrap"><table class="wkgrid"><thead><tr><th></th>${days.map((d, i) => `<th class="${d === today ? 'today' : ''}">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="pmobile">${mobile}</div>`;
+  },
+  list: () => '', detail: () => ''
+};
+function planDialog(who, date, item){
+  const isNew = !item, p = getPers(who), row = PLAN_ROWS.find(r => r[0] === who), mon = mondayOf(date);
+  const t0 = item?.tacheId ? get('taches', item.tacheId) : null, pr = p ? presOf(p, date) : null, pc = pr && pr.code ? PCODE[pr.code] : null;
+  const days = Array.from({length:S.pwe ? 7 : 5}, (_, i) => isoAdd(mon, i));
+  const mates = p ? db.personnes.filter(x => live(x) && x.actif !== false && x.groupe === p.groupe && x.id !== p.id).sort(persSort) : [];
+  const titre = `${p ? esc(persName(p)) : esc(row ? row[1] : '')} · ${dayLbl(date)}`;
+  dialog({title: isNew ? `Planifier · ${titre}` : titre, saveLabel: isNew ? 'Ajouter' : 'Enregistrer',
+    body:`${pc && pc[1] === 'abs' ? `<p class="dlg-warn">${icon('out')}${esc(persName(p))} est absent ce jour-là : ${esc(pc[0])}${pr.note ? ' · ' + esc(pr.note) : ''}.</p>` : pc ? `<p class="hint">Au planning : <b>${esc(pr.code)}</b> · ${esc(pc[0])}${pr.note ? ' · ' + esc(pr.note) : ''}</p>` : ''}
+      ${row && who !== 'row:autres' ? '' : `<label>Tâche de TriFlow <span class="muted">(facultatif)</span><input name="tache" data-id="${t0 ? t0.id : ''}" data-label="${t0 ? esc(t0.titre) : ''}" value="${t0 ? esc(t0.titre) : ''}" placeholder="Choisir une tâche : tapez un mot ou un KKS…"></label>`}
+      <label>${row && who !== 'row:autres' ? (who === 'row:ext' ? 'Entreprise et travail' : 'Réservation') : 'Travail à faire / remarque'}<textarea name="text" rows="3" ${who === 'row:ext' ? 'list="dl-marques"' : ''} placeholder="${who === 'row:ext' ? 'ex. Caliqua : révision vanne 1LAB40AA410' : who === 'row:nacelle' ? 'ex. Nacelle 20 m · halle chaudière · 8h–12h' : 'ex. Aider Lima au remplacement des toiles'}">${esc(item?.text || '')}</textarea></label>
+      ${isNew ? `<fieldset><legend>Jours</legend><div class="pdchk">${days.map((d, i) => `<label class="chk"><input type="checkbox" name="d" value="${d}" ${d === date ? 'checked' : ''}> ${DAYS[i]} ${+d.slice(8)}</label>`).join('')}</div></fieldset>
+      ${mates.length ? `<fieldset><legend>Aussi pour</legend><div class="pdchk">${mates.map(x => { const q = presOf(x, date), a = q && PCODE[q.code]?.[1] === 'abs'; return `<label class="chk ${a ? 'abs' : ''}"><input type="checkbox" name="m" value="${x.id}"> ${esc(persName(x))}${a ? ` <small>(${esc(q.code)})</small>` : ''}</label>`; }).join('')}</div></fieldset>` : ''}` : ''}
+      ${t0 ? `<div class="tools"><button type="button" class="btn small" data-go-task="${t0.id}">${icon('check')}Ouvrir la tâche</button></div>` : ''}`,
+    del: isNew ? null : {label:'Retirer du planning', soft:true, run(){ tx(() => { db.plan = db.plan.filter(x => x !== item); }); render(); toast('Retiré du planning', '', true); }},
+    onOpen(f, d){
+      if (f.elements.tache){
+        const wantG = p ? 'p:' + p.id : '';
+        combo(f.elements.tache, {items: () => db.taches.filter(t => live(t) && t.actif !== false).sort((a, b) => (wantG ? (forWho(b, wantG) - forWho(a, wantG)) : 0) || a.prochaine.localeCompare(b.prochaine)).map(t => { const k = getKks(t.kksId); return {id:t.id, label:t.titre, search:`${t.titre} ${k ? k.code + ' ' + k.designation : ''} ${assignLabel(t.assign)}`, html:`${esc(t.titre)}${k ? ` <span class="kks">${esc(k.code)}</span>` : ''}`, right:`<span class="muted">${esc(assignLabel(t.assign))} · ${fmtD(t.prochaine)}</span>`}; })});
+      }
+      const gb = $('[data-go-task]', d); if (gb) gb.onclick = () => { d.close(); go('taches', gb.dataset.goTask); };
+    },
+    onSave(f){
+      const ti = f.elements.tache; let tid = '';
+      if (ti && ti.value.trim()){ tid = ti.dataset.id || ''; if (!get('taches', tid)) throw new Error('Choisissez la tâche dans la liste, ou videz le champ.'); }
+      const text = val(f, 'text'); if (!tid && !text) throw new Error('Choisissez une tâche ou écrivez le travail à faire.');
+      if (!isNew){ tx(() => { item.text = text; if (tid) item.tacheId = tid; else delete item.tacheId; }); render(); toast('Planning enregistré', '', true); return; }
+      const ds = [...f.querySelectorAll('input[name=d]:checked')].map(x => x.value), ws = [who, ...[...f.querySelectorAll('input[name=m]:checked')].map(x => x.value)];
+      if (!ds.length) throw new Error('Cochez au moins un jour.');
+      tx(() => { for (const w of ws) for (const dd of ds) db.plan.push({id:uid(), date:dd, who:w, ...(tid ? {tacheId:tid} : {}), text}); });
+      render(); toast(`${ws.length * ds.length} case(s) remplie(s)`, '', true);
+    }});
+}
+function planSheetHTML(){
+  const mon = S.pweek, nd = S.pwe ? 7 : 5, days = Array.from({length:nd}, (_, i) => isoAdd(mon, i)), ppl = planPeople();
+  const cell = (w, d, p) => { const pr = p ? presOf(p, d) : null; const its = db.plan.filter(x => x.who === w && x.date === d).map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null, k = t ? getKks(t.kksId) : null; return `<div>• ${esc(t ? t.titre : x.text)}${k ? ` <span class="mono">${esc(k.code)}</span>` : ''}${t && x.text ? ` — ${esc(x.text)}` : ''}</div>`; }).join(''); return `<td>${pr && pr.code ? `<span class="pc-code ${PCODE[pr.code]?.[1] === 'abs' ? 'abs' : ''}">${esc(pr.code)}</span>` : ''}${its}</td>`; };
+  let lg = null, body = '';
+  for (const p of ppl){ if (p.groupe !== lg){ body += `<tr><th colspan="${nd + 1}" class="g">${esc(p.groupe === 'Équipe' ? 'Équipes de rotation' : p.groupe || '')}</th></tr>`; lg = p.groupe; } body += `<tr><th>${esc(persName(p))}</th>${days.map(d => cell(p.id, d, p)).join('')}</tr>`; }
+  body += PLAN_ROWS.map(([w, t]) => `<tr><th>${t}</th>${days.map(d => cell(w, d, null)).join('')}</tr>`).join('');
+  return `<article class="rpt plan-sheet"><header class="rpt-head"><div><div class="rpt-org">Tridel · Maintenance</div><h1>Planification de la semaine ${isoWeek(mon)}</h1></div><div class="rpt-num"><div>${fmtD(days[0])} – ${fmtD(days[nd - 1])}</div></div></header>
+    <table class="rpt-tbl plan-tbl"><thead><tr><th></th>${days.map((d, i) => `<th>${DAYN[i]} ${+d.slice(8)}.${d.slice(5, 7)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>
+    <footer class="rpt-foot">Imprimé le ${fmtDT(new Date().toISOString())} · TriFlow</footer></article>`;
+}
+
 const OPT_SECS = [['lieux', 'Emplacements', 'shelf'], ['kks', 'Équipements (KKS)', 'plant'], ['personnes', 'Personnes', 'person'], ['fournisseurs', 'Fournisseurs', 'truck'], ['listes', 'Listes', 'list'], ['etiquettes', 'Étiquettes & QR', 'qr'], ['donnees', 'Sauvegarde', 'save'], ['connexion', 'Connexion', 'person']];
 const OPT = {};
 OPT.lieux = () => {
@@ -3998,7 +4180,8 @@ function labelsHTML(cells, o){
   return html;
 }
 function printLabels(cells, o){ doPrint(labelsHTML(cells, o)); }
-function doPrint(html){ $('#print').innerHTML = html; document.body.classList.add('printing'); setTimeout(() => { window.print(); setTimeout(endPrint, 500); }, 60); }
+function endPrintLand(){ document.body.classList.remove('land'); }
+function doPrint(html){ setTimeout(endPrintLand, 3000); $('#print').innerHTML = html; document.body.classList.add('printing'); setTimeout(() => { window.print(); setTimeout(endPrint, 500); }, 60); }
 function endPrint(){ document.body.classList.remove('printing'); $('#print').innerHTML = ''; }
 window.addEventListener('afterprint', endPrint);
 
@@ -4366,6 +4549,15 @@ function exportKksLinks(){
    ===================================================================== */
 const ACT = {
   scan: () => scanDialog(),
+  pweek(d){ const n = +d.n; S.pweek = n ? isoAdd(S.pweek || mondayOf(todayISO()), n) : mondayOf(todayISO()); S.pday = null; render(); },
+  pday(d){ S.pday = +d.i; render(); },
+  'plan-add'(d, t, e){ if (e && e.target.closest('.pit')) return; planDialog(d.who, d.date, null); },
+  'plan-edit'(d){ const x = db.plan.find(y => y.id === d.id); if (x) planDialog(x.who, x.date, x); },
+  'plan-we'(){ S.pwe = !S.pwe; render(); },
+  'plan-grp'(d){ S.phide = S.phide || new Set(['Cadres', 'Administration']); S.phide.has(d.g) ? S.phide.delete(d.g) : S.phide.add(d.g); render(); },
+  'plan-print'(){ document.body.classList.add('land'); doPrint(planSheetHTML()); },
+  'plan-copy'(){ const mon = S.pweek, prev = isoAdd(mon, -7); const src = db.plan.filter(x => x.date >= prev && x.date < mon && !x.tacheId && x.text); if (!src.length){ toast('Aucun texte libre la semaine précédente.'); return; }
+    tx(() => { for (const x of src){ const dd = isoAdd(x.date, 7); if (!db.plan.some(y => y.who === x.who && y.date === dd && y.text === x.text)) db.plan.push({id:uid(), date:dd, who:x.who, text:x.text}); } }); render(); toast(`${src.length} ligne(s) reprise(s)`, '', true); },
   me: () => meDialog(),
   'relink-kks'(){ const r = tx(() => linkPartialKks(db)); render(); toast(r.nl ? `${r.nl} lien(s) pièce ↔ KKS ajouté(s)${r.nc ? ` · ${r.nc} repère(s) KKS créé(s)` : ''}` : 'Aucun nouveau repère KKS trouvé dans les pièces', '', !!r.nl); },
   'p-all'(d){ S.pAll = S.pAll === d.id ? null : d.id; fillDetail(); },
