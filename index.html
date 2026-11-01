@@ -3936,7 +3936,7 @@ function planSheetHTML(){
   return `<article class="plan-sheet xls"><h1 class="xt">Planification des tâches pour le personnel en maintenance et les chauffeurs de réserve</h1>
     <table class="xtbl"><colgroup><col class="xcn">${days.map(() => '<col>').join('')}</colgroup>
       <thead><tr><th class="xs">Semaine ${isoWeek(mon)}</th>${days.map((d, i) => `<th class="xd">${DAYN[i]}</th>`).join('')}</tr>
-      <tr><th class="xs2">${fmtD(d0)} – ${fmtD(d1)}</th>${days.map(d => `<th class="xd2">${+d.slice(8)}.${d.slice(5, 7)}.${d.slice(0, 4)}</th>`).join('')}</tr></thead>
+      <tr><th class="xs2"></th>${days.map(d => `<th class="xd2">${d.slice(8)} ${MOIS[+d.slice(5, 7) - 1]}</th>`).join('')}</tr></thead>
       <tbody>${body}</tbody></table>
     <p class="xf">Imprimé le ${fmtDT(new Date().toISOString())} · TriFlow</p></article>`;
 }
