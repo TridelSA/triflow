@@ -2534,7 +2534,7 @@ let db = CLOUD.cfg().url ? migrate(blank()) : load();
 if (!db){ db = seed(); save(); }
 
 /* ---------------- État d'affichage ---------------- */
-const S = {pour:'', tvue:'afaire', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:''}, lowOnly:false, zeroOnly:false, psort:'iddesc', plimit:300, back:[], statut:'actives', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux'};
+const S = {pour:'', tvue:'afaire', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:'', optfour:''}, lowOnly:false, zeroOnly:false, psort:'iddesc', plimit:300, back:[], statut:'actives', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux'};
 
 function toast(msg, kind = ''){
   const t = $('#toast'); t.textContent = msg; t.className = 'show ' + kind;
@@ -2681,8 +2681,9 @@ VIEWS.pieces = {
       <section class="pd-sec"><h3>${icon('plant')}Équipements (KKS)</h3>
         ${ks.length ? `<div class="pd-kks">${ks.map(k => `<span class="pd-k">${kksTag(k)}<span class="t">${esc(k.designation)}</span><button class="icon-btn" data-act="unlink-kks" data-piece="${p.id}" data-id="${k.id}" aria-label="Retirer ${esc(k.code)}" title="Retirer">×</button></span>`).join('')}</div>` : '<p class="empty-line">Aucun équipement lié.</p>'}
         <form class="inline-form" data-form="link-kks" data-piece="${p.id}"><input name="kks" list="dl-kks" placeholder="Lier un équipement (code KKS)" aria-label="Repère KKS à lier" autocomplete="off"><button class="btn">Lier</button></form></section>
-      ${p.fournisseur && p.fournisseur !== p.fabricant || noteRows.length ? `<section class="pd-sec"><h3>${icon('list')}Informations</h3><dl class="pd-info">
+      ${p.fournisseur && p.fournisseur !== p.fabricant || noteRows.length || (p.fours || []).length ? `<section class="pd-sec"><h3>${icon('list')}Informations</h3><dl class="pd-info">
         ${p.fournisseur && p.fournisseur !== p.fabricant ? `<dt>Fournisseur</dt><dd>${esc(p.fournisseur)}</dd>` : ''}
+        ${(p.fours || []).filter(n => n !== p.fournisseur && n !== p.fabricant).length ? `<dt>Aussi cités</dt><dd>${esc(p.fours.filter(n => n !== p.fournisseur && n !== p.fabricant).join(', '))}</dd>` : ''}
         ${noteRows.map(([k, v]) => k ? `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>` : `<dd class="full">${esc(v)}</dd>`).join('')}</dl></section>` : ''}
       <section class="pd-sec"><h3>${icon('repeat')}Historique <span class="muted">${hist.length || ''}</span></h3>
         ${hist.length ? `<div class="pd-hist">${(showAll ? hist : hist.slice(0, 8)).map(h => `<div class="ph"><span class="d">${fmtD(h.date)}</span><span class="q ${h.neutral ? '' : h.qte < 0 ? 'neg' : 'pos'}">${h.neutral ? '' : h.qte > 0 ? '+' : h.qte < 0 ? '−' : ''}${num(Math.abs(h.qte))}</span><span class="m">${esc(h.motif)}${h.who ? ` <span class="muted">· ${esc(h.who)}</span>` : ''}${h.lieu ? `<span class="lw">${esc(h.lieu)}</span>` : ''}</span></div>`).join('')}</div>
@@ -2986,12 +2987,50 @@ OPT.personnes = () => {
     ${rows.length ? `<div class="tbl-wrap"><table class="tbl compact"><thead><tr><th>Nom</th><th>Groupe</th><th class="num hide-sm">Rapports</th></tr></thead><tbody>${rows.map(p => `<tr data-act="edit-pers" data-id="${p.id}" tabindex="0"><td><strong style="font-weight:500">${esc(p.nom)}</strong> ${esc(p.prenom || '')}${p.actif ? '' : ' <span class="chip off">Plus au planning</span>'}</td><td>${grpChip(p.groupe) || '<span class="muted">—</span>'}</td><td class="num qty hide-sm">${db.interventions.filter(i => i.intervenants.includes(p.id)).length || ''}</td></tr>`).join('')}</tbody></table></div>` : `<div class="pad">${empty('Aucune personne', '<p>Utilisez « Reprendre du Planning Tridel ».</p>')}</div>`}</section>`;
 };
 OPT.fournisseurs = () => {
-  const rows = [...db.listes.fournisseurs].sort(coll.compare);
-  const used = n => db.pieces.filter(p => norm(p.fabricant) === norm(n) || norm(p.fournisseur) === norm(n)).length;
-  return `<section class="opt-sec"><div class="head"><h2>Fournisseurs</h2><div class="tools"><button class="btn primary" data-act="new-four">${icon('plus')}Fournisseur</button></div></div>
-    <div class="pad"><p class="hint">Une seule liste pour les marques et les fournisseurs : elle est proposée dans la fiche de chaque pièce. Renommer un nom met à jour toutes les pièces concernées.</p></div>
-    ${rows.length ? `<div class="tbl-wrap"><table class="tbl compact"><thead><tr><th>Nom</th><th class="num">Pièces</th></tr></thead><tbody>${rows.map(n => `<tr data-act="edit-four" data-name="${esc(n)}" tabindex="0"><td>${esc(n)}</td><td class="num qty">${used(n) || ''}</td></tr>`).join('')}</tbody></table></div>` : `<div class="pad">${empty('Aucun fournisseur', '<p>Ajoutez-en avec « + Fournisseur », ou ils se rempliront en créant des pièces.</p>')}</div>`}</section>`;
+  const q = norm(S.q.optfour || '');
+  const cnt = new Map(); for (const p of db.pieces){ const set = new Set([p.fabricant, p.fournisseur, ...(p.fours || [])].filter(Boolean).map(norm)); for (const k of set) cnt.set(k, (cnt.get(k) || 0) + 1); }
+  const rows = [...db.listes.fournisseurs].filter(n => !q || norm(n).includes(q)).sort(coll.compare);
+  return `<section class="opt-sec"><div class="head"><h2>Fournisseurs <span class="muted" style="font-family:var(--f-mono);font-size:.9rem">${db.listes.fournisseurs.length}</span></h2><div class="tools">${menu([['new-four', 'Un fournisseur', 'plus'], ['import-four', 'Importer depuis CareOffice (fichier)', 'save'], ['link-four', 'Relier les pièces aux fournisseurs', 'repeat']], 'Ajouter', 'plus', 'primary')}</div></div>
+    <div class="pad"><p class="hint">Une pièce est reliée à un fournisseur quand son nom apparaît dans sa marque, son fournisseur, sa désignation ou ses notes.</p>
+    <input type="search" data-search="optfour" data-opt4="1" placeholder="Filtrer…" value="${esc(S.q.optfour || '')}" aria-label="Filtrer les fournisseurs" style="max-width:320px"></div>
+    <div id="opt-four">${rows.length ? `<div class="tbl-wrap"><table class="tbl compact"><thead><tr><th>Nom</th><th class="num">Pièces</th></tr></thead><tbody>${rows.map(n => `<tr data-act="edit-four" data-name="${esc(n)}" tabindex="0"><td>${esc(n)}</td><td class="num qty">${cnt.get(norm(n)) || ''}</td></tr>`).join('')}</tbody></table></div>` : `<div class="pad">${empty('Aucun fournisseur', '')}</div>`}</div></section>`;
 };
+/* Relie chaque pièce aux fournisseurs dont le nom apparaît dans sa désignation ou ses notes (à appeler dans tx) */
+function linkFournisseurs(){
+  const nz = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const SUF = /\b(ag|sa|gmbh|s\.?r\.?l\.?|sarl|sàrl|ltd|inc|co|kg|sas|bv|spa|ab|oy)\b\.?/gi;
+  const long = new Map(), acro = new Map();
+  for (const n of db.listes.fournisseurs){
+    const c = nz(n).replace(SUF, '').replace(/[^a-z0-9&+ -]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (c.length >= 4){ if (!long.has(c)) long.set(c, n); }
+    else { const a = n.replace(SUF, '').trim(); if (/^[A-Z0-9&]{3,4}$/.test(a) && !acro.has(a)) acro.set(a, n); }
+  }
+  const esc2 = x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const RL = long.size ? new RegExp('(?<![a-z0-9])(' + [...long.keys()].sort((a, b) => b.length - a.length).map(esc2).join('|') + ')(?![a-z0-9])', 'g') : null;
+  const RA = acro.size ? new RegExp('(?<![A-Za-z0-9])(' + [...acro.keys()].sort((a, b) => b.length - a.length).map(esc2).join('|') + ')(?![A-Za-z0-9])', 'g') : null;
+  let np = 0;
+  for (const p of db.pieces){
+    const raw = `${p.designation || ''} ${p.notes || ''}`, txt = nz(raw), found = new Set();
+    if (RL) for (const m of txt.matchAll(RL)) found.add(long.get(m[1]));
+    if (RA) for (const m of raw.matchAll(RA)) found.add(acro.get(m[1]));
+    const list = [...found].sort(coll.compare);
+    if (list.length){ np++; if (!p.fournisseur) p.fournisseur = list[0]; }
+    if (list.length || p.fours) p.fours = list;
+  }
+  return np;
+}
+function importFourDialog(){
+  dialog({title:'Importer les fournisseurs depuis CareOffice', saveLabel:'Importer', wide:true,
+    body:`<p>Choisissez le fichier <span class="mono">fournisseurs-careoffice.json</span>. Les noms sont ajoutés à la liste (sans doublon), puis chaque pièce est reliée aux fournisseurs cités dans sa désignation ou ses notes.</p><label>Fichier<input type="file" name="file" accept=".json,application/json"></label><p class="hint" data-prev></p>`,
+    onOpen(f, d){ f.elements.file.addEventListener('change', async () => { try { const j = JSON.parse(await f.elements.file.files[0].text()); d._data = j; $('[data-prev]', d).textContent = `${(j.fournisseurs || []).length} fournisseur(s).`; } catch(e){ d._data = null; $('[data-prev]', d).textContent = 'Fichier illisible.'; } }); },
+    onSave(f, d){
+      const j = d._data; if (!j || !Array.isArray(j.fournisseurs)) throw new Error('Choisissez le fichier fournisseurs-careoffice.json.');
+      let add = 0, np = 0;
+      const core = x => norm(x).replace(/\b(ag|sa|gmbh|s\.?r\.?l\.?|sarl|sàrl|ltd|inc|co|kg|sas|bv|spa|ab|oy)\b\.?/g, '').replace(/[^a-z0-9&+]/g, '');
+      tx(() => { const have = new Set(db.listes.fournisseurs.map(core)); for (const n of j.fournisseurs){ const t = String(n || '').trim(); if (t && !have.has(core(t))){ db.listes.fournisseurs.push(t); have.add(core(t)); add++; } } db.listes.fournisseurs.sort(coll.compare); np = linkFournisseurs(); });
+      render(); toast(`${add} fournisseur(s) ajouté(s) · ${np} pièce(s) reliée(s)`);
+    }});
+}
 function fourDialog(name){
   const isNew = name == null;
   dialog({title: isNew ? 'Nouveau fournisseur' : 'Modifier le fournisseur',
@@ -3004,7 +3043,7 @@ function fourDialog(name){
       if (db.listes.fournisseurs.some(x => x !== name && norm(x) === norm(n))) throw new Error(`« ${n} » est déjà dans la liste.`);
       tx(() => {
         if (isNew) db.listes.fournisseurs.push(n);
-        else { db.listes.fournisseurs = db.listes.fournisseurs.map(x => x === name ? n : x); for (const p of db.pieces){ if (p.fabricant === name) p.fabricant = n; if (p.fournisseur === name) p.fournisseur = n; } }
+        else { db.listes.fournisseurs = db.listes.fournisseurs.map(x => x === name ? n : x); for (const p of db.pieces){ if (p.fabricant === name) p.fabricant = n; if (p.fournisseur === name) p.fournisseur = n; if (p.fours?.includes(name)) p.fours = p.fours.map(x => x === name ? n : x); } }
         db.listes.fournisseurs.sort(coll.compare);
       });
       render(); toast(isNew ? 'Fournisseur ajouté' : 'Fournisseur renommé');
@@ -3906,6 +3945,8 @@ const ACT = {
   'edit-kks': d => kksDialog(getKks(d.id)),
   'import-kks': () => importKksDialog(),
   'import-pieces': () => importPiecesDialog(),
+  'import-four': () => importFourDialog(),
+  'link-four'(){ let np = 0; tx(() => { np = linkFournisseurs(); }); render(); toast(`${np} pièce(s) reliée(s) à au moins un fournisseur`); },
   'import-travaux': () => importTravauxDialog(),
   'new-pers': () => persDialog(),
   async logout(){ await CLOUD.sb.auth.signOut(); location.reload(); },
@@ -3976,6 +4017,7 @@ document.addEventListener('submit', e => {
 });
 document.addEventListener('input', e => {
   const k = e.target.dataset?.search; if (!k) return; S.q[k] = e.target.value;
+  if (e.target.dataset.opt4){ render(); const i = document.querySelector('[data-opt4]'); if (i){ i.focus(); i.setSelectionRange(i.value.length, i.value.length); } return; }
   if (e.target.dataset.opt){ const q = norm(S.q.optkks); $('#opt-list').innerHTML = optKksTable(db.kks.filter(x => !q || norm(`${x.code} ${x.designation} ${x.aic || ''}`).includes(q)).sort(kksSort)); }
   else fillList();
 });
