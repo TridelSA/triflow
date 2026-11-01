@@ -433,6 +433,41 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .back-nav{margin:0 0 10px}
 .back-nav .ico{transform:rotate(180deg)}
 .pd-info.rep{margin-top:6px}
+.pwrap{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:14px;align-items:start}
+.pside{background:var(--surface);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;max-height:calc(100vh - 230px);position:sticky;top:10px}
+.ps-h{padding:12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.ps-h small{color:var(--muted);font-size:.78rem}
+.ps-h input{min-height:34px;padding:4px 10px;font-size:.85rem}
+.ps-l{overflow:auto;display:flex;flex-direction:column;gap:6px;padding:10px}
+.ps-t{cursor:grab;padding:7px 9px;border:1px solid var(--accent-line);background:var(--accent-soft);border-radius:8px;display:flex;flex-direction:column;gap:3px;font-size:.84rem}
+.ps-t.late{border-color:var(--bad);background:var(--bad-soft)}
+.ps-t small{color:var(--muted);font-size:.72rem;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ps-t small .kks{font-size:.68rem;padding:0 4px}
+.ps-t.drag{opacity:.5}
+.ps-f{padding:8px 12px;margin:0;border-top:1px solid var(--line)}
+.pc.drop{outline:2px dashed var(--accent);outline-offset:-3px;background:var(--accent-soft)}
+@media (max-width:1100px){ .pwrap{grid-template-columns:minmax(0,1fr)} .pside{display:none} }
+.ptd{display:flex;align-items:center;gap:8px;width:100%}
+.ptd .pit{flex:1}
+.ptd.done .pit{opacity:.6;text-decoration:line-through}
+.ok-tag{display:inline-flex;align-items:center;gap:4px;color:var(--ok);font-weight:700;font-size:.8rem}
+.ok-tag .ico{width:14px;height:14px}
+.dict-wrap{position:relative;display:block}
+.dict-wrap textarea{padding-right:46px}
+.dict{all:unset;cursor:pointer;position:absolute;right:8px;bottom:8px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--sunk);color:var(--muted);border:1px solid var(--line)}
+.dict .ico{width:18px;height:18px}
+.dict.on{background:var(--bad);color:#fff;border-color:var(--bad);animation:pulse 1.2s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 6px rgba(198,40,56,.18)}}
+.ord-g .four-p{width:100%}
+.ord-g{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:10px}
+.ord-h{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--sunk);font-weight:700}
+.ord-h .ico{width:16px;height:16px}
+.nav-plus{display:none !important}
+.navsheet{position:fixed;z-index:40;top:150px;right:14px;display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px;box-shadow:0 10px 28px rgba(0,0,0,.2)}
+.navsheet button{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;font-weight:600}
+.navsheet button:hover{background:var(--sunk)}
+.navsheet .ico{width:18px;height:18px;color:var(--accent)}
+@media (max-width:760px){ #nav .nav-more{display:none} #nav .nav-plus{display:flex !important} }
 .pweek{display:flex;align-items:center;gap:6px}
 .pweek .btn.icon-only:first-child .ico{transform:rotate(180deg)}
 .pw-l{display:flex;flex-direction:column;align-items:center;min-width:150px;line-height:1.15}
@@ -768,7 +803,7 @@ dialog.dlg::backdrop{background:rgba(12,18,21,.55)}
   #toast{bottom:calc(88px + env(safe-area-inset-bottom,0px))}
 }
 #toast.undo{pointer-events:auto;display:flex;align-items:center;gap:14px}
-#toast button{all:unset;cursor:pointer;font-weight:700;color:var(--accent-line);text-decoration:underline;text-underline-offset:3px}
+#toast button{all:unset;cursor:pointer;margin-left:12px;font-weight:700;color:var(--accent-line);text-decoration:underline;text-underline-offset:3px}
 @media (prefers-reduced-motion:reduce){#toast,details.oroom > summary .chev{transition:none}}
 
 /* ---------- Écrans moyens & téléphone ---------- */
@@ -909,11 +944,12 @@ body.land .plan-sheet{page:land}
       <nav class="nav" id="nav" aria-label="Sections">
         <button data-act="nav" data-view="accueil" title="Accueil"><span data-icon="home"></span><span class="nl">Accueil</span></button>
         <button data-act="nav" data-view="pieces" title="Pièces"><span data-icon="box"></span><span class="nl">Pièces</span></button>
-        <button data-act="nav" data-view="kks" title="Installation"><span data-icon="plant"></span><span class="nl">Installation</span></button>
-        <button data-act="nav" data-view="taches" title="Tâches"><span data-icon="check"></span><span class="nl">Tâches</span></button>
+        <button class="nav-more" data-act="nav" data-view="kks" title="Installation"><span data-icon="plant"></span><span class="nl">Installation</span></button>
+        <button class="nav-more" data-act="nav" data-view="taches" title="Tâches"><span data-icon="check"></span><span class="nl">Tâches</span></button>
         <button data-act="nav" data-view="interventions" title="Rapports"><span data-icon="wrench"></span><span class="nl">Rapports</span></button>
         <button data-act="nav" data-view="planning" title="Planning"><span data-icon="calendar"></span><span class="nl">Planning</span></button>
-        <button data-act="nav" data-view="options" title="Options"><span data-icon="cog"></span><span class="nl">Options</span></button>
+        <button class="nav-more" data-act="nav" data-view="options" title="Options"><span data-icon="cog"></span><span class="nl">Options</span></button>
+        <button class="nav-plus" data-act="navplus" title="Plus" aria-expanded="false"><span data-icon="more"></span><span class="nl">Plus</span></button>
       </nav>
     </div>
   </header>
@@ -932,6 +968,7 @@ body.land .plan-sheet{page:land}
 </div>
 <div id="print"></div>
 <div id="toast" role="status" aria-live="polite"></div>
+<div class="navsheet" id="navsheet" hidden><button data-act="nav" data-view="taches"><span data-icon="check"></span>Tâches</button><button data-act="nav" data-view="kks"><span data-icon="plant"></span>Installation</button><button data-act="nav" data-view="options"><span data-icon="cog"></span>Options</button></div>
 <div class="fab" id="fab"><div class="fab-menu" hidden><button data-act="new-int"><span data-icon="report"></span>Nouveau rapport</button><button data-act="quick-move" data-type="sortie"><span data-icon="move"></span>Mouvement de stock</button><button data-act="scan"><span data-icon="scan"></span>Scanner un QR</button></div><button class="fab-btn" data-act="fab" aria-label="Ajouter" aria-expanded="false">+</button></div>
 <input type="file" id="file-json" accept=".json,application/json" hidden>
 <datalist id="dl-lieux"></datalist>
@@ -2250,6 +2287,7 @@ const ICONS = {
   move:'M4 8h13l-3.5-3.5M20 16H7l3.5 3.5',
   more:'M5 12h.01M12 12h.01M19 12h.01',
   archive:'M3 4h18v4H3zM5 8v12h14V8M10 12h4',
+  mic:'M12 3a3 3 0 00-3 3v6a3 3 0 006 0V6a3 3 0 00-3-3zM5 11a7 7 0 0014 0M12 18v3M8.5 21h7',
   calendar:'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4M8 14h2M12 14h2M16 14h.01M8 17h2',
   scan:'M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M7 12h10',
   merge:'M6 3v6a6 6 0 006 6h6M15 12l3 3-3 3M6 21v-6',
@@ -2886,7 +2924,7 @@ function hydrateIcons(root = document){ $$('[data-icon]', root).forEach(el => { 
 function render(){
   contIdx = null; initPour();
   refreshDatalists(); refreshCounts();
-  $$('#nav button').forEach(b => b.setAttribute('aria-current', b.dataset.view === S.view ? 'page' : 'false'));
+  $$('#nav button').forEach(b => b.setAttribute('aria-current', b.dataset.view === S.view || (b.classList.contains('nav-plus') && ['taches', 'kks', 'options'].includes(S.view)) ? 'page' : 'false')); { const ns = $('#navsheet'); if (ns) ns.hidden = true; }
   const bk = S.back[S.back.length - 1], VN = {planning:'le planning', accueil:'l’accueil', pieces:'la pièce', kks:'l’installation', lieux:'les emplacements', interventions:'le rapport', taches:'la tâche', options:'les options'};
   const bl = bk ? (bk.view === 'pieces' && getPiece(bk.sel.pieces) ? `la pièce ${getPiece(bk.sel.pieces).ref}` : bk.view === 'pieces' && bk.q.pieces ? `la recherche « ${bk.q.pieces} »` : bk.view === 'kks' && getKks(bk.sel.kks) ? getKks(bk.sel.kks).code : VN[bk.view] || 'la page précédente') : '';
   const am = S.arch[S.view] ? `<div class="arch-mode">${icon('archive')}<span><strong>Archives</strong> · éléments retirés des listes, restaurables à tout moment.</span><button class="btn small" data-act="arch-view" data-v="${S.view}">Revenir à la liste</button></div>` : '';
@@ -2945,7 +2983,7 @@ VIEWS.accueil = {
       ${(() => { const me = meId(), mine = !!S.pour; const dueAll = db.taches.filter(t => live(t) && t.actif !== false && daysTo(t.prochaine) <= 7 && forWho(t, S.pour)).sort((a, b) => a.prochaine.localeCompare(b.prochaine)), due = dueAll.slice(0, 5);
         const who = me ? `<span class="who-line">${mine ? `${icon('person')}Filtré pour <b>${esc(pourLabel(S.pour))}</b>${S.pour === 'p:' + me && getPers(me).groupe ? ` et son groupe` : ''} · <button class="link" data-act="pour-all">Voir tout le monde</button>` : `Tout le monde · <button class="link" data-act="pour-me">Seulement mes affaires</button>`} · <button class="link" data-act="me">Changer de nom</button></span>` : `<span class="who-line"><button class="link" data-act="me">${icon('person')}Qui êtes-vous ? Choisissez votre nom pour voir vos tâches</button></span>`;
         const td = me ? db.plan.filter(x => x.who === me && x.date === todayISO()) : [];
-        const tdH = td.length ? `<div class="ptoday"><b>${icon('calendar')}Aujourd’hui au planning</b>${td.map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null; return `<button class="pit ${t ? 'task' : ''}" data-act="${t ? 'goto' : 'nav'}" data-view="${t ? 'taches' : 'planning'}" ${t ? `data-id="${t.id}"` : ''}>${t ? icon('repeat') : ''}<span>${esc(t ? t.titre : x.text)}</span>${t && x.text ? `<small>${esc(x.text)}</small>` : ''}</button>`; }).join('')}</div>` : '';
+        const tdH = td.length ? `<div class="ptoday"><b>${icon('calendar')}Aujourd’hui au planning</b>${td.map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null, done = t && db.interventions.some(i => i.tacheId === t.id && i.date === x.date); return `<div class="ptd ${done ? 'done' : ''}"><button class="pit ${t ? 'task' : ''}" data-act="${t ? 'goto' : 'nav'}" data-view="${t ? 'taches' : 'planning'}" ${t ? `data-id="${t.id}"` : ''}>${t ? icon('repeat') : ''}<span>${esc(t ? t.titre : x.text)}</span>${t && x.text ? `<small>${esc(x.text)}</small>` : ''}</button>${done ? `<span class="ok-tag">${icon('check')}Fait</span>` : `<button class="btn small primary" data-act="plan-done" data-id="${x.id}">${icon('check')}C’est fait</button>`}</div>`; }).join('')}</div>` : '';
         return `<section class="panel"><div class="panel-head"><h2>${mine ? 'Mes tâches' : 'Tâches à faire'}${dueAll.length ? ` <span class="muted" style="font-size:.9rem">${dueAll.length}</span>` : ''}</h2><button class="link" data-act="nav" data-view="taches">${dueAll.length > 5 ? `Voir les ${dueAll.length}` : 'Toutes'}</button></div>${who}${tdH}${due.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${due.map(t => tacheRow(t, false)).join('')}</tbody></table></div>` : '<div style="padding:0 16px 16px"><p class="empty-line">Rien en retard ni dans les 7 prochains jours.</p></div>'}</section>`; })()}
       <section class="panel"><div class="panel-head"><h2>Rapports en cours</h2><button class="link" data-act="nav" data-view="interventions">Toutes</button></div>${open.length ? intTable(open) : '<div style="padding:0 16px 16px"><p class="empty-line">Aucun rapport en cours.</p></div>'}</section>
       </div>
@@ -2975,7 +3013,7 @@ function filteredPieces(){
 }
 VIEWS.pieces = {
   shell: () => `<header class="page-head"><h1>Pièces</h1><div class="tools">${searchBox('pieces', 'Rechercher une pièce…')}<button class="btn icon-only" data-act="scan" title="Scanner un QR code" aria-label="Scanner un QR code">${icon('scan')}</button><button class="btn primary" data-act="new-piece">${icon('plus')}Nouvelle pièce</button>
-    ${menu([['labels-list', 'Étiquettes QR de la liste', 'qr', {}], ['toggle-low', S.lowOnly ? 'Afficher toutes les pièces' : 'Pièces sous le stock minimum', 'list', {}], ['xl-pieces', 'Exporter la liste (Excel)', 'excel', {}], '-', ['dups', 'Rechercher les doublons', 'merge', {}], ['relink-kks', 'Relier les repères KKS cités dans les notes', 'plant', {}], archItem('pieces'), '-', ['import-pieces', 'Importer depuis CareOffice (fichier)', 'save', {}]])}</div></header>
+    ${menu([['labels-list', 'Étiquettes QR de la liste', 'qr', {}], ['toggle-low', S.lowOnly ? 'Afficher toutes les pièces' : 'Pièces sous le stock minimum', 'list', {}], ['xl-pieces', 'Exporter la liste (Excel)', 'excel', {}], '-', ['to-order', 'Liste à commander', 'truck', {}], ['dups', 'Rechercher les doublons', 'merge', {}], ['relink-kks', 'Relier les repères KKS cités dans les notes', 'plant', {}], archItem('pieces'), '-', ['import-pieces', 'Importer depuis CareOffice (fichier)', 'save', {}]])}</div></header>
     ${S.zeroOnly ? `<p class="tools" style="margin:-6px 0 14px"><span class="chip bad">Pièces à zéro<button class="icon-btn" style="width:20px;height:20px;font-size:1rem;color:inherit" data-act="toggle-zero" aria-label="Afficher toutes les pièces">×</button></span></p>` : ''}
     ${S.lowOnly ? `<p class="tools" style="margin:-6px 0 14px"><span class="chip warn">Sous le stock minimum<button class="icon-btn" style="width:20px;height:20px;font-size:1rem;color:inherit" data-act="toggle-low" aria-label="Afficher toutes les pièces">×</button></span></p>` : ''}
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
@@ -3471,11 +3509,45 @@ VIEWS.planning = {
         ${mon !== mondayOf(today) ? `<button class="btn small" data-act="pweek" data-n="0">Cette semaine</button>` : ''}
         ${menu([['plan-print', 'Imprimer la semaine (A4 paysage)', 'printer', {}], ['plan-copy', 'Reprendre le texte libre de la semaine précédente', 'repeat', {}], ['plan-we', S.pwe ? 'Masquer le week-end' : 'Afficher le week-end', 'calendar', {}], '-', ['plan-hide', 'Personnes affichées…', 'person', {}]])}</div></header>
       <p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez dans une case pour attribuer une tâche ou écrire le travail à faire. Les codes (R, RM, VA…) viennent du Planning Tridel.</p>
-      <div class="wkgrid-wrap"><table class="wkgrid"><thead><tr><th></th>${days.map((d, i) => `<th class="${d === today ? 'today' : ''}">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="pwrap"><div class="wkgrid-wrap"><table class="wkgrid"><thead><tr><th></th>${days.map((d, i) => `<th class="${d === today ? 'today' : ''}">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>${planSideHTML(days, ppl)}</div>
       <div class="pmobile">${mobile}</div>`;
   },
   list: () => '', detail: () => ''
 };
+/* Tâches à planifier cette semaine (ou en retard) pour les personnes affichées, à glisser dans une case */
+function planSideHTML(days, ppl){
+  const end = days[days.length - 1], start = days[0], q = norm(S.q.planside || '');
+  const whoKeys = new Set(ppl.map(p => 'p:' + p.id)), planned = new Set(db.plan.filter(x => x.tacheId && x.date >= start && x.date <= end).map(x => x.tacheId));
+  let ts = db.taches.filter(t => live(t) && t.actif !== false && t.prochaine <= end && !planned.has(t.id) && [...whoKeys].some(k => forWho(t, k)));
+  if (q) ts = ts.filter(t => norm(`${t.titre} ${getKks(t.kksId)?.code || ''} ${assignLabel(t.assign)}`).includes(q));
+  ts.sort((a, b) => a.prochaine.localeCompare(b.prochaine));
+  const late = ts.filter(t => t.prochaine < start).length;
+  return `<aside class="pside"><div class="ps-h"><b>À planifier</b><small>${ts.length} tâche(s) dues d’ici ${fmtD(end)}${late ? ` · dont ${late} en retard` : ''}</small><input type="search" data-search="planside" data-pside="1" placeholder="Filtrer…" value="${esc(S.q.planside || '')}" aria-label="Filtrer les tâches à planifier"></div>
+    <div class="ps-l">${ts.slice(0, 150).map(t => { const k = getKks(t.kksId); return `<div class="ps-t ${t.prochaine < start ? 'late' : ''}" draggable="true" data-tid="${t.id}" title="Glissez dans la case d’une personne"><span class="t">${esc(t.titre)}</span><small>${k ? `<span class="kks">${esc(k.code)}</span> ` : ''}${esc(assignLabel(t.assign))} · ${fmtD(t.prochaine)}</small></div>`; }).join('') || '<p class="empty-line" style="padding:12px">Rien à planifier : tout est déjà placé.</p>'}${ts.length > 150 ? `<p class="list-note">${ts.length - 150} autre(s) : filtrez.</p>` : ''}</div>
+    <p class="hint ps-f">Glissez une tâche dans la case d’une personne.</p></aside>`;
+}
+document.addEventListener('dragstart', e => { const t = e.target.closest?.('[data-tid]'); if (!t) return; e.dataTransfer.setData('text/plain', 'tid:' + t.dataset.tid); e.dataTransfer.effectAllowed = 'copy'; t.classList.add('drag'); });
+document.addEventListener('dragend', e => { e.target.closest?.('[data-tid]')?.classList.remove('drag'); $$('.pc.drop').forEach(x => x.classList.remove('drop')); });
+document.addEventListener('dragover', e => { const c = e.target.closest?.('.pc[data-who]'); if (!c) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; if (!c.classList.contains('drop')){ $$('.pc.drop').forEach(x => x.classList.remove('drop')); c.classList.add('drop'); } });
+document.addEventListener('dragleave', e => { const c = e.target.closest?.('.pc[data-who]'); if (c && !c.contains(e.relatedTarget)) c.classList.remove('drop'); });
+document.addEventListener('drop', e => { const c = e.target.closest?.('.pc[data-who]'); if (!c) return; e.preventDefault(); c.classList.remove('drop');
+  const v = e.dataTransfer.getData('text/plain') || ''; if (!v.startsWith('tid:')) return; const t = get('taches', v.slice(4)); if (!t) return;
+  const who = c.dataset.who, date = c.dataset.date, p = getPers(who), pr = p ? presOf(p, date) : null, abs = pr && PCODE[pr.code]?.[1] === 'abs';
+  tx(() => { db.plan.push({id:uid(), date, who, tacheId:t.id, text:''}); }); render();
+  toast(`${t.titre} → ${p ? persName(p) : PLAN_ROWS.find(r => r[0] === who)?.[1] || ''}, ${dayLbl(date)}${abs ? ` · attention : absent (${pr.code})` : ''}`, abs ? 'bad' : '', true); });
+/* Pièces sous le minimum (stock minimum renseigné), regroupées par fournisseur */
+function orderRows(){ return db.pieces.filter(p => live(p) && p.stockMin > 0 && dispo(p) < p.stockMin).map(p => ({p, four:p.fournisseur || p.fabricant || 'Sans fournisseur', qty:round(p.stockMin - dispo(p))})).sort((a, b) => coll.compare(a.four, b.four) || coll.compare(a.p.designation, b.p.designation)); }
+function orderHTML(rows, print){
+  const g = new Map(); for (const r of rows){ if (!g.has(r.four)) g.set(r.four, []); g.get(r.four).push(r); }
+  return [...g].map(([f, list]) => `<${print ? 'tbody' : 'div class="ord-g"'}>${print ? `<tr><th colspan="5" class="g">${esc(f)}</th></tr>` : `<div class="ord-h">${icon('truck')}${esc(f)} <span class="muted">${list.length}</span></div>`}${list.map(({p, qty}) => print ? `<tr><td class="mono">${esc(p.ref)}</td><td>${esc(p.designation)}${p.refFab ? `<br><small>réf. ${esc(p.refFab)}</small>` : ''}</td><td class="n">${num(dispo(p))}</td><td class="n">${num(p.stockMin)}</td><td class="n"><b>${num(qty)}</b> ${esc(p.unite)}</td></tr>` : `<button class="four-p" data-goto-p="${p.id}"><span class="pid">${esc(p.ref)}</span><span class="t">${esc(p.designation)}</span><span class="muted">${num(dispo(p))} / min ${num(p.stockMin)}</span><span class="q">+${num(qty)} <small>${esc(p.unite)}</small></span></button>`).join('')}</${print ? 'tbody' : 'div'}>`).join('');
+}
+function orderDialog(){
+  const rows = orderRows();
+  dialog({title:'Liste à commander', wide:true, saveLabel:'Imprimer',
+    body: rows.length ? `<p class="hint">${rows.length} pièce(s) sous leur stock minimum, regroupées par fournisseur. La quantité proposée ramène le stock au minimum.</p>${orderHTML(rows, false)}<div class="tools"><button type="button" class="btn small" data-ord-xl>${icon('excel')}Exporter (Excel)</button></div>` : '<p>Aucune pièce sous son stock minimum.</p>',
+    onOpen(f, d){ d.addEventListener('click', e => { const b = e.target.closest('[data-goto-p]'); if (b){ d.close(); go('pieces', b.dataset.gotoP); } if (e.target.closest('[data-ord-xl]')) downloadXlsx(xlName('a-commander'), 'À commander', [['Fournisseur', 'ID', 'Désignation', 'Réf. fabricant', 'En stock', 'Minimum', 'À commander', 'Unité'], ...rows.map(r => [r.four, /^\d+$/.test(r.p.ref) ? +r.p.ref : r.p.ref, r.p.designation, r.p.refFab || '', dispo(r.p), r.p.stockMin, r.qty, r.p.unite || ''])]); }); },
+    onSave(){ if (!rows.length) return; doPrint(`<article class="rpt"><header class="rpt-head"><div><div class="rpt-org">Tridel · Maintenance</div><h1>Pièces à commander</h1></div><div class="rpt-num"><div>${fmtD(todayISO())}</div></div></header><table class="rpt-tbl"><thead><tr><th>ID</th><th>Désignation</th><th class="n">Stock</th><th class="n">Min.</th><th class="n">À commander</th></tr></thead>${orderHTML(rows, true)}</table><footer class="rpt-foot">TriFlow</footer></article>`); }});
+}
 function planDialog(who, date, item){
   const isNew = !item, p = getPers(who), row = PLAN_ROWS.find(r => r[0] === who), mon = mondayOf(date);
   const t0 = item?.tacheId ? get('taches', item.tacheId) : null, pr = p ? presOf(p, date) : null, pc = pr && pr.code ? PCODE[pr.code] : null;
@@ -3488,7 +3560,7 @@ function planDialog(who, date, item){
       <label>${row && who !== 'row:autres' ? (who === 'row:ext' ? 'Entreprise et travail' : 'Réservation') : 'Travail à faire / remarque'}<textarea name="text" rows="3" ${who === 'row:ext' ? 'list="dl-marques"' : ''} placeholder="${who === 'row:ext' ? 'ex. Caliqua : révision vanne 1LAB40AA410' : who === 'row:nacelle' ? 'ex. Nacelle 20 m · halle chaudière · 8h–12h' : 'ex. Aider Lima au remplacement des toiles'}">${esc(item?.text || '')}</textarea></label>
       ${isNew ? `<fieldset><legend>Jours</legend><div class="pdchk">${days.map((d, i) => `<label class="chk"><input type="checkbox" name="d" value="${d}" ${d === date ? 'checked' : ''}> ${DAYS[i]} ${+d.slice(8)}</label>`).join('')}</div></fieldset>
       ${mates.length ? `<fieldset><legend>Aussi pour</legend><div class="pdchk">${mates.map(x => { const q = presOf(x, date), a = q && PCODE[q.code]?.[1] === 'abs'; return `<label class="chk ${a ? 'abs' : ''}"><input type="checkbox" name="m" value="${x.id}"> ${esc(persName(x))}${a ? ` <small>(${esc(q.code)})</small>` : ''}</label>`; }).join('')}</div></fieldset>` : ''}` : ''}
-      ${t0 ? `<div class="tools"><button type="button" class="btn small" data-go-task="${t0.id}">${icon('check')}Ouvrir la tâche</button></div>` : ''}`,
+      ${!isNew ? `<div class="tools">${t0 ? `<button type="button" class="btn small" data-go-task="${t0.id}">${icon('repeat')}Ouvrir la tâche</button>` : ''}<button type="button" class="btn small primary" data-plan-done="${item.id}">${icon('check')}C’est fait : faire le rapport</button></div>` : ''}`,
     del: isNew ? null : {label:'Retirer du planning', soft:true, run(){ tx(() => { db.plan = db.plan.filter(x => x !== item); }); render(); toast('Retiré du planning', '', true); }},
     onOpen(f, d){
       if (f.elements.tache){
@@ -3496,6 +3568,7 @@ function planDialog(who, date, item){
         combo(f.elements.tache, {items: () => db.taches.filter(t => live(t) && t.actif !== false).sort((a, b) => (wantG ? (forWho(b, wantG) - forWho(a, wantG)) : 0) || a.prochaine.localeCompare(b.prochaine)).map(t => { const k = getKks(t.kksId); return {id:t.id, label:t.titre, search:`${t.titre} ${k ? k.code + ' ' + k.designation : ''} ${assignLabel(t.assign)}`, html:`${esc(t.titre)}${k ? ` <span class="kks">${esc(k.code)}</span>` : ''}`, right:`<span class="muted">${esc(assignLabel(t.assign))} · ${fmtD(t.prochaine)}</span>`}; })});
       }
       const gb = $('[data-go-task]', d); if (gb) gb.onclick = () => { d.close(); go('taches', gb.dataset.goTask); };
+      const db2 = $('[data-plan-done]', d); if (db2) db2.onclick = () => { d.close(); ACT['plan-done']({id:db2.dataset.planDone}); };
     },
     onSave(f){
       const ti = f.elements.tache; let tid = '';
@@ -3711,6 +3784,7 @@ $('#gq').addEventListener('keydown', e => {
 window.addEventListener('scroll', e => { if (!e.target.closest?.('.menu-list')) closeMenus(); }, true);
 window.addEventListener('resize', () => closeMenus());
 document.addEventListener('mousedown', e => { if (!e.target.closest('.gsearch')) closeSearch(); if (!e.target.closest('.menu')) closeMenus(); if (!e.target.closest('#fab .fab-btn')){ const m = $('#fab .fab-menu'); if (m && !m.hidden && !e.target.closest('#fab .fab-menu')){ m.hidden = true; $('#fab .fab-btn').setAttribute('aria-expanded', 'false'); } } });
+document.addEventListener('mousedown', e => { const ns = $('#navsheet'); if (ns && !ns.hidden && !e.target.closest('#navsheet') && !e.target.closest('.nav-plus')) ns.hidden = true; });
 document.getElementById('fab').addEventListener('click', e => { if (e.target.closest('.fab-menu button')){ setTimeout(() => { $('#fab .fab-menu').hidden = true; $('#fab .fab-btn').setAttribute('aria-expanded', 'false'); }, 0); } });
 document.addEventListener('keydown', e => {
   const list = e.target.closest?.('.menu-list');
@@ -4236,11 +4310,25 @@ function combo(input, {items, onPick, keep = true, max = 60}){
 const pieceItems = () => db.pieces.filter(live).sort((a, b) => coll.compare(a.ref, b.ref)).map(p => { const mp = mainPlace(p); return {id:p.id, key:p.ref, label:pieceLabel(p), search:[p.ref, p.designation, p.fabricant, p.refFab].join(' '), html:`<span class="ref">${esc(p.ref)}</span> ${esc(p.designation)}`, right:`<span class="qty">${num(total(p))} ${esc(p.unite)}</span>${mp ? ' · ' + esc(lieuCode(mp)) : ''}`}; });
 
 /* ---------- Interventions ---------- */
-function interventionDialog(it, kksId, tache){
+/* Dictée vocale (Chrome, Edge, Safari) : le texte s'ajoute au champ */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition, HAS_DICT = !!SR;
+let DICT = null;
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-dict]'); if (!b) return; e.preventDefault();
+  if (DICT){ DICT.stop(); return; }
+  const ta = b.closest('form').elements[b.dataset.dict]; const r = new SR(); r.lang = 'fr-CH'; r.continuous = true; r.interimResults = true;
+  const base = ta.value ? ta.value.replace(/\s+$/, '') + ' ' : ''; let fin = '';
+  r.onresult = ev => { let tmp = ''; for (let i = ev.resultIndex; i < ev.results.length; i++){ const t = ev.results[i][0].transcript; if (ev.results[i].isFinal) fin += t; else tmp += t; } ta.value = base + fin + tmp; };
+  r.onerror = ev => { if (ev.error === 'not-allowed') toast('Micro refusé : autorisez-le dans le navigateur.', 'bad'); };
+  r.onend = () => { DICT = null; b.classList.remove('on'); ta.value = (base + fin).replace(/\s+$/, ''); };
+  DICT = r; b.classList.add('on'); try { r.start(); } catch(x){ DICT = null; b.classList.remove('on'); }
+}, true);
+function interventionDialog(it, kksId, tache, opts = {}){
   const isNew = !it;
   const T = tache || get('taches', it?.tacheId);
   const v = it || (tache ? {num:nextNum(), date:todayISO(), type:db.listes.types.find(x => /pr[ée]ventive/i.test(x)) || db.listes.types[0] || '', statut:'terminee', kksId:tache.kksId, titre:tache.titre, constat:tache.description, travaux:'', duree:'', intervenants:tache.assign?.type === 'personne' && getPers(tache.assign.v) ? [tache.assign.v] : [], pieces:[]}
     : {num:nextNum(), date:todayISO(), type:db.listes.types[0] || '', statut:'ouverte', kksId:kksId || '', titre:'', constat:'', travaux:'', duree:'', intervenants:[], pieces:[]});
+  if (isNew){ const me = meId(); const add = [...(opts.who || []), ...(me ? [me] : [])].filter(id => getPers(id)); if (add.length) v.intervenants = [...new Set([...v.intervenants, ...add])]; if (opts.date) v.date = opts.date; if (opts.text && !v.travaux) v.constat = [v.constat, opts.text].filter(Boolean).join('\n'); }
   const k = getKks(v.kksId);
   const people = db.personnes.filter(p => (p.actif !== false && live(p)) || v.intervenants.includes(p.id)).sort(persSort);
   const snapFor = id => (it?.snap?.[id]) || (isFourId(id) ? fourSnap(id.slice(5)) : getPers(id) ? persSnap(getPers(id)) : {nom:'(supprimé)', prenom:'', groupe:''});
@@ -4253,7 +4341,7 @@ function interventionDialog(it, kksId, tache){
     body:`${T ? `<p class="task-note">${icon('repeat')}<span>Tâche « ${esc(T.titre)} » · ${esc(freqLabel(T.freq))}${T.actif !== false ? ` · prévue le ${fmtD(T.prochaine)}` : ''}. ${it?.tacheFait ? '' : 'Elle passera à l’échéance suivante quand ce rapport sera « Terminé ».'}</span></p>` : ''}
       <label>Quoi ?<input name="titre" value="${esc(v.titre)}" required placeholder="ex. Fuite garniture pompe alimentaire"></label>
       <label>Où ? · équipement (KKS)<input name="kks" list="dl-kks" value="${k ? esc(kksLabel(k)) : ''}" placeholder="Code ou désignation" autocomplete="off"></label>
-      <label>Ce qui a été fait<textarea name="travaux" rows="4" placeholder="Décrivez l’intervention…">${esc(v.travaux)}</textarea></label>
+      <label>Ce qui a été fait<span class="dict-wrap"><textarea name="travaux" rows="4" placeholder="Décrivez l’intervention…">${esc(v.travaux)}</textarea>${HAS_DICT ? `<button type="button" class="dict" data-dict="travaux" title="Dicter" aria-label="Dicter le texte">${icon('mic')}</button>` : ''}</span></label>
       <div class="grid2"><label>Date<input name="date" type="date" value="${esc(v.date)}" required></label><label>Statut<select name="statut">${Object.entries(STATUTS).map(([a, b]) => opt(a, b[0], v.statut)).join('')}</select></label></div>
       <fieldset><legend>Intervenants</legend>${people.length ? `<div class="chips" data-psel></div>
         <input data-padd placeholder="Ajouter : une personne ou une entreprise externe…" aria-label="Ajouter un intervenant">
@@ -4261,7 +4349,7 @@ function interventionDialog(it, kksId, tache){
         <div class="pgrid" data-pgrid></div>` : '<p class="hint">Aucune personne enregistrée.</p>'}</fieldset>
       <details class="more" ${!isNew && (v.constat || v.duree || v.pieces.length) ? 'open' : ''}><summary>${icon('chev')}Plus de détails <span class="muted">type, durée, constat, pièces utilisées</span></summary>
       <div class="grid2"><label>Type<select name="type">${optList(db.listes.types, v.type)}</select></label><label>Durée (heures)<input name="duree" type="number" min="0" step="0.25" value="${esc(v.duree)}"></label></div>
-      <label>Constat / demande<textarea name="constat" rows="3">${esc(v.constat)}</textarea></label>
+      <label>Constat / demande<span class="dict-wrap"><textarea name="constat" rows="3">${esc(v.constat)}</textarea>${HAS_DICT ? `<button type="button" class="dict" data-dict="constat" title="Dicter" aria-label="Dicter le texte">${icon('mic')}</button>` : ''}</span></label>
       <fieldset><legend>Pièces consommées</legend><div class="plines"></div><div class="tools"><button type="button" class="btn ghost small" data-addline>${icon('plus')}Ajouter une pièce</button></div><p class="hint">Les quantités sont retirées du stock à l’enregistrement ; modifier ou supprimer une ligne remet la différence en stock.</p></fieldset></details>`,
     del: isNew ? null : archDel('interventions', it, function(){
       tx(() => { it.pieces.forEach(x => { const p = getPiece(x.pieceId); if (p && getLieu(x.lieuId)) addStock(p, x.lieuId, x.qte, 'Annulation intervention', it.num); }); db.interventions = db.interventions.filter(i => i !== it); });
@@ -4571,6 +4659,8 @@ const ACT = {
   'plan-edit'(d){ const x = db.plan.find(y => y.id === d.id); if (x) planDialog(x.who, x.date, x); },
   'plan-we'(){ S.pwe = !S.pwe; render(); },
   'plan-hide': () => planHideDialog(),
+  navplus(d, t){ const s2 = $('#navsheet'); s2.hidden = !s2.hidden; t.setAttribute('aria-expanded', String(!s2.hidden)); },
+  'to-order': () => orderDialog(),
   'plan-print'(){ document.body.classList.add('land'); doPrint(planSheetHTML()); },
   'plan-copy'(){ const mon = S.pweek, prev = isoAdd(mon, -7); const src = db.plan.filter(x => x.date >= prev && x.date < mon && !x.tacheId && x.text); if (!src.length){ toast('Aucun texte libre la semaine précédente.'); return; }
     tx(() => { for (const x of src){ const dd = isoAdd(x.date, 7); if (!db.plan.some(y => y.who === x.who && y.date === dd && y.text === x.text)) db.plan.push({id:uid(), date:dd, who:x.who, text:x.text}); } }); render(); toast(`${src.length} ligne(s) reprise(s)`, '', true); },
@@ -4659,6 +4749,8 @@ const ACT = {
   'new-tache': d => tacheDialog(null, d.kks),
   'edit-tache': d => tacheDialog(get('taches', d.id)),
   'do-tache': d => interventionDialog(null, null, get('taches', d.id)),
+  'plan-done'(d){ const x = db.plan.find(y => y.id === d.id); if (!x) return; const t = x.tacheId ? get('taches', x.tacheId) : null; const who = db.plan.filter(y => y.date === x.date && (t ? y.tacheId === t.id : y.text === x.text) && getPers(y.who)).map(y => y.who);
+    if (t) interventionDialog(null, null, t, {who, date:x.date, text:x.text}); else { interventionDialog(null, null, null, {who, date:x.date}); setTimeout(() => { const f = document.querySelector('dialog[open] form'); if (f && f.elements.titre && !f.elements.titre.value) f.elements.titre.value = x.text.split('\n')[0].slice(0, 120); }, 50); } },
   'print-taches': () => doPrint(tachesSheetHTML()),
   'toggle-tvue'(){ S.tvue = S.tvue === 'toutes' ? 'afaire' : 'toutes'; render(); },
   'edit-int': d => interventionDialog(getInt(d.id)),
@@ -4743,7 +4835,8 @@ document.addEventListener('submit', e => {
   try { FORMS[f.dataset.form](f); } catch(x){ toast(x.message, 'bad'); }
 });
 document.addEventListener('input', e => {
-  const k = e.target.dataset?.search; if (!k) return; S.q[k] = e.target.value; if (k === 'interventions') S.ryear = null;
+  const k = e.target.dataset?.search; if (!k) return; S.q[k] = e.target.value;
+  if (e.target.dataset.pside){ const mon = S.pweek, nd = S.pwe ? 7 : 5, days = Array.from({length:nd}, (_, i) => isoAdd(mon, i)); const el = $('.pside'); if (el){ const pos = e.target.selectionStart; el.outerHTML = planSideHTML(days, planPeople()); const ni = $('.pside input'); ni.focus(); ni.setSelectionRange(pos, pos); } return; } if (k === 'interventions') S.ryear = null;
   if (e.target.dataset.opt4){ render(); const i = document.querySelector('[data-opt4]'); if (i){ i.focus(); i.setSelectionRange(i.value.length, i.value.length); } return; }
   if (e.target.dataset.opt){ const q = norm(S.q.optkks); $('#opt-list').innerHTML = optKksTable(db.kks.filter(x => live(x) && (!q || norm(`${x.code} ${x.designation} ${x.aic || ''}`).includes(q))).sort(kksSort)); }
   else fillList();
