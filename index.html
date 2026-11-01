@@ -81,6 +81,12 @@ p{margin:0}
 .nav button[aria-current="page"]{background:#fff;color:#155C39}
 .nav button:focus-visible{outline:2px solid #fff;outline-offset:1px}
 .content{min-width:0;display:flex;flex-direction:column}
+@media (min-width:981px){
+  .hero{min-height:0;padding:18px 22px 16px}
+  .hero-inner{flex-direction:row;align-items:center;justify-content:flex-start;gap:26px}
+  .hero p{display:none}
+  .hero h1{font-size:1.5rem}
+}
 .foot{padding:8px 0 28px;font-size:.78rem;color:var(--muted)}
 .topbar{position:sticky;top:0;z-index:15;background:var(--bg);padding-block:12px}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:16;background:var(--bg)}
@@ -426,6 +432,12 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 @media (prefers-reduced-motion:reduce){#detail > *{animation:none}.kpi{transition:none}}
 .back-nav{margin:0 0 10px}
 .back-nav .ico{transform:rotate(180deg)}
+.pd-info.rep{margin-top:6px}
+.pps{display:flex;flex-wrap:wrap;gap:6px}
+.pp{display:inline-flex;align-items:baseline;gap:5px;padding:3px 9px;border-radius:999px;background:var(--sunk);font-size:.85rem}
+.pp small{color:var(--muted);font-size:.72rem}
+.prow .ploc .kks{font-size:.72rem;padding:0 5px}
+.pd-sec .pre{margin:0;line-height:1.55}
 .pd-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
 .pd-id{font-family:var(--f-mono);font-size:.85rem;font-weight:700;color:var(--muted);background:var(--sunk);padding:3px 10px;border-radius:999px}
 .pd-tools{display:flex;gap:6px;align-items:center}
@@ -2047,6 +2059,7 @@ const ICONS = {
   qr:'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2M14 18h2v2M18 18h2v2h-2',
   report:'M7 3h7l5 5v13H7zM14 3v5h5M10 12h6M10 16h6',
   move:'M4 8h13l-3.5-3.5M20 16H7l3.5 3.5',
+  more:'M5 12h.01M12 12h.01M19 12h.01',
   edit:'M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4',
   chev:'M9 6l6 6-6 6',
   arrow:'M4 12h15M14 7l5 5-5 5',
@@ -2064,7 +2077,7 @@ const ICONS = {
   tag:'M3 12V4h8l10 10-8 8zM7.5 7.5h.5'
 };
 let menuSeq = 0;
-function menu(items, label = 'Options', ic = 'cog', cls = ''){
+function menu(items, label = 'Plus', ic = 'more', cls = ''){
   const id = 'menu-' + (++menuSeq);
   return `<div class="menu"><button type="button" class="btn ${cls}" data-act="menu" aria-haspopup="menu" aria-expanded="false" aria-controls="${id}">${icon(ic)}${label}<svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="menu-list" id="${id}" role="menu" hidden>${items.map(it => it === '-' ? '<hr>' : `<button type="button" role="menuitem" data-act="${it[0]}" ${Object.entries(it[3] || {}).map(([k, v]) => `data-${k}="${esc(v)}"`).join(' ')}>${icon(it[2])}${it[1]}</button>`).join('')}</div></div>`;
 }
@@ -2629,7 +2642,7 @@ VIEWS.accueil = {
     <div class="quick">${qa('quick-move', 'sortie', 'move', 'Mouvement de stock')}${qa('new-int', '', 'report', 'Nouveau rapport')}${qa('labels-pick', '', 'qr', 'Étiquettes QR')}</div>
     <div class="cols">
       <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
-      ${(() => { const due = db.taches.filter(t => t.actif !== false && daysTo(t.prochaine) <= 7).sort((a, b) => a.prochaine.localeCompare(b.prochaine)); return `<section class="panel"><div class="panel-head"><h2>Tâches à faire</h2><button class="link" data-act="nav" data-view="taches">Toutes</button></div>${due.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${due.map(t => tacheRow(t, false)).join('')}</tbody></table></div>` : '<div style="padding:0 16px 16px"><p class="empty-line">Rien en retard ni dans les 7 prochains jours.</p></div>'}</section>`; })()}
+      ${(() => { const dueAll = db.taches.filter(t => t.actif !== false && daysTo(t.prochaine) <= 7).sort((a, b) => a.prochaine.localeCompare(b.prochaine)), due = dueAll.slice(0, 5); return `<section class="panel"><div class="panel-head"><h2>Tâches à faire${dueAll.length ? ` <span class="muted" style="font-size:.9rem">${dueAll.length}</span>` : ''}</h2><button class="link" data-act="nav" data-view="taches">${dueAll.length > 5 ? `Voir les ${dueAll.length}` : 'Toutes'}</button></div>${due.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${due.map(t => tacheRow(t, false)).join('')}</tbody></table></div>` : '<div style="padding:0 16px 16px"><p class="empty-line">Rien en retard ni dans les 7 prochains jours.</p></div>'}</section>`; })()}
       <section class="panel"><div class="panel-head"><h2>Rapports en cours</h2><button class="link" data-act="nav" data-view="interventions">Toutes</button></div>${open.length ? intTable(open) : '<div style="padding:0 16px 16px"><p class="empty-line">Aucun rapport en cours.</p></div>'}</section>
       </div>
       <section class="panel"><div class="panel-head"><h2>Installation</h2><button class="link" data-act="nav" data-view="kks">Tout voir</button></div>
@@ -2871,21 +2884,25 @@ VIEWS.interventions = {
     rows.sort((a, b) => b.date.localeCompare(a.date) || b.num.localeCompare(a.num));
     if (!db.interventions.length) return empty('Aucun rapport', '<p>Créez le premier avec « Nouveau rapport ».</p>');
     if (!rows.length) return empty(S.statut === 'actives' ? 'Aucun rapport en cours' : 'Aucun rapport ne correspond', S.statut !== 'toutes' ? `<p><button class="btn small" data-act="int-all">Afficher les ${db.interventions.length} rapports</button></p>` : '');
-    return `<div class="tbl-wrap"><table class="tbl"><tbody>${rows.map(i => `<tr data-act="select" data-id="${i.id}" class="${S.sel.interventions === i.id ? 'sel' : ''}" tabindex="0"><td><span class="ref">${esc(i.num)} · ${fmtD(i.date)}</span><span class="des">${esc(i.titre)}</span></td><td class="num">${statutChip(i.statut)}</td></tr>`).join('')}</tbody></table></div>`;
+    return `<div class="list-bar"><span class="muted">${rows.length} rapport(s)</span></div><div class="plist">${rows.slice(0, 400).map(i => { const k = kInfo(i); return `<button class="prow ${S.sel.interventions === i.id ? 'sel' : ''}" data-act="select" data-id="${i.id}">
+        <span class="pm"><span class="pdes">${esc(i.titre)}</span><span class="ploc"><span class="pid">${fmtD(i.date)}</span>${k ? `<span class="kks">${esc(k.code)}</span>` : ''}${i.type ? `<span class="muted">${esc(i.type)}</span>` : ''}</span></span>
+        ${i.statut !== 'terminee' ? statutChip(i.statut) : ''}</button>`; }).join('')}${rows.length > 400 ? `<p class="list-note">${rows.length - 400} autre(s) : utilisez la recherche.</p>` : ''}</div>`;
   },
   detail(){
     const i = getInt(S.sel.interventions);
     if (!i) return placeholder('report', 'Choisissez un rapport.');
     const k = kInfo(i), T = tInfo(i);
     const names = intPers(i).map(x => `${getPers(x.id) ? `<button class="link" data-act="pers-ints" data-id="${x.id}">${esc(persName(x))}</button>` : esc(persName(x))}${x.groupe ? ` <span class="muted">(${esc(x.groupe)})</span>` : ''}`).join(', ');
-    return `<div class="d-head"><div class="d-title"><span class="ref">${esc(i.num)} · ${fmtD(i.date)}</span><h2>${esc(i.titre)}</h2></div>
-      <div class="d-actions"><button class="btn primary" data-act="edit-int" data-id="${i.id}">${icon('edit')}Compléter</button><button class="btn" data-act="print-int" data-id="${i.id}">${icon('printer')}Imprimer</button></div></div>
-      <dl class="facts"><div><dt>Statut</dt><dd>${statutChip(i.statut)}</dd></div>${i.duree ? `<div><dt>Durée</dt><dd class="qty">${num(i.duree)} h</dd></div>` : ''}
-      <div class="wide"><dt>Équipement</dt><dd>${k ? `${kTagI(i)} ${esc(k.designation)}` : '—'}</dd></div>
-      <div class="wide"><dt>Intervenants</dt><dd>${names || '—'}</dd></div>
-      ${T ? `<div class="wide"><dt>Tâche</dt><dd>${get('taches', i.tacheId) ? `<button class="link" data-act="goto" data-view="taches" data-id="${i.tacheId}">${icon('repeat')}${esc(T.titre)}</button>` : esc(T.titre)} <span class="muted">· ${esc(T.freq)}</span></dd></div>` : ''}</dl>
-      ${i.constat ? `<section class="block"><h3>Constat</h3><p class="pre">${esc(i.constat)}</p></section>` : ''}
-      ${i.travaux ? `<section class="block"><h3>Travaux réalisés</h3><p class="pre">${esc(i.travaux)}</p></section>` : ''}
+    const pills = intPers(i).map(x => `<span class="pp">${getPers(x.id) ? `<button class="link" data-act="pers-ints" data-id="${x.id}">${esc(persName(x))}</button>` : esc(persName(x))}${x.groupe ? `<small>${esc(x.groupe)}</small>` : ''}</span>`).join('');
+    return `<div class="pd-head"><span class="pd-id">${esc(i.num)}</span><div class="pd-tools">${i.statut !== 'terminee' ? statutChip(i.statut) : ''}<button class="btn small" data-act="edit-int" data-id="${i.id}">${icon('edit')}${i.statut === 'terminee' ? 'Modifier' : 'Compléter'}</button><button class="btn small" data-act="print-int" data-id="${i.id}">${icon('printer')}Imprimer</button></div></div>
+      <h2 class="pd-title">${esc(i.titre)}</h2>
+      <p class="pd-sub">${fmtD(i.date)}${i.type ? ` · ${esc(i.type)}` : ''}${i.duree ? ` · ${num(i.duree)} h` : ''}${i.statut === 'terminee' ? ' · <span style="color:var(--ok)">terminé</span>' : ''}</p>
+      <dl class="pd-info rep">
+        <dt>Équipement</dt><dd>${k ? `${kTagI(i)} ${esc(k.designation)}` : '—'}</dd>
+        ${T ? `<dt>Tâche</dt><dd>${get('taches', i.tacheId) ? `<button class="link" data-act="goto" data-view="taches" data-id="${i.tacheId}">${esc(T.titre)}</button>` : esc(T.titre)} <span class="muted">· ${esc(T.freq)}</span></dd>` : ''}
+        <dt>Intervenants</dt><dd>${pills ? `<span class="pps">${pills}</span>` : '—'}</dd></dl>
+      ${i.constat ? `<section class="pd-sec"><h3>${icon('report')}Constat / demande</h3><p class="pre">${esc(i.constat)}</p></section>` : ''}
+      ${i.travaux ? `<section class="pd-sec"><h3>${icon('wrench')}Travaux réalisés</h3><p class="pre">${esc(i.travaux)}</p></section>` : ''}
       ${i.pieces.length ? `<section class="block"><h3>Pièces utilisées</h3><div class="tbl-wrap"><table class="tbl compact"><tbody>${i.pieces.map(x => { const p = getPiece(x.pieceId), s = lineInfo(x, i); return `<tr ${p ? `data-act="goto" data-view="pieces" data-id="${p.id}" tabindex="0"` : ''}><td><span class="ref">${esc(s.ref)}</span> ${esc(s.designation)}${s.lieu ? `<span class="sub">${esc(s.lieu)}</span>` : ''}</td><td class="num qty">${num(x.qte)} ${esc(s.unite || '')}</td></tr>`; }).join('')}</tbody></table></div></section>` : ''}`;
   }
 };
