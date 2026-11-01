@@ -433,7 +433,7 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .back-nav{margin:0 0 10px}
 .back-nav .ico{transform:rotate(180deg)}
 .pd-info.rep{margin-top:6px}
-@media (max-width:980px){ .help-btn{position:absolute !important;top:14px;right:16px} }
+@media (min-width:761px) and (max-width:980px){ .help-btn{position:absolute !important;top:14px;right:16px} }
 .help-btn{all:unset;cursor:pointer;position:relative;flex:none;z-index:3;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.18);color:#fff;font-weight:800;border:1px solid rgba(255,255,255,.35)}
 .help-btn:hover{background:rgba(255,255,255,.3)}
 .help details{border:1px solid var(--line);border-radius:10px;margin-bottom:8px}
@@ -944,6 +944,72 @@ body.land .plan-sheet{page:land}
 .lbl-prev .sheet,.lbl-prev .roll{zoom:.55;background:#fff;color:#000;box-shadow:0 1px 6px rgba(0,0,0,.25);margin:0 auto 14px}
 .lbl-prev .sheet{height:auto;min-height:120mm}
 .lbl-prev .sheet > *{outline:1px dashed #c8c8c8}
+
+/* ---------- Ergonomie v5 ---------- */
+.hsync{display:inline-flex;align-items:center;gap:6px;margin-left:10px;vertical-align:middle;font-size:.72rem;font-weight:600;color:#D3E8DB;letter-spacing:0;font-family:var(--f-body)}
+.hsync i{width:8px;height:8px;border-radius:50%;background:#6FD08A;box-shadow:0 0 0 3px rgba(111,208,138,.18);flex:none}
+.hsync[data-state=saving] i,.hsync[data-state=sync] i{background:#F2C14E;box-shadow:0 0 0 3px rgba(242,193,78,.2)}
+.hsync[data-state=offline] i,.hsync[data-state=error] i{background:#FF6B5E;box-shadow:0 0 0 3px rgba(255,107,94,.25)}
+.hsync span:empty{display:none}
+.chip.old{background:var(--sunk);color:var(--muted)}
+.chip.old::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--warn);flex:none}
+.pd-loc .q{white-space:nowrap}
+.mdue{display:none}
+.kpi .kt2{display:block;font-size:.72rem;color:var(--muted);font-weight:500;margin-top:1px}
+.pcode.k-abs{color:var(--bad);border-color:currentColor}.pcode.k-on{color:var(--ok)}.pcode.k-rot{color:var(--steel)}
+.four-row td:first-child{display:table-cell}
+.four-row .fr-n{display:flex;align-items:center;gap:8px}
+.fchips{display:flex;gap:6px;overflow-x:auto;padding:10px 12px;border-bottom:1px solid var(--line);scrollbar-width:thin}
+.fchips .ychip.bad[aria-selected=false] small{color:var(--bad);opacity:1;font-weight:700}
+.fchips .ychip.warn[aria-selected=false] small{color:var(--warn);opacity:1;font-weight:700}
+.list-bar .lb-sort{margin-left:auto}
+tr.grp.old th{color:var(--muted)}
+.ps-t.old{border-color:var(--line);background:var(--sunk)}
+.ps-sep{margin:8px 2px 2px;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.wkgrid thead th.today{background:var(--accent-soft)}
+.wkgrid thead th.today::after{content:'Aujourd’hui';display:inline-block;margin-top:2px;font-size:.66rem;font-weight:700;color:var(--accent-ink);background:var(--accent);border-radius:999px;padding:0 7px}
+.wkgrid td.today{background:color-mix(in srgb, var(--accent-soft) 70%, transparent);box-shadow:inset 1px 0 0 var(--accent-line),inset -1px 0 0 var(--accent-line)}
+.ptip-row{display:flex;flex-wrap:wrap;align-items:flex-start;gap:6px 16px;margin:-4px 0 12px}
+.ptip-row .hint{margin:0;flex:1 1 320px}
+.plegend{font-size:.8rem}
+.plegend summary{cursor:pointer;color:var(--steel);font-weight:600;list-style:none;display:inline-flex;align-items:center;gap:5px}
+.plegend summary::-webkit-details-marker{display:none}
+.plegend[open] summary{margin-bottom:6px}
+.plegend .lg{display:flex;flex-wrap:wrap;gap:4px 12px;max-width:760px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.plegend .lg b{width:100%;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:4px}
+.plegend .lg span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.plegend .pcode{align-self:auto}
+.week{display:flex;flex-direction:column}
+.wd{display:grid;grid-template-columns:62px minmax(0,1fr);gap:10px;align-items:start;padding:9px 16px;border-top:1px solid var(--line)}
+.wd.today{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.wd.past{opacity:.6}
+.wd .wdl{font-size:.8rem;font-weight:700;line-height:1.2}
+.wd .wdl small{display:block;font-weight:500;color:var(--muted);font-family:var(--f-mono)}
+.wd .wdi{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0}
+.wd .wdi .pit{max-width:100%}
+.wd .wdi .muted{font-size:.85rem}
+.wd .abs{font-size:.8rem;color:var(--bad);font-weight:600}
+@media (max-width:760px){
+  .app{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+  .hero{min-height:0 !important;padding:10px 14px !important;border-radius:14px}
+  .hero-inner{flex-direction:row;align-items:center;gap:10px}
+  .hero-stripe{height:4px}
+  .hero h1{font-size:1.15rem !important}
+  .help-btn{position:static !important;margin-left:auto;width:28px;height:28px}
+  .nav{position:fixed;left:0;right:0;bottom:0;z-index:35;border-radius:0;border:0;border-top:1px solid rgba(255,255,255,.12);background:#0E2818;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:0 -6px 20px rgba(0,0,0,.18)}
+  .nav button{padding:7px 2px}
+  .navsheet{top:auto;bottom:calc(76px + env(safe-area-inset-bottom,0px));right:10px}
+  .fab{bottom:calc(84px + env(safe-area-inset-bottom,0px)) !important}
+  #toast{bottom:calc(156px + env(safe-area-inset-bottom,0px)) !important}
+  .pd-mbar{bottom:calc(74px + env(safe-area-inset-bottom,0px)) !important}
+  .page-head .tools > .btn.primary[data-act=new-piece],.page-head .tools > .btn.primary[data-act=new-tache],.page-head .tools > .btn.primary[data-act=new-int]{display:none}
+  .wd{padding:9px 12px}
+  .page-head .tools > .search{flex:1 1 200px}
+  .mdue{display:block;margin-top:5px}
+  .trow-r > .chip{display:none}
+  .help-btn{background:rgba(8,28,16,.55)}
+}
+@media (max-width:980px){ .ptip-row .plegend{display:none} }
 </style>
 </head>
 <body>
@@ -952,7 +1018,7 @@ body.land .plan-sheet{page:land}
     <div class="hero-art" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2079 513" preserveAspectRatio="xMaxYMax slice" focusable="false" aria-hidden="true"><defs><linearGradient id="g0" gradientUnits="userSpaceOnUse" x1="1624.43" y1="0" x2="1664.7704" y2="0"><stop offset="0.000" stop-color="#f5efe9"/><stop offset="0.000" stop-color="#f5efe9"/><stop offset="0.000" stop-color="#f5efe9"/><stop offset="0.000" stop-color="#f5efe9"/><stop offset="0.000" stop-color="#f5efe9"/><stop offset="0.000" stop-color="#f5efe9"/><stop offset="0.079" stop-color="#f6f0ea"/><stop offset="0.254" stop-color="#f7f3ee"/><stop offset="0.444" stop-color="#faf7f4"/><stop offset="0.619" stop-color="#fcfaf7"/><stop offset="0.810" stop-color="#fefdfc"/><stop offset="1.000" stop-color="#ffffff"/></linearGradient><linearGradient id="g1" gradientUnits="userSpaceOnUse" x1="218.846" y1="0" x2="236.08" y2="0"><stop offset="0.000" stop-color="#1d516b"/><stop offset="0.000" stop-color="#1d516b"/><stop offset="0.000" stop-color="#1d516b"/><stop offset="0.000" stop-color="#1d516b"/><stop offset="0.000" stop-color="#1d516b"/><stop offset="0.000" stop-color="#1d516b"/><stop offset="0.079" stop-color="#1e526d"/><stop offset="0.254" stop-color="#1f5771"/><stop offset="0.444" stop-color="#225c77"/><stop offset="0.619" stop-color="#23607b"/><stop offset="0.810" stop-color="#256480"/><stop offset="1.000" stop-color="#276884"/></linearGradient></defs><path d="M1624.4 277.2 L1664.8 277.2 L1664.8 19.3 C1664.8 19.3 1643.8 7.9 1624.4 19.3 L1624.4 277.2 Z" fill="url(#g0)"/><path d="M1623.9 52 C1623.9 52 1626.4 49.9 1630.3 50.2 L1630.3 16.6 C1630.3 16.6 1627.3 17.6 1623.9 19.6 C1623.9 19.6 1623.9 51.5 1623.9 52 Z" fill="#cb2b36"/><path d="M1665.3 50.2 C1665.3 50.2 1663 48.7 1658.8 48.7 L1658.8 16.7 C1658.8 16.7 1662.6 17.9 1665.3 19.3 C1665.3 19.3 1665.3 49.9 1665.3 50.2 Z" fill="#ff4340"/><path d="M1665.3 115.1 C1665.3 115.1 1663 113.6 1658.8 113.6 L1658.8 81.5 C1658.8 81.5 1662.6 82.7 1665.3 84.2 C1665.3 84.2 1665.3 114.7 1665.3 115.1 Z" fill="#ff4340"/><path d="M1623.9 115.9 C1623.9 115.9 1626.5 113.9 1630.3 114.2 L1630.3 80.6 C1630.3 80.6 1627.3 81.6 1623.9 83.6 C1623.9 83.6 1623.9 115.5 1623.9 115.9 Z" fill="#cb2b36"/><path d="M1623.9 190.6 C1623.9 190.6 1626.5 188.6 1630.3 188.8 L1630.3 155.3 C1630.3 155.3 1627.3 156.3 1623.9 158.3 C1623.9 158.3 1623.9 190.1 1623.9 190.6 Z" fill="#cb2b36"/><path d="M1665.3 189.7 C1665.3 189.7 1663 188.2 1658.8 188.2 L1658.8 156.2 C1658.8 156.2 1662.6 157.4 1665.3 158.8 C1665.3 158.8 1665.3 189.4 1665.3 189.7 Z" fill="#ff4340"/><path d="M1630.8 14.9 L1630.8 2.5 C1630.8 2.5 1638.7 .0979166 1644.6 .00267847 C1650.6 -.0925596 1658.3 2.4 1658.3 2.4 L1658.3 15.3 C1658.3 15.3 1650.6 13.3 1644.6 13.2 C1638.6 13.1 1630.8 14.9 1630.8 14.9 Z" fill="#517f92"/><path d="M1624.8 19.5 L1624.8 19.4 C1625 19.3 1627.1 18.2 1630.3 17 C1633.6 15.9 1638 14.7 1642.7 14.7 C1643.2 14.7 1643.7 14.8 1644.2 14.8 C1649.5 15.1 1654.1 16 1657.6 17 C1661 18 1663.5 19.1 1664.5 19.6 C1665.2 20 1666.2 19.7 1666.5 19 C1666.9 18.3 1666.7 17.4 1666 17 C1664.7 16.3 1662.1 15.1 1658.4 14.1 C1654.7 13 1649.9 12.1 1644.3 11.8 C1643.8 11.8 1643.2 11.7 1642.7 11.7 C1637.3 11.7 1632.5 13 1629 14.3 C1625.5 15.6 1623.3 16.8 1623.3 16.9 C1622.5 17.3 1622.3 18.2 1622.7 18.9 C1623.1 19.6 1624 19.9 1624.8 19.5 Z" fill="#517f92"/><path d="M1316.8 506.3 L1316.8 330.9 L1979.4 330.9 L1979.4 506.3 L1316.8 506.3 Z" fill="#d6dddb"/><path d="M1979.4 506.3 L1984.1 506.3 L1984.1 332.1 L1984.1 298.4 L1979.4 298.4 L1979.4 506.3 Z" fill="#c4ccca"/><path d="M1356.7 273.8 L1316.8 289.9 L1316.8 269.5 L1356.7 273.8 Z" fill="#98bcc7"/><path d="M2075.8 354.3 L2075.8 501.8 L1984.1 506.3 L1984.1 332.1 L2075.8 354.3 Z" fill="#abb7b6"/><path d="M1316.8 296.4 L1316.8 330.9 L1979.4 330.9 L1979.4 298.4 L1316.8 296.4 Z" fill="#1d516b"/><path d="M2075.8 332.1 L2075.8 354.3 L1984.1 332.1 L1984.1 298.4 C1984.1 298.4 2008.3 272.2 2034.8 281.3 C2073.1 294.6 2075.8 332.1 2075.8 332.1 Z" fill="#266884"/><path d="M1356.7 273.8 C1356.7 273.8 1332.9 276.9 1316.8 289.9 L1986.7 289.9 C1986.7 289.9 1998.5 273.8 2018.8 273.8 L1356.7 273.8 Z" fill="#a9c1c8"/><path d="M1316.8 289.9 L1316.8 296.4 L1984.1 298.4 C1984.1 298.4 1984.7 292.2 1986.7 289.9 L1316.8 289.9 Z" fill="#c4ccca"/><path d="M1984.1 298.4 C1984.1 298.4 2006.2 276 2030 280.6 C2054.8 285.4 2073.7 309.6 2075.8 333.1 L2078.2 333.1 C2078.2 333.1 2077.4 305.5 2050.2 284.6 C2050.2 284.6 2037.2 275 2018.8 273.8 C2018.8 273.8 2000.9 273.1 1986.7 289.9 C1986.7 289.9 1984.1 294.4 1984.1 299 C1984.1 303.6 1984.1 298.4 1984.1 298.4 Z" fill="#dae0df"/><path d="M1832.5 372.5 L1710.3 372.5 L1710.3 360.1 L1832.5 360.1 L1832.5 372.5 Z" fill="#1d516b"/><path d="M1832.5 372.5 L1832.5 372 L1710.8 372 L1710.8 360.6 L1832 360.6 L1832 372.5 L1832.5 372.5 L1832.5 372 L1832.5 372.5 L1833 372.5 L1833 359.6 L1709.8 359.6 L1709.8 373 L1833 373 L1833 372.5 L1832.5 372.5 Z" fill="#55869a"/><path d="M1832 361.4 L1710.8 361.4 L1710.8 360.6 L1832 360.6 L1832 361.4 Z" fill="#1d516b"/><path d="M1832.5 400.1 L1710.3 400.1 L1710.3 387.7 L1832.5 387.7 L1832.5 400.1 Z" fill="#1d516b"/><path d="M1832.5 400.1 L1832.5 399.6 L1710.8 399.6 L1710.8 388.2 L1832 388.2 L1832 400.1 L1832.5 400.1 L1832.5 399.6 L1832.5 400.1 L1833 400.1 L1833 387.2 L1709.8 387.2 L1709.8 400.6 L1833 400.6 L1833 400.1 L1832.5 400.1 Z" fill="#55869a"/><path d="M1832 389 L1710.8 389 L1710.8 388.2 L1832 388.2 L1832 389 Z" fill="#1d516b"/><path d="M1832.5 427.7 L1710.3 427.7 L1710.3 415.3 L1832.5 415.3 L1832.5 427.7 Z" fill="#1d516b"/><path d="M1832.5 427.7 L1832.5 427.2 L1710.8 427.2 L1710.8 415.8 L1832 415.8 L1832 427.7 L1832.5 427.7 L1832.5 427.2 L1832.5 427.7 L1833 427.7 L1833 414.8 L1709.8 414.8 L1709.8 428.2 L1833 428.2 L1833 427.7 L1832.5 427.7 Z" fill="#55869a"/><path d="M1832 416.6 L1710.8 416.6 L1710.8 415.8 L1832 415.8 L1832 416.6 Z" fill="#1d516b"/><path d="M1832.5 455.3 L1710.3 455.3 L1710.3 442.9 L1832.5 442.9 L1832.5 455.3 Z" fill="#1d516b"/><path d="M1832.5 455.3 L1832.5 454.8 L1710.8 454.8 L1710.8 443.4 L1832 443.4 L1832 455.3 L1832.5 455.3 L1832.5 454.8 L1832.5 455.3 L1833 455.3 L1833 442.4 L1709.8 442.4 L1709.8 455.8 L1833 455.8 L1833 455.3 L1832.5 455.3 Z" fill="#55869a"/><path d="M1832 444.2 L1710.8 444.2 L1710.8 443.4 L1832 443.4 L1832 444.2 Z" fill="#1d516b"/><path d="M1832.5 482.9 L1710.3 482.9 L1710.3 470.5 L1832.5 470.5 L1832.5 482.9 Z" fill="#1d516b"/><path d="M1832.5 482.9 L1832.5 482.4 L1710.8 482.4 L1710.8 471 L1832 471 L1832 482.9 L1832.5 482.9 L1832.5 482.4 L1832.5 482.9 L1833 482.9 L1833 470 L1709.8 470 L1709.8 483.4 L1833 483.4 L1833 482.9 L1832.5 482.9 Z" fill="#55869a"/><path d="M1832 471.8 L1710.8 471.8 L1710.8 471 L1832 471 L1832 471.8 Z" fill="#1d516b"/><path d="M1316.8 269.6 L1280.6 265.2 L1280.6 508 L1316.8 506.4 L1316.8 269.6 Z" fill="#f6f0e9"/><path d="M1280.6 264.7 L979.4 276 L979.4 325.8 L1075.6 333.7 L1028.4 355.2 L1138.6 361.1 L1138.6 456.6 L1106.1 456.6 L1106.1 505.9 L1280.6 508.4 L1280.6 264.7" fill="#d7e2e3"/><path d="M1143.7 456.5 L1143.7 482.9 L1199.7 482.9 L1199.7 456.5 L1143.7 456.5 Z" fill="#1d516b"/><path d="M1301 355.3 L1301 360.1 L1308.6 360.1 L1308.6 355.3 L1301 355.3 Z" fill="#266884"/><path d="M1301 379.5 L1301 384.3 L1308.6 384.3 L1308.6 379.5 L1301 379.5 Z" fill="#266884"/><path d="M1301 403.7 L1301 408.4 L1308.6 408.4 L1308.6 403.7 L1301 403.7 Z" fill="#266884"/><path d="M1301 427.9 L1301 432.6 L1308.6 432.6 L1308.6 427.9 L1301 427.9 Z" fill="#266884"/><path d="M1301 452.1 L1301 456.8 L1308.6 456.8 L1308.6 452.1 L1301 452.1 Z" fill="#266884"/><path d="M2011.8 373.5 L2011.8 381.7 L2024.9 383.6 L2024.9 376.4 L2011.8 373.5 Z" fill="#266884"/><path d="M2037.2 379.3 L2037.2 385.5 L2045.3 386.8 L2045.3 380.7 L2037.2 379.3 Z" fill="#266884"/><path d="M2011.8 408.1 L2011.8 416.3 L2024.9 416.9 L2024.9 409.7 L2011.8 408.1 Z" fill="#266884"/><path d="M2037.2 411.5 L2037.2 417.7 L2045.3 418 L2045.3 412.3 L2037.2 411.5 Z" fill="#266884"/><path d="M2011.8 441.3 L2011.8 447.9 L2024.9 447.9 L2024.9 441.3 C2024.9 441.3 2011.8 441.2 2011.8 441.3 Z" fill="#266884"/><path d="M2036.7 441.5 L2036.7 447.6 L2045.3 447.5 L2045.3 441.6 C2045.3 441.6 2036.8 441.6 2036.7 441.5 Z" fill="#266884"/><path d="M2011.8 472.3 L2011.8 479.3 L2024.9 479.3 L2024.9 472.3 C2024.9 472.3 2011.9 472.4 2011.8 472.3 Z" fill="#266884"/><path d="M2036.7 472.7 L2036.7 479 L2045.3 478.8 L2045.3 472.6 C2045.3 472.6 2036.8 472.7 2036.7 472.7 Z" fill="#266884"/><path d="M675.2 508.1 L653.1 508.1 L653.1 324.1 L986.3 335.9 L986.3 509.1 L675.2 508.1 Z" fill="#ff3e36"/><path d="M1138.6 363.3 L1138.6 458 L846.3 458 L846.3 348.8 L1138.6 363.3 Z" fill="#fefcfb"/><path d="M846.3 348.8 L667.7 359.5 L667.7 458 L846.3 458 L846.3 348.8 Z" fill="#d7e2e3"/><path d="M1075.9 346.5 L1075.6 333.7 L846.1 314.1 L846.1 336.1 L986.4 354.4 L1031.2 356.8 L1075.9 346.5 Z" fill="#ebede9"/><path d="M1075.9 346.5 L1076.4 346.5 L1076.1 333.2 L845.6 313.6 L845.6 336.5 L986.3 354.9 L1031.2 357.3 L1076.4 346.9 L1076.4 346.5 L1075.9 346.5 L1075.8 346.1 L1031.1 356.3 L986.4 353.9 L846.6 335.6 L846.6 314.7 L1075.1 334.1 L1075.4 346.5 L1075.9 346.5 L1075.8 346.1 L1075.9 346.5 Z" fill="#d7e2e3"/><path d="M846.1 347.1 L849.4 347.1 L849.4 512.2 L846.1 512.2 L846.1 347.1 Z" fill="#f5f6f6"/><path d="M799.5 335.5 L799.5 349.9 L801.5 349.9 L801.5 335.5" fill="#c8d1cf"/><path d="M717.8 339.9 L717.8 354.4 L719.8 354.4 L719.8 339.9" fill="#c8d1cf"/><path d="M667.7 359.5 L667.7 357 L846.3 345.4 L846.3 348.8 L667.7 359.5 Z" fill="#6ba5ae"/><path d="M846.3 348.8 L1138.6 363.3 L1138.6 361.1 L846.3 345.4 C846.3 345.4 846.1 348.8 846.3 348.8 Z" fill="#a1ccd2"/><path d="M675.2 458 L675.2 508.1 L846.1 512.1 L846.1 458 L675.2 458 Z" fill="#1d516b"/><path d="M849.4 458 L849.4 512.4 L1106.1 505.9 L1106.1 458 L849.4 458 Z" fill="#266884"/><path d="M849.4 375.1 L849.4 428.1 L1064.2 431.1 L1064.2 384.3 L849.4 375.1 Z" fill="#266884"/><path d="M683.7 382.2 L708.2 381.1 L708.2 432.7 L683.7 433.3 C683.7 433.3 683.5 382.1 683.7 382.2 Z" fill="#1d516b"/><path d="M846.1 375.1 L846.1 428.3 L736.5 431.1 L736.5 380.1 L846.1 375.1 Z" fill="#1d516b"/><path d="M1091.4 385.5 L1091.4 399.4 L1138.6 400.2 L1138.6 386.6 L1091.4 385.5 Z" fill="#266884"/><path d="M1091.4 417.2 L1091.4 421.9 L1138.6 422.2 L1138.6 417.6 L1091.4 417.2 Z" fill="#266884"/><path d="M846.1 336.1 L846.1 314.1 L669.7 327.3 L669.7 348.8 L846.1 336.1 Z" fill="#d7e2e3"/><path d="M846.1 336.1 L846.6 336.1 L846.6 313.6 L669.2 326.8 L669.2 349.4 L846.6 336.5 L846.6 336.1 L846.1 336.1 L846 335.6 L670.2 348.3 L670.2 327.8 L845.6 314.7 L845.6 336.1 L846.1 336.1 L846 335.6 L846.1 336.1 Z" fill="#c8d1cf"/><path d="M583.4 506.3 L583.4 390.5 L640.8 390.5 L640.8 506.3 C640.8 506.3 582.6 506.3 583.4 506.3 Z" fill="#efebe5"/><path d="M609.6 506.3 L609.6 437 L640.8 437 L640.8 506.3 C640.8 506.3 609.9 506.3 609.6 506.3 Z" fill="#b3c7cb"/><path d="M653.1 324.1 L640.8 325.2 L640.8 508.1 L653.1 508.1 L653.1 324.1 Z" fill="#dc3037"/><path d="M627.6 410.2 L627.6 437 L640.8 437 L640.8 410.2 C640.8 410.2 627.2 410.2 627.6 410.2 Z" fill="#1d516b"/><path d="M616.8 506.3 L616.8 457.3 L640.8 457.3 L640.8 506.3 L616.8 506.3 Z" fill="#648794"/><path d="M616.8 471.4 L616.8 456.5 L640.8 456.5 L640.8 471.4 L616.8 471.4 Z" fill="#456b7f"/><path d="M566.8 506.3 L566.8 410.2 L592.7 410.2 L592.7 506.3 L566.8 506.3 C566.8 506.3 567.5 506.9 566.8 506.3 Z" fill="#456b7f"/><path d="M19.3 508.7 L19.3 471.6 C19.3 471.6 381 471.5 560.6 469.7 L560.6 508.7 C560.6 508.7 21.1 508.7 19.3 508.7 Z" fill="#456b7f"/><path d="M19.3 508.7 L10.4 508.7 L10.4 469.7 L19.3 469.7 L19.3 508.7 Z" fill="#b0c3c6"/><path d="M569.5 508.7 L560.6 508.7 L560.6 469.7 L569.5 469.7 L569.5 508.7 Z" fill="#b0c3c6"/><path d="M15 307.9 L15 302.6 C15 302.6 64 276.6 309.6 277 C555.2 277.3 580.7 303 580.7 303 L580.7 308.1 L15 307.9 Z" fill="#dde0dd"/><path d="M23.2 309.8 L15 307.9 C15 307.9 73.4 279.6 311.3 282.6 C532.3 285.4 543.4 297.6 580.7 308.1 L572.3 309.8 L309.6 300.3 L23.2 309.8 Z" fill="#30566a"/><path d="M20.9 309.3 L21.1 316.6 C21.1 316.6 202.8 301.9 309.6 300.3 C416.5 298.7 573.7 317.6 573.7 317.6 L573.8 309.5 C573.8 309.5 529.3 286.4 309.6 284.8 C89.9 283.3 20.9 309.3 20.9 309.3 Z" fill="#577b8a"/><path d="M0 323.6 L0 472.5 C0 472.5 355.1 482.4 588.2 468.7 L588.2 323.6 C588.2 323.6 551.9 295.3 294.1 296 C294.1 296 61 296 0 323.6 Z" fill="#efebe6"/><path d="M318.2 411.2 L301 411.2 L301 342.8 L318.2 342.8 L318.2 411.2 Z" fill="#266884"/><path d="M236.1 411.2 L218.8 411.2 L218.8 342.8 L236.1 342.8 L236.1 411.2 Z" fill="url(#g1)"/><path d="M149 412.9 L133.8 413.4 L133.8 346.4 L149 345.4 L149 412.9 Z" fill="#1d516b"/><path d="M71.3 414.9 L58.2 415.3 L58.2 350.7 L71.3 349.7 L71.3 414.9 Z" fill="#1d516b"/><path d="M19.8 415.1 L13.7 415.3 L13.7 353.7 L19.8 352.8 L19.8 415.1 Z" fill="#1d516b"/><path d="M397.8 411.2 L381.6 411 L381.6 343.6 L397.8 344.1 L397.8 411.2 Z" fill="#266884"/><path d="M475.5 411.8 L460.2 411.7 L460.2 345.9 L475.5 346.9 L475.5 411.8 Z" fill="#266884"/><path d="M543.4 413.8 L530.4 413.3 L530.4 351.1 L542.9 352.5 L543.4 413.8 Z" fill="#266884"/><path d="M583.5 415.8 L577.9 415.4 L577.9 356.9 L583.5 357.8 L583.5 415.8 Z" fill="#266884"/></svg></div>
     <div class="hero-stripe"></div>
     <div class="hero-inner">
-      <div class="hero-copy"><h1>TriFlow</h1><p>Maintenance Tridel · pièces, tâches et rapports</p></div>
+      <div class="hero-copy"><h1>TriFlow<span class="hsync" id="hsync" hidden><i></i><span></span></span></h1><p>Maintenance Tridel · pièces, tâches et rapports</p></div>
       <button class="help-btn" data-act="help" title="Aide" aria-label="Aide">?</button>
       <nav class="nav" id="nav" aria-label="Sections">
         <button data-act="nav" data-view="accueil" title="Accueil"><span data-icon="home"></span><span class="nl">Accueil</span></button>
@@ -2531,7 +2597,9 @@ const CLOUD = {
     return m;
   },
   status(st){ this.state = st || this.state; const el = $('#sync'); if (!el) return;
-    el.textContent = {sync:'Mise à jour…', ok:'Enregistré', saving:'Enregistrement…', offline:'Hors ligne : modifications en attente', error:'Erreur d’enregistrement'}[this.state] || ''; el.dataset.state = this.state; },
+    const txt = {sync:'Mise à jour…', ok:'Enregistré', saving:'Enregistrement…', offline:'Hors ligne : modifications en attente', error:'Erreur d’enregistrement'}[this.state] || '';
+    el.textContent = txt; el.dataset.state = this.state;
+    const h = $('#hsync'); if (h){ h.hidden = !txt; h.dataset.state = this.state; h.title = txt; h.querySelector('span').textContent = {offline:'Hors ligne', error:'Erreur', sync:'Mise à jour…', saving:''}[this.state] || ''; } },
   schedule(){ clearTimeout(this.timer); this.status('saving'); this.timer = setTimeout(() => this.push(), 120); },
   cacheKey(){ return 'snap:' + (this.cfg().url || '') + ':' + (this.user?.email || ''); },
   async fetchAll(cols){
@@ -2935,9 +3003,14 @@ function addFreq(iso, n, unite){
 const freqLabel = f => f.unite === 'once' ? 'Une seule fois' : f.n === 1 ? ({jour:'Chaque jour', semaine:'Chaque semaine', mois:'Chaque mois', an:'Chaque année'})[f.unite] : `Tous les ${f.n} ${UNITES_T[f.unite][1]}`;
 const assignLabel = a => !a || !a.v ? 'Non attribuée' : a.type === 'personne' ? persName(getPers(a.v) || {nom:'(supprimé)'}) : a.v;
 const daysTo = iso => Math.round((new Date(iso + 'T12:00') - new Date(todayISO() + 'T12:00')) / 864e5);
+const lateLbl = n => n < 14 ? `${n} j` : n < 60 ? `${Math.round(n / 7)} sem.` : `${Math.round(n / 30.4)} mois`;
+/* Retard de plus d'un an : tâche « en souffrance » (souvent reprise de CareOffice) — affichée en gris pour que le rouge reste réservé à l'urgent */
+const isOld = t => t.actif !== false && daysTo(t.prochaine) < -365;
+const urgSort = (a, b) => (isOld(a) - isOld(b)) || a.prochaine.localeCompare(b.prochaine);
 function dueInfo(t){
   const n = daysTo(t.prochaine);
-  if (n < 0) return {k:'retard', chip:`<span class="chip bad">En retard · ${-n} j</span>`};
+  if (n < -365) return {k:'vieux', chip:`<span class="chip old" title="Échéance : ${fmtD(t.prochaine)}">En retard depuis ${t.prochaine.slice(0, 4)}</span>`};
+  if (n < 0) return {k:'retard', chip:`<span class="chip bad" title="Échéance : ${fmtD(t.prochaine)}">En retard · ${lateLbl(-n)}</span>`};
   if (n === 0) return {k:'semaine', chip:'<span class="chip warn">Aujourd’hui</span>'};
   if (n <= 7) return {k:'semaine', chip:`<span class="chip warn">Dans ${n} j</span>`};
   return {k:'plus', chip:`<span class="chip off">${fmtD(t.prochaine)}</span>`};
@@ -2972,7 +3045,7 @@ let db = CLOUD.cfg().url ? migrate(blank()) : load();
 if (!db){ db = seed(); save(); }
 
 /* ---------------- État d'affichage ---------------- */
-const S = {pour:'', tvue:'afaire', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:'', optfour:''}, lowOnly:false, zeroOnly:false, psort:'iddesc', plimit:300, rlimit:300, back:[], statut:'toutes', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux', arch:{}};
+const S = {pour:'', tf:'', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:'', optfour:''}, lowOnly:false, zeroOnly:false, psort:'iddesc', plimit:200, rlimit:300, back:[], statut:'toutes', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux', arch:{}};
 
 function toast(msg, kind = '', undo = false){
   const t = $('#toast'); t.textContent = msg; t.className = 'show ' + kind + (undo ? ' undo' : '');
@@ -2993,8 +3066,15 @@ function refreshCounts(){
   $$('[data-count]').forEach(el => { el.textContent = c[el.dataset.count] || ''; });
 }
 function hydrateIcons(root = document){ $$('[data-icon]', root).forEach(el => { el.outerHTML = icon(el.dataset.icon); }); }
+function fabMenu(){
+  const m = $('#fab .fab-menu'); if (!m) return;
+  const first = {pieces:['new-piece', 'box', 'Nouvelle pièce'], taches:['new-tache', 'repeat', 'Nouvelle tâche']}[S.view];
+  const html = (first ? `<button data-act="${first[0]}">${icon(first[1])}${first[2]}</button>` : '') + `<button data-act="new-int">${icon('report')}Nouveau rapport</button><button data-act="quick-move" data-type="sortie">${icon('move')}Mouvement de stock</button><button data-act="scan">${icon('scan')}Scanner un QR</button>`;
+  if (m.dataset.v !== S.view){ m.innerHTML = html; m.dataset.v = S.view; }
+  m.hidden = true; $('#fab .fab-btn')?.setAttribute('aria-expanded', 'false');
+}
 function render(){
-  contIdx = null; initPour();
+  contIdx = null; initPour(); fabMenu();
   refreshDatalists(); refreshCounts();
   $$('#nav button').forEach(b => b.setAttribute('aria-current', b.dataset.view === S.view || (b.classList.contains('nav-plus') && ['taches', 'kks', 'options'].includes(S.view)) ? 'page' : 'false')); { const ns = $('#navsheet'); if (ns) ns.hidden = true; }
   const bk = S.back[S.back.length - 1], VN = {planning:'le planning', accueil:'l’accueil', pieces:'la pièce', kks:'l’installation', lieux:'les emplacements', interventions:'le rapport', taches:'la tâche', options:'les options'};
@@ -3003,8 +3083,15 @@ function render(){
   $('#main').innerHTML = (bk ? `<button class="btn small back-nav" data-act="nav-back">${icon('chev')}Retour à ${esc(bl)}</button>` : '') + VIEWS[S.view].shell().replace('</header>', '</header>' + am);
   fillList(); fillDetail();
 }
-function fillList(){ contIdx = null; const el = $('#list'); if (el) el.innerHTML = VIEWS[S.view].list(); }
-function fillDetail(){ contIdx = null; const el = $('#detail'); if (el) el.innerHTML = VIEWS[S.view].detail(); $('#main .split')?.classList.toggle('has-sel', S.view === 'pieces' && !!getPiece(S.sel.pieces)); }
+const AUTOIO = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting){ AUTOIO.unobserve(e.target); e.target.click(); } }), {rootMargin:'600px'}) : null;
+function fillList(){ contIdx = null; const el = $('#list'); if (el){ el.innerHTML = VIEWS[S.view].list(); if (AUTOIO) $$('[data-autoload]', el).forEach(b => AUTOIO.observe(b)); } }
+/* Sur grand écran, ouvrir le premier élément de la liste plutôt qu'un panneau vide */
+function autoSel(){
+  if (!['pieces', 'taches', 'interventions'].includes(S.view) || !matchMedia('(min-width: 981px)').matches) return;
+  const cur = S.sel[S.view]; if (cur && (S.view === 'pieces' ? getPiece(cur) : get(S.view, cur))) return;
+  const f = $('#list [data-act=select][data-id]'); if (!f) return; S.sel[S.view] = f.dataset.id; f.classList.add('sel');
+}
+function fillDetail(){ contIdx = null; autoSel(); const el = $('#detail'); if (el) el.innerHTML = VIEWS[S.view].detail(); $('#main .split')?.classList.toggle('has-sel', S.view === 'pieces' && !!getPiece(S.sel.pieces)); }
 function go(view, id){
   S.view = view; if (id !== undefined) S.sel[view] = id;
   closeSearch(); render();
@@ -3038,29 +3125,39 @@ function intTable(list, noK = false){
 const VIEWS = {};
 
 /* ---------- Accueil ---------- */
+/* « Ma semaine » sur l'accueil : présence (Planning Tridel) et travail attribué dans le planning, du lundi au vendredi */
+function weekHTML(){
+  const me = meId(), p = me && getPers(me); if (!p) return '';
+  const today = todayISO(), we = (new Date(today + 'T12:00:00').getDay() + 6) % 7 >= 5, mon = isoAdd(mondayOf(today), we ? 7 : 0), days = Array.from({length:5}, (_, i) => isoAdd(mon, i));
+  if (!PLANS[mon.slice(0, 4)]) loadPresence(mon.slice(0, 4));
+  const rows = days.map((d, i) => { const items = db.plan.filter(x => x.who === me && x.date === d), pr = presOf(p, d), pc = pr && pr.code ? PCODE[pr.code] || [pr.code, 'on'] : null;
+    const it = items.map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null, done = t && db.interventions.some(v => v.tacheId === t.id && v.date === d);
+      return `<button class="pit ${t ? 'task' : ''} ${done ? 'done' : ''}" data-act="${t ? 'goto' : 'nav'}" data-view="${t ? 'taches' : 'planning'}" ${t ? `data-id="${t.id}"` : ''}>${t ? icon(done ? 'check' : 'repeat') : ''}<span>${esc(t ? t.titre : x.text)}</span>${t && x.text ? `<small>${esc(x.text)}</small>` : ''}</button>`; }).join('');
+    const abs = pc && pc[1] === 'abs';
+    return `<div class="wd ${d === today ? 'today' : ''} ${d < today ? 'past' : ''}"><span class="wdl">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></span><span class="wdi">${pc ? `<span class="pcode ${'k-' + pc[1]}" title="${esc(pc[0])}">${esc(pr.code)}</span>` : ''}${abs ? `<span class="abs">${esc(pc[0])}</span>` : ''}${it || (abs ? '' : '<span class="muted">—</span>')}</span></div>`; }).join('');
+  return `<section class="panel"><div class="panel-head"><h2>${we ? 'La semaine prochaine' : 'Ma semaine'} <span class="muted" style="font-size:.9rem">sem. ${isoWeek(mon)}</span></h2><button class="link" data-act="nav" data-view="planning">Planning</button></div><div class="week">${rows}</div></section>`;
+}
 VIEWS.accueil = {
   shell(){
     const open = db.interventions.filter(i => live(i) && i.statut !== 'terminee' && intFor(i, S.pour)).sort((a, b) => b.date.localeCompare(a.date));
-    const zc = new Map(); for (const k of db.kks.filter(live)){ const c = sysEff(k.code)[0]; if (c) zc.set(c, (zc.get(c) || 0) + 1); }
-    const zones = [...zc].sort((a, b) => a[0].localeCompare(b[0]));
     const qa = (act, type, ic, t) => `<button class="qa" data-act="${act}" ${type ? `data-type="${type}"` : ''}><span class="qi">${icon(ic)}</span><strong>${t}</strong></button>`;
     return `${db.meta.demo ? `<div class="notice"><p><strong>Données d'exemple.</strong> Elles sont fictives et servent à essayer l'outil.</p><button class="btn" data-act="clear-demo">Effacer les exemples</button></div>` : ''}
     <header class="page-head"><h1>Accueil</h1></header>
-    ${(() => { const low = db.pieces.filter(p => live(p) && isLow(p)).length, zero = db.pieces.filter(p => live(p) && isOut(p)).length, me = !!S.pour, late = db.taches.filter(t => live(t) && t.actif !== false && daysTo(t.prochaine) < 0 && forWho(t, S.pour)).length;
+    ${(() => { const low = db.pieces.filter(p => live(p) && isLow(p)).length, zero = db.pieces.filter(p => live(p) && isOut(p)).length, me = !!S.pour, lateAll = db.taches.filter(t => live(t) && t.actif !== false && daysTo(t.prochaine) < 0 && forWho(t, S.pour)), late = lateAll.filter(t => !isOld(t)).length, old = lateAll.length - late;
       const k = (act, n, t, ic, tone, extra = '') => `<button class="kpi ${n ? tone : 'calm'}" data-act="${act}" ${extra}><span class="ki">${icon(ic)}</span><span class="kn">${num(n)}</span><span class="kt">${t}</span></button>`;
-      return `<div class="kpis">${k('show-low', low, 'Sous le stock minimum', 'box', 'warn')}${k('show-zero', zero, 'Pièces à zéro', 'box', 'bad')}${k('nav', late, me ? 'Mes tâches en retard' : 'Tâches en retard', 'repeat', 'bad', 'data-view="taches"')}${k('nav', open.length, S.pour ? 'Mes rapports ouverts' : 'Rapports ouverts', 'report', 'info', 'data-view="interventions"')}</div>`; })()}
-    <div class="quick">${qa('scan', '', 'scan', 'Scanner un QR')}${qa('quick-move', 'sortie', 'move', 'Mouvement de stock')}${qa('new-int', '', 'report', 'Nouveau rapport')}${qa('labels-pick', '', 'qr', 'Étiquettes QR')}</div>
+      return `<div class="kpis">${k('show-low', low, 'Sous le stock minimum', 'box', 'warn')}${k('show-zero', zero, 'Pièces à zéro', 'box', 'calm')}${k('tf', late, (me ? 'Mes tâches en retard' : 'Tâches en retard') + (old ? `<small class="kt2">+ ${old} depuis plus d’un an</small>` : ''), 'repeat', 'bad', 'data-f="retard"')}${k('nav', open.length, S.pour ? 'Mes rapports ouverts' : 'Rapports ouverts', 'report', 'info', 'data-view="interventions"')}</div>`; })()}
+    <div class="quick">${qa('scan', '', 'scan', 'Scanner un QR')}${qa('quick-move', 'sortie', 'move', 'Mouvement de stock')}${qa('new-int', '', 'report', 'Nouveau rapport')}${qa('new-tache', '', 'repeat', 'Nouvelle tâche')}</div>
     <div class="cols">
       <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
-      ${(() => { const me = meId(), mine = !!S.pour; const dueAll = db.taches.filter(t => live(t) && t.actif !== false && daysTo(t.prochaine) <= 7 && forWho(t, S.pour)).sort((a, b) => a.prochaine.localeCompare(b.prochaine)), due = dueAll.slice(0, 5);
+      ${(() => { const me = meId(), mine = !!S.pour; const dueAll = db.taches.filter(t => live(t) && t.actif !== false && daysTo(t.prochaine) <= 7 && forWho(t, S.pour)).sort(urgSort), due = dueAll.slice(0, 5);
         const who = me ? `<span class="who-line">${mine ? `${icon('person')}Filtré pour <b>${esc(pourLabel(S.pour))}</b>${S.pour === 'p:' + me && getPers(me).groupe ? ` et son groupe` : ''} · <button class="link" data-act="pour-all">Voir tout le monde</button>` : `Tout le monde · <button class="link" data-act="pour-me">Seulement mes affaires</button>`} · <button class="link" data-act="me">Changer de nom</button></span>` : `<span class="who-line"><button class="link" data-act="me">${icon('person')}Qui êtes-vous ? Choisissez votre nom pour voir vos tâches</button></span>`;
         const td = me ? db.plan.filter(x => x.who === me && x.date === todayISO()) : [];
         const tdH = td.length ? `<div class="ptoday"><b>${icon('calendar')}Aujourd’hui au planning</b>${td.map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null, done = t && db.interventions.some(i => i.tacheId === t.id && i.date === x.date); return `<div class="ptd ${done ? 'done' : ''}"><button class="pit ${t ? 'task' : ''}" data-act="${t ? 'goto' : 'nav'}" data-view="${t ? 'taches' : 'planning'}" ${t ? `data-id="${t.id}"` : ''}>${t ? icon('repeat') : ''}<span>${esc(t ? t.titre : x.text)}</span>${t && x.text ? `<small>${esc(x.text)}</small>` : ''}</button>${done ? `<span class="ok-tag">${icon('check')}Fait</span>` : `<button class="btn small primary" data-act="plan-done" data-id="${x.id}">${icon('check')}C’est fait</button>`}</div>`; }).join('')}</div>` : '';
         return `<section class="panel"><div class="panel-head"><h2>${mine ? 'Mes tâches' : 'Tâches à faire'}${dueAll.length ? ` <span class="muted" style="font-size:.9rem">${dueAll.length}</span>` : ''}</h2><button class="link" data-act="nav" data-view="taches">${dueAll.length > 5 ? `Voir les ${dueAll.length}` : 'Toutes'}</button></div>${who}${tdH}${due.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${due.map(t => tacheRow(t, false)).join('')}</tbody></table></div>` : '<div style="padding:0 16px 16px"><p class="empty-line">Rien en retard ni dans les 7 prochains jours.</p></div>'}</section>`; })()}
       <section class="panel"><div class="panel-head"><h2>Rapports en cours</h2><button class="link" data-act="nav" data-view="interventions">Toutes</button></div>${open.length ? intTable(open) : '<div style="padding:0 16px 16px"><p class="empty-line">Aucun rapport en cours.</p></div>'}</section>
       </div>
-      <section class="panel"><div class="panel-head"><h2>Installation</h2><button class="link" data-act="nav" data-view="kks">Tout voir</button></div>
-        ${zones.length ? `<div class="ztiles">${zones.map(([c, n]) => { const z = ZSHORT[c] || [sysName(c) || c, 'plant']; return `<button class="ztile" data-act="sys-sel" data-sys="${c}" title="${esc(c + ' ' + sysName(c))}"><span class="zi">${icon(z[1])}</span><span class="zt"><b class="code">${c}</b><span>${esc(z[0])}</span></span><span class="zn">${n}</span></button>`; }).join('')}</div>` : '<div style="padding:0 16px 16px"><p class="empty-line">Aucun repère KKS.</p></div>'}</section>
+      <div style="display:flex;flex-direction:column;gap:18px;min-width:0">${weekHTML()}${(() => { const done = db.interventions.filter(i => live(i) && i.statut === 'terminee' && intFor(i, S.pour)).sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 5);
+        return `<section class="panel"><div class="panel-head"><h2>${S.pour ? 'Derniers rapports' : 'Derniers rapports'}</h2><button class="link" data-act="nav" data-view="interventions">Tous</button></div>${done.length ? intTable(done) : '<div style="padding:0 16px 16px"><p class="empty-line">Aucun rapport terminé.</p></div>'}</section>`; })()}</div>
     </div>`;
   },
   list: () => '', detail: () => ''
@@ -3086,21 +3183,21 @@ function filteredPieces(){
 VIEWS.pieces = {
   shell: () => `<header class="page-head"><h1>Pièces</h1><div class="tools">${searchBox('pieces', 'Rechercher une pièce…')}<button class="btn icon-only" data-act="scan" title="Scanner un QR code" aria-label="Scanner un QR code">${icon('scan')}</button><button class="btn primary" data-act="new-piece">${icon('plus')}Nouvelle pièce</button>
     ${menu([['labels-list', 'Étiquettes QR de la liste', 'qr', {}], ['toggle-low', S.lowOnly ? 'Afficher toutes les pièces' : 'Pièces sous le stock minimum', 'list', {}], ['xl-pieces', 'Exporter la liste (Excel)', 'excel', {}], '-', ['to-order', 'Liste à commander', 'truck', {}], ['dups', 'Rechercher les doublons', 'merge', {}], ['relink-kks', 'Relier les repères KKS cités dans les notes', 'plant', {}], archItem('pieces'), '-', ['import-pieces', 'Importer depuis CareOffice (fichier)', 'save', {}]])}</div></header>
-    ${S.zeroOnly ? `<p class="tools" style="margin:-6px 0 14px"><span class="chip bad">Pièces à zéro<button class="icon-btn" style="width:20px;height:20px;font-size:1rem;color:inherit" data-act="toggle-zero" aria-label="Afficher toutes les pièces">×</button></span></p>` : ''}
-    ${S.lowOnly ? `<p class="tools" style="margin:-6px 0 14px"><span class="chip warn">Sous le stock minimum<button class="icon-btn" style="width:20px;height:20px;font-size:1rem;color:inherit" data-act="toggle-low" aria-label="Afficher toutes les pièces">×</button></span></p>` : ''}
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list(){
     const rows = filteredPieces();
     if (!db.pieces.length) return empty('Aucune pièce', '<p>Créez la première avec « Nouvelle pièce ».</p>');
-    if (!rows.length) return S.arch.pieces ? empty('Aucune pièce archivée', '') : empty('Aucune pièce ne correspond', '');
-    const more = `<div class="list-bar"><span class="muted">${rows.length} pièce(s)${rows.length > S.plimit ? ` · ${S.plimit} affichées` : ''}</span><span class="lb-r"><label>Afficher<select class="mini" data-change="plimit" aria-label="Nombre de pièces affichées">${[[300, '300'], [500, '500'], [1000, '1000'], [1e9, 'Toutes']].map(([v, t]) => `<option value="${v}" ${S.plimit === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label><label>Trier<select class="mini" data-change="psort" aria-label="Trier les pièces">${[['iddesc', 'Par ID (décroissant)'], ['id', 'Par ID (croissant)'], ['alpha', 'Alphabétique'], ['recent', 'Mouvement le plus récent'], ['old', 'Mouvement le plus ancien']].map(([v, t]) => `<option value="${v}" ${S.psort === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label></span></div>`;
+    const lv = S.arch.pieces ? [] : db.pieces.filter(live), nLow = lv.filter(isLow).length, nZero = lv.filter(isOut).length, pf = S.zeroOnly ? 'zero' : S.lowOnly ? 'low' : '';
+    const chips = S.arch.pieces ? '' : `<div class="fchips" role="tablist" aria-label="Quelles pièces">${[['', 'Toutes', lv.length, ''], ['low', 'Stock bas', nLow, 'warn'], ['zero', 'Épuisées', nZero, '']].map(([f, t, n, tone]) => `<button role="tab" class="ychip ${tone}" data-act="pf" data-f="${f}" aria-selected="${pf === f}">${t} <small>${num(n)}</small></button>`).join('')}</div>`;
+    if (!rows.length) return chips + (S.arch.pieces ? empty('Aucune pièce archivée', '') : empty('Aucune pièce ne correspond', ''));
+    const more = `${chips}<div class="list-bar"><span class="muted">${num(rows.length)} pièce(s)</span><span class="lb-r lb-sort"><label>Trier<select class="mini" data-change="psort" aria-label="Trier les pièces">${[['iddesc', 'Par ID (décroissant)'], ['id', 'Par ID (croissant)'], ['alpha', 'Alphabétique'], ['recent', 'Mouvement le plus récent'], ['old', 'Mouvement le plus ancien']].map(([v, t]) => `<option value="${v}" ${S.psort === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label></span></div>`;
     return `${more}<div class="plist">${rows.slice(0, S.plimit).map(p => {
       const mp = mainPlace(p), n = sortedStock(p).length, hm = horsMag(p);
       return `<button class="prow ${S.sel.pieces === p.id ? 'sel' : ''}" data-act="select" data-id="${p.id}">
         <span class="pm"><span class="pdes" title="${esc(p.designation)}">${esc(p.designation)}</span>
           <span class="ploc"><span class="pid">${esc(p.ref)}</span>${mp ? plate(mp, false) + (n > 1 ? ` <span class="muted">+${n - 1}</span>` : '') : '<span class="muted">Sans emplacement</span>'}${hm.length ? ` <span class="muted" style="color:var(--stat)">+${num(hm.reduce((a, s) => a + s.qte, 0))} hors magasin</span>` : ''}</span></span>
         <span class="pq ${isOut(p) ? 'zero' : isLow(p) ? 'low' : ''}"><b>${num(dispo(p))}</b><small>${isOut(p) ? 'épuisé' : isLow(p) ? 'stock bas' : esc(p.unite)}</small></span></button>`;
-    }).join('')}</div>`;
+    }).join('')}${rows.length > S.plimit ? `<p class="list-note"><button class="link" data-act="pmore" data-autoload>Afficher les suivantes (${num(rows.length - S.plimit)} de plus)</button></p>` : ''}</div>`;
   },
   detail(){
     const p = getPiece(S.sel.pieces);
@@ -3270,11 +3367,15 @@ VIEWS.lieux = {
 
 /* ---------- Interventions ---------- */
 /* ---------- Tâches ---------- */
-function filteredTaches(){
-  let rows = db.taches.filter(t => S.arch.taches ? t.arch : !t.arch).filter(t => S.arch.taches || S.tvue === 'toutes' || t.actif !== false).filter(t => S.arch.taches || forWho(t, S.pour));
+const tKey = t => t.actif === false ? 'fait' : dueInfo(t).k;
+function baseTaches(){
+  let rows = db.taches.filter(t => S.arch.taches ? t.arch : !t.arch).filter(t => S.arch.taches || forWho(t, S.pour));
   const q = norm(S.q.taches || '');
   if (q) rows = rows.filter(t => norm([t.titre, t.description, getKks(t.kksId)?.code, getKks(t.kksId)?.designation, assignLabel(t.assign)].join(' ')).includes(q));
-  if (S.tlate) rows = rows.filter(t => t.actif !== false && daysTo(t.prochaine) < -365);
+  return rows;
+}
+function filteredTaches(){
+  const rows = baseTaches().filter(t => S.arch.taches || (S.tf ? tKey(t) === S.tf : t.actif !== false));
   return rows.sort((a, b) => (a.actif === false) - (b.actif === false) || a.prochaine.localeCompare(b.prochaine));
 }
 function pourSelect(){
@@ -3285,23 +3386,26 @@ function pourSelect(){
 function tacheRow(t, withSel = true){
   const k = getKks(t.kksId), run = openRun(t), off = t.actif === false;
   return `<tr data-act="${withSel ? 'select' : 'goto'}" ${withSel ? '' : 'data-view="taches"'} data-id="${t.id}" class="${withSel && S.sel.taches === t.id ? 'sel' : ''}" tabindex="0">
-    <td><span class="des">${esc(t.titre)}</span><span class="sub">${k ? esc(k.code) + ' · ' : ''}${esc(assignLabel(t.assign))} · ${esc(freqLabel(t.freq))}</span></td>
+    <td><span class="des">${esc(t.titre)}</span><span class="sub">${k ? esc(k.code) + ' · ' : ''}${esc(assignLabel(t.assign))} · ${esc(freqLabel(t.freq))}</span>${!off && !run ? `<span class="mdue">${dueInfo(t).chip}</span>` : ''}</td>
     <td class="num"><span class="trow-r">${off ? '<span class="chip ok">Faite</span>' : run ? '<span class="chip info">En cours</span>' : dueInfo(t).chip}${!off && !run && !t.arch ? `<button class="tick" data-act="do-tache" data-id="${t.id}" title="C’est fait : remplir le rapport" aria-label="Faire la tâche ${esc(t.titre)}">${icon('check')}</button>` : ''}</span></td></tr>`;
 }
 VIEWS.taches = {
   shell: () => `<header class="page-head"><h1>Tâches</h1><div class="tools">${searchBox('taches', 'Rechercher une tâche…')}${S.arch.taches ? '' : pourSelect()}
     <button class="btn primary" data-act="new-tache">${icon('plus')}Nouvelle tâche</button>
-    ${menu([['print-taches', 'Imprimer la liste de travail', 'printer', {}], ['toggle-tvue', S.tvue === 'toutes' ? 'Masquer les tâches faites' : 'Afficher aussi les tâches faites', 'list', {}], ['toggle-tlate', S.tlate ? 'Toutes les tâches' : 'En retard depuis plus d’un an', 'repeat', {}], ['xl-taches', 'Exporter la liste (Excel)', 'excel', {}], '-', archItem('taches')])}</div></header>
-    ${S.tlate ? `<p class="tools" style="margin:-6px 0 14px"><span class="chip bad">En retard depuis plus d’un an<button class="icon-btn" style="width:20px;height:20px;font-size:1rem;color:inherit" data-act="toggle-tlate" aria-label="Afficher toutes les tâches">×</button></span></p>` : ''}
+    ${menu([['print-taches', 'Imprimer la liste de travail', 'printer', {}], ['xl-taches', 'Exporter la liste (Excel)', 'excel', {}], '-', archItem('taches')])}</div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list(){
     if (!db.taches.length) return empty('Aucune tâche', '<p>Créez une tâche récurrente (graissage, contrôle, étalonnage…) avec « Nouvelle tâche ».</p>');
     const rows = filteredTaches();
-    if (!rows.length) return S.arch.taches ? empty('Aucune tâche archivée', '') : empty('Rien à faire', '<p>Aucune tâche pour cette sélection.</p>');
-    const grp = {retard:[], semaine:[], plus:[], fait:[]};
-    rows.forEach(t => grp[t.actif === false ? 'fait' : dueInfo(t).k].push(t));
-    const sec = (key, title) => grp[key].length ? `<tbody><tr class="grp"><th colspan="2"><span>${title}</span> <span class="muted" style="font-family:var(--f-body);font-size:.8rem">${grp[key].length}</span></th></tr>${grp[key].map(t => tacheRow(t)).join('')}</tbody>` : '';
-    return `<div class="tbl-wrap"><table class="tbl">${sec('retard', 'En retard')}${sec('semaine', 'Cette semaine')}${sec('plus', 'Plus tard')}${sec('fait', 'Faites')}</table></div>`;
+    const cnt = {}; if (!S.arch.taches) for (const t of baseTaches()){ const k = tKey(t); cnt[k] = (cnt[k] || 0) + 1; }
+    const afaire = (cnt.retard || 0) + (cnt.vieux || 0) + (cnt.semaine || 0) + (cnt.plus || 0);
+    const chip = (f, t, n, tone = '') => f && !n && S.tf !== f ? '' : `<button role="tab" class="ychip ${tone}" data-act="tf" data-f="${f}" aria-selected="${(S.tf || '') === f}">${t} <small>${n || 0}</small></button>`;
+    const chips = S.arch.taches ? '' : `<div class="fchips" role="tablist" aria-label="Quelles tâches">${chip('', 'À faire', afaire)}${chip('retard', 'En retard', cnt.retard, 'bad')}${chip('semaine', 'Cette semaine', cnt.semaine, 'warn')}${chip('plus', 'Plus tard', cnt.plus)}${chip('vieux', 'Retard de plus d’un an', cnt.vieux)}${chip('fait', 'Faites', cnt.fait)}</div>`;
+    if (!rows.length) return chips + (S.arch.taches ? empty('Aucune tâche archivée', '') : empty('Rien à faire', '<p>Aucune tâche pour cette sélection.</p>'));
+    const grp = {retard:[], semaine:[], plus:[], vieux:[], fait:[]};
+    rows.forEach(t => grp[tKey(t)].push(t));
+    const sec = (key, title) => grp[key].length ? `<tbody><tr class="grp ${key === 'vieux' ? 'old' : ''}"><th colspan="2"><span>${title}</span> <span class="muted" style="font-family:var(--f-body);font-size:.8rem">${grp[key].length}</span></th></tr>${grp[key].map(t => tacheRow(t)).join('')}</tbody>` : '';
+    return `${chips}<div class="tbl-wrap"><table class="tbl">${sec('retard', 'En retard')}${sec('semaine', 'Cette semaine')}${sec('plus', 'Plus tard')}${sec('vieux', 'En retard depuis plus d’un an')}${sec('fait', 'Faites')}</table></div>`;
   },
   detail(){
     const t = get('taches', S.sel.taches);
@@ -3361,7 +3465,7 @@ function tacheDialog(t, kksId){
     }});
 }
 function tachesSheetHTML(){
-  const rows = filteredTaches().filter(t => t.actif !== false && daysTo(t.prochaine) <= 7);
+  const rows = baseTaches().filter(t => t.actif !== false && daysTo(t.prochaine) <= 7).sort(urgSort);
   const who = S.pour ? (S.pour.startsWith('g:') ? S.pour.slice(2) : persName(getPers(S.pour.slice(2)) || {nom:''})) : 'Tout le monde';
   return `<article class="rpt"><header class="rpt-head"><div><div class="rpt-org">Tridel · Maintenance</div><h1>Liste de travail</h1></div><div class="rpt-num"><div>${esc(who)}</div><div>${fmtD(todayISO())}</div></div></header>
     ${rows.length ? `<table class="rpt-tbl"><thead><tr><th style="width:8mm"></th><th>Tâche</th><th>Équipement</th><th>Pour</th><th>Prévue</th></tr></thead><tbody>${rows.map(t => { const k = getKks(t.kksId); return `<tr><td><span class="box"></span></td><td><strong>${esc(t.titre)}</strong>${t.description ? `<br><span style="font-size:8.5pt">${esc(t.description)}</span>` : ''}</td><td class="mono">${k ? esc(k.code) : ''}</td><td>${esc(assignLabel(t.assign))}</td><td>${fmtD(t.prochaine)}${daysTo(t.prochaine) < 0 ? ' (retard)' : ''}</td></tr>`; }).join('')}</tbody></table>` : '<p>Aucune tâche en retard ou prévue dans les 7 jours.</p>'}
@@ -3518,10 +3622,12 @@ async function loadPresence(year){
   if (PLANS[year]) return PLANS[year];
   PLANS[year] = {loading:true, byNom:new Map(), order:new Map()};
   try { const r = await fetch(`${PLANNING_URL}planning-${year}.json`, {cache:'no-store'}); if (r.ok){ const j = await r.json(); (j.employes || []).forEach((e, i) => { const n = String(e.nom || '').trim().toUpperCase(); PLANS[year].byNom.set(n, e); PLANS[year].order.set(n, i); }); } } catch(e){}
-  PLANS[year].loading = false; if (S.view === 'planning') render(); return PLANS[year];
+  PLANS[year].loading = false; if (S.view === 'planning' || S.view === 'accueil') render(); return PLANS[year];
 }
 const presOf = (p, iso) => { const P = PLANS[iso.slice(0, 4)]; if (!P) return null; const e = P.byNom.get(String(p.nom || '').toUpperCase()); if (!e) return null; return {code:e.planning?.[iso] || '', note:e.commentaires?.[iso] || ''}; };
 const isoAdd = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+/* Semaine « en cours » : le week-end, c'est déjà la semaine suivante qu'on prépare */
+const thisWeek = () => { const t = todayISO(), m = mondayOf(t); return (new Date(t + 'T12:00:00').getDay() + 6) % 7 >= 5 ? isoAdd(m, 7) : m; };
 const mondayOf = iso => { const d = new Date(iso + 'T12:00:00'), w = (d.getDay() + 6) % 7; return isoAdd(iso, -w); };
 const isoWeek = iso => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7); const y = new Date(d.getFullYear(), 0, 4); return 1 + Math.round(((d - y) / 864e5 - 3 + (y.getDay() + 6) % 7) / 7); };
 const DAYN = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'], DAYS = ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'];
@@ -3557,7 +3663,7 @@ function planCell(who, iso, p){
 }
 VIEWS.planning = {
   shell(){
-    const mon = S.pweek || (S.pweek = mondayOf(todayISO())); loadPresence(mon.slice(0, 4)); if (isoAdd(mon, 6).slice(0, 4) !== mon.slice(0, 4)) loadPresence(isoAdd(mon, 6).slice(0, 4));
+    const mon = S.pweek || (S.pweek = thisWeek()); loadPresence(mon.slice(0, 4)); if (isoAdd(mon, 6).slice(0, 4) !== mon.slice(0, 4)) loadPresence(isoAdd(mon, 6).slice(0, 4));
     const nd = S.pwe ? 7 : 5, days = Array.from({length:nd}, (_, i) => isoAdd(mon, i)), today = todayISO();
     const ppl = planPeople(), me = meId(), P = PLANS[mon.slice(0, 4)];
     const grps = db.listes.groupes.filter(g => db.personnes.some(p => live(p) && p.actif !== false && p.groupe === g));
@@ -3578,24 +3684,29 @@ VIEWS.planning = {
         h += '<div class="pmg">Général</div>' + PLAN_ROWS.map(([w, t]) => `<div class="pmr"><span class="pn">${t}</span>${planCell(w, d, null)}</div>`).join(''); return h; })()}</div>`;
     return `<header class="page-head"><h1>Planning</h1><div class="tools">
         <div class="pweek"><button class="btn icon-only" data-act="pweek" data-n="-7" aria-label="Semaine précédente">${icon('chev')}</button><div class="pw-l"><b>Semaine ${isoWeek(mon)}</b><span>${range}</span></div><button class="btn icon-only" data-act="pweek" data-n="7" aria-label="Semaine suivante">${icon('chev')}</button></div>
-        ${mon !== mondayOf(today) ? `<button class="btn small" data-act="pweek" data-n="0">Cette semaine</button>` : ''}
+        ${mon !== thisWeek() ? `<button class="btn small" data-act="pweek" data-n="0">Cette semaine</button>` : ''}
         ${menu([['plan-print', 'Imprimer la semaine (A4 paysage)', 'printer', {}], ['plan-copy', 'Reprendre le texte libre de la semaine précédente', 'repeat', {}], ['plan-we', S.pwe ? 'Masquer le week-end' : 'Afficher le week-end', 'calendar', {}], '-', ['plan-hide', 'Personnes affichées…', 'person', {}]])}</div></header>
-      <p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez dans une case pour attribuer une tâche ou écrire le travail à faire. Les codes (R, RM, VA…) viennent du Planning Tridel.</p>
+      <div class="ptip-row"><p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez dans une case pour attribuer une tâche ou écrire le travail à faire. Les codes viennent du Planning Tridel.</p>${planLegend()}</div>
       <div class="pwrap"><div class="wkgrid-wrap"><table class="wkgrid"><thead><tr><th></th>${days.map((d, i) => `<th class="${d === today ? 'today' : ''}">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>${planSideHTML(days, ppl)}</div>
       <div class="pmobile">${mobile}</div>`;
   },
   list: () => '', detail: () => ''
 };
+function planLegend(){
+  const seen = new Map(); for (const [c, [t, k]] of Object.entries(PCODE)){ const key = k + '|' + t; if (!seen.has(key)) seen.set(key, {k, t, c:[]}); seen.get(key).c.push(c); }
+  const g = (k, title) => { const l = [...seen.values()].filter(x => x.k === k); return l.length ? `<b>${title}</b>${l.map(x => `<span>${x.c.map(c => `<span class="pcode k-${k}">${c}</span>`).join('')}${esc(x.t)}</span>`).join('')}` : ''; };
+  return `<details class="plegend"><summary>${icon('list')}Que veulent dire les codes ?</summary><div class="lg">${g('on', 'Présent')}${g('rot', 'Rotation')}${g('piq', 'Piquet')}${g('off', 'Congé')}${g('abs', 'Absent')}</div></details>`;
+}
 /* Tâches à planifier cette semaine (ou en retard) pour les personnes affichées, à glisser dans une case */
 function planSideHTML(days, ppl){
   const end = days[days.length - 1], start = days[0], q = norm(S.q.planside || '');
   const whoKeys = new Set(ppl.map(p => 'p:' + p.id)), planned = new Set(db.plan.filter(x => x.tacheId && x.date >= start && x.date <= end).map(x => x.tacheId));
   let ts = db.taches.filter(t => live(t) && t.actif !== false && t.prochaine <= end && !planned.has(t.id) && [...whoKeys].some(k => forWho(t, k)));
   if (q) ts = ts.filter(t => norm(`${t.titre} ${getKks(t.kksId)?.code || ''} ${assignLabel(t.assign)}`).includes(q));
-  ts.sort((a, b) => a.prochaine.localeCompare(b.prochaine));
-  const late = ts.filter(t => t.prochaine < start).length;
-  return `<aside class="pside"><div class="ps-h"><b>À planifier</b><small>${ts.length} tâche(s) dues d’ici ${fmtD(end)}${late ? ` · dont ${late} en retard` : ''}</small><input type="search" data-search="planside" data-pside="1" placeholder="Filtrer…" value="${esc(S.q.planside || '')}" aria-label="Filtrer les tâches à planifier"></div>
-    <div class="ps-l">${ts.slice(0, 150).map(t => { const k = getKks(t.kksId); return `<div class="ps-t ${t.prochaine < start ? 'late' : ''}" draggable="true" data-tid="${t.id}" title="Glissez dans la case d’une personne"><span class="t">${esc(t.titre)}</span><small>${k ? `<span class="kks">${esc(k.code)}</span> ` : ''}${esc(assignLabel(t.assign))} · ${fmtD(t.prochaine)}</small></div>`; }).join('') || '<p class="empty-line" style="padding:12px">Rien à planifier : tout est déjà placé.</p>'}${ts.length > 150 ? `<p class="list-note">${ts.length - 150} autre(s) : filtrez.</p>` : ''}</div>
+  ts.sort(urgSort);
+  const late = ts.filter(t => t.prochaine < start).length, oldN = ts.filter(isOld).length;
+  return `<aside class="pside"><div class="ps-h"><b>À planifier</b><small>${ts.length} tâche(s) dues d’ici ${fmtD(end)}${late ? ` · dont ${late} en retard${oldN ? ` (${oldN} depuis plus d’un an, en bas)` : ''}` : ''}</small><input type="search" data-search="planside" data-pside="1" placeholder="Filtrer…" value="${esc(S.q.planside || '')}" aria-label="Filtrer les tâches à planifier"></div>
+    <div class="ps-l">${ts.slice(0, 150).map((t, i, a) => { const k = getKks(t.kksId), o = isOld(t); return `${o && (i === 0 || !isOld(a[i - 1])) ? '<p class="ps-sep">En retard depuis plus d’un an</p>' : ''}<div class="ps-t ${o ? 'old' : t.prochaine < start ? 'late' : ''}" draggable="true" data-tid="${t.id}" title="Glissez dans la case d’une personne"><span class="t">${esc(t.titre)}</span><small>${k ? `<span class="kks">${esc(k.code)}</span> ` : ''}${esc(assignLabel(t.assign))} · ${fmtD(t.prochaine)}</small></div>`; }).join('') || '<p class="empty-line" style="padding:12px">Rien à planifier : tout est déjà placé.</p>'}${ts.length > 150 ? `<p class="list-note">${ts.length - 150} autre(s) : filtrez.</p>` : ''}</div>
     <p class="hint ps-f">Glissez une tâche dans la case d’une personne.</p></aside>`;
 }
 document.addEventListener('dragstart', e => { const t = e.target.closest?.('[data-tid]'); if (!t) return; e.dataTransfer.setData('text/plain', 'tid:' + t.dataset.tid); e.dataTransfer.effectAllowed = 'copy'; t.classList.add('drag'); });
@@ -3710,7 +3821,7 @@ OPT.fournisseurs = () => {
     <input type="search" data-search="optfour" data-opt4="1" placeholder="Filtrer…" value="${esc(S.q.optfour || '')}" aria-label="Filtrer les fournisseurs" style="max-width:320px"></div>
     <div id="opt-four">${rows.length ? `<div class="tbl-wrap"><table class="tbl compact"><thead><tr><th>Nom</th><th class="num">Pièces</th></tr></thead><tbody>${rows.map(n => { const open = S.fourOpen === n, c = cnt.get(norm(n)) || 0;
       const ps = open ? db.pieces.filter(p => [p.fabricant, p.fournisseur, ...(p.fours || [])].some(x => x && norm(x) === norm(n))).sort((a, b) => coll.compare(a.designation, b.designation)) : [];
-      return `<tr class="four-row ${open ? 'open' : ''}" data-act="four-open" data-name="${esc(n)}" tabindex="0"><td><span class="chev ${open ? 'open' : ''}">${icon('chev')}</span>${esc(n)}</td><td class="num qty">${c || ''}</td></tr>
+      return `<tr class="four-row ${open ? 'open' : ''}" data-act="four-open" data-name="${esc(n)}" tabindex="0"><td><span class="fr-n"><span class="chev ${open ? 'open' : ''}">${icon('chev')}</span>${esc(n)}</span></td><td class="num qty">${c || ''}</td></tr>
       ${open ? `<tr class="four-sub"><td colspan="2"><div class="four-tools"><button class="btn small" data-act="four-pieces" data-name="${esc(n)}">${icon('box')}Ouvrir dans Pièces</button>${(rc.get(n) || 0) ? `<button class="btn small" data-act="four-ints" data-name="${esc(n)}">${icon('report')}${rc.get(n)} rapport(s)</button>` : ''}<button class="btn small" data-act="edit-four" data-name="${esc(n)}">${icon('edit')}Renommer</button><button class="btn small ghost" data-act="four-arch" data-name="${esc(n)}">${icon('archive')}Archiver</button></div>
         ${ps.length ? `<div class="four-list">${ps.slice(0, 200).map(p => { const mp = mainPlace(p); return `<button class="four-p" data-act="goto" data-view="pieces" data-id="${p.id}"><span class="pid">${esc(p.ref)}</span><span class="t">${esc(p.designation)}</span>${mp ? plate(mp, false) : ''}<span class="q">${num(dispo(p))} <small>${esc(p.unite)}</small></span></button>`; }).join('')}${ps.length > 200 ? `<p class="list-note">${ps.length - 200} autre(s) : « Ouvrir dans Pièces » pour tout voir.</p>` : ''}</div>` : '<p class="empty-line" style="padding:8px 0">Aucune pièce reliée.</p>'}</td></tr>` : ''}`; }).join('')}</tbody></table></div>` : `<div class="pad">${empty('Aucun fournisseur', '')}</div>`}</div>
     ${db.listes.fournArch.length ? `<details class="arch-sec"><summary>${icon('archive')}Fournisseurs archivés <span class="muted">${db.listes.fournArch.length}</span></summary>${[...db.listes.fournArch].sort(coll.compare).map(n => `<div class="arch-line"><span class="t">${esc(n)}</span><button class="btn small" data-act="four-unarch" data-name="${esc(n)}">Restaurer</button><button class="link danger" data-act="four-del" data-name="${esc(n)}">Supprimer</button></div>`).join('')}</details>` : ''}</section>`;
@@ -4725,7 +4836,7 @@ function exportKksLinks(){
    ===================================================================== */
 const ACT = {
   scan: () => scanDialog(),
-  pweek(d){ const n = +d.n; S.pweek = n ? isoAdd(S.pweek || mondayOf(todayISO()), n) : mondayOf(todayISO()); S.pday = null; render(); },
+  pweek(d){ const n = +d.n; S.pweek = n ? isoAdd(S.pweek || thisWeek(), n) : thisWeek(); S.pday = null; render(); },
   pday(d){ S.pday = +d.i; render(); },
   'plan-add'(d, t, e){ if (e && e.target.closest('.pit')) return; planDialog(d.who, d.date, null); },
   'plan-edit'(d){ const x = db.plan.find(y => y.id === d.id); if (x) planDialog(x.who, x.date, x); },
@@ -4744,7 +4855,10 @@ const ACT = {
   'pour-me'(){ const me = meId(); S.pour = me ? 'p:' + me : ''; render(); },
   'name-ints'(d){ S.q.interventions = d.name; S.statut = 'toutes'; S.arch.interventions = false; S.ryear = null; go('interventions'); },
   recaler(d){ const t = get('taches', d.id); if (!t) return; const today = todayISO(); tx(() => { if (t.freq.unite === 'once') t.prochaine = today; else { let n = t.prochaine; while (n < today) n = addFreq(n, t.freq.n, t.freq.unite); t.prochaine = n; } }); render(); toast(`Prochaine fois : ${fmtD(t.prochaine)}`, '', true); },
-  'toggle-tlate'(){ S.tlate = !S.tlate; S.tvue = 'afaire'; render(); },
+  'toggle-tlate'(){ S.tf = S.tf === 'vieux' ? '' : 'vieux'; render(); },
+  tf(d){ if (S.view !== 'taches'){ S.tf = d.f || ''; S.back = []; go('taches'); return; } S.tf = d.f || ''; S.sel.taches = null; fillList(); fillDetail(); },
+  pf(d){ S.lowOnly = d.f === 'low'; S.zeroOnly = d.f === 'zero'; S.plimit = 200; S.sel.pieces = null; fillList(); fillDetail(); },
+  pmore(){ S.plimit += 300; fillList(); },
   fab(d, t){ const m = $('#fab .fab-menu'); m.hidden = !m.hidden; t.setAttribute('aria-expanded', String(!m.hidden)); },
   ryear(d){ S.ryear = d.y; S.sel.interventions = null; fillList(); fillDetail(); },
   rmore(d){ S.rmore = d.k; fillList(); },
@@ -4789,8 +4903,8 @@ const ACT = {
   'kks-back'(){ S.sel.kks = null; fillList(); fillDetail(); },
   'zone-clear'(){ S.zone = ''; render(); },
   opt(d){ S.opt = d.sec; go('options'); },
-  'show-low'(){ S.lowOnly = true; S.zeroOnly = false; S.back = []; go('pieces'); },
-  'show-zero'(){ S.zeroOnly = true; S.lowOnly = false; S.back = []; go('pieces'); },
+  'show-low'(){ S.lowOnly = true; S.zeroOnly = false; S.sel.pieces = null; S.back = []; go('pieces'); },
+  'show-zero'(){ S.zeroOnly = true; S.lowOnly = false; S.sel.pieces = null; S.back = []; go('pieces'); },
   'toggle-zero'(){ S.zeroOnly = !S.zeroOnly; render(); },
   'toggle-low'(){ S.lowOnly = !S.lowOnly; render(); },
   'quick-move': d => moveDialog(null, d.type),
@@ -4825,7 +4939,7 @@ const ACT = {
   'plan-done'(d){ const x = db.plan.find(y => y.id === d.id); if (!x) return; const t = x.tacheId ? get('taches', x.tacheId) : null; const who = db.plan.filter(y => y.date === x.date && (t ? y.tacheId === t.id : y.text === x.text) && getPers(y.who)).map(y => y.who);
     if (t) interventionDialog(null, null, t, {who, date:x.date, text:x.text}); else { interventionDialog(null, null, null, {who, date:x.date}); setTimeout(() => { const f = document.querySelector('dialog[open] form'); if (f && f.elements.titre && !f.elements.titre.value) f.elements.titre.value = x.text.split('\n')[0].slice(0, 120); }, 50); } },
   'print-taches': () => doPrint(tachesSheetHTML()),
-  'toggle-tvue'(){ S.tvue = S.tvue === 'toutes' ? 'afaire' : 'toutes'; render(); },
+  'toggle-tvue'(){ S.tf = S.tf === 'fait' ? '' : 'fait'; render(); },
   'edit-int': d => interventionDialog(getInt(d.id)),
   'print-int': d => doPrint(reportHTML(getInt(d.id))),
   'print-piece': d => doPrint(pieceSheetHTML(getPiece(d.id))),
