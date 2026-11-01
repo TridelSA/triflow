@@ -1,0 +1,35 @@
+# Sauvegarde automatique de la base TriFlow, chaque lundi à 5h (heure suisse) et à la demande.
+# Le fichier est chiffré (le dépôt est public) puis gardé 90 jours dans l'onglet « Actions » de GitHub.
+# Réglages nécessaires (Settings › Secrets and variables › Actions) :
+#   TRIFLOW_EMAIL, TRIFLOW_PASSWORD : un compte TriFlow dédié à la sauvegarde
+#   BACKUP_PASSWORD : le mot de passe de chiffrement (à garder en lieu sûr)
+name: Sauvegarde TriFlow
+on:
+  schedule:
+    - cron: '7 4 * * 1'
+  workflow_dispatch:
+jobs:
+  sauvegarde:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Exporter la base
+        env:
+          TRIFLOW_EMAIL: ${{ secrets.TRIFLOW_EMAIL }}
+          TRIFLOW_PASSWORD: ${{ secrets.TRIFLOW_PASSWORD }}
+        run: python3 outils/sauvegarde.py > triflow-sauvegarde.json
+      - name: Compresser et chiffrer
+        env:
+          BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
+        run: |
+          test -n "$BACKUP_PASSWORD" || { echo "Secret BACKUP_PASSWORD manquant"; exit 1; }
+          D=$(date +%F)
+          gzip -9 triflow-sauvegarde.json
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -in triflow-sauvegarde.json.gz -out "triflow-sauvegarde-$D.json.gz.enc" -pass env:BACKUP_PASSWORD
+          rm triflow-sauvegarde.json.gz
+          echo "D=$D" >> $GITHUB_ENV
+      - uses: actions/upload-artifact@v4
+        with:
+          name: triflow-sauvegarde-${{ env.D }}
+          path: triflow-sauvegarde-*.json.gz.enc
+          retention-days: 90
