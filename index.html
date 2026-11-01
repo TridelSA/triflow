@@ -433,6 +433,26 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .back-nav{margin:0 0 10px}
 .back-nav .ico{transform:rotate(180deg)}
 .pd-info.rep{margin-top:6px}
+.who-line{display:block;padding:0 16px 10px;font-size:.85rem;color:var(--muted)}
+.who-line .link{font-size:.85rem}
+.who-line .ico{width:15px;height:15px;vertical-align:-3px;margin-right:4px}
+.recal{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 0;padding:10px 12px;border-radius:10px;background:var(--sunk);font-size:.88rem}
+.recal .ico{width:16px;height:16px;flex:none;color:var(--muted)}
+.recal span{flex:1;min-width:200px}
+details.more{border:1px solid var(--line);border-radius:12px;padding:0 14px;margin-top:4px}
+details.more[open]{padding-bottom:14px}
+details.more > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:12px 0;font-weight:600}
+details.more > summary::-webkit-details-marker{display:none}
+details.more > summary .ico{width:16px;height:16px;transition:transform .15s}
+details.more[open] > summary .ico{transform:rotate(90deg)}
+details.more > summary .muted{font-weight:400;font-size:.85rem}
+details.more > *:not(summary){margin-top:12px}
+.matl{margin-top:10px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.matl-h{display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--sunk);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.matl-h .ico{width:15px;height:15px}
+.matl-r{display:flex;align-items:baseline;gap:10px;padding:7px 12px;border-top:1px solid var(--line);font-size:.9rem}
+.matl-r .q{flex:none;min-width:2.6em;font-family:var(--f-mono);font-weight:700}
+.matl-r .pid{margin-left:auto;font-family:var(--f-mono);font-size:.75rem;color:var(--muted);white-space:nowrap}
 .ychips{display:flex;gap:6px;overflow-x:auto;padding:10px 12px;border-bottom:1px solid var(--line);scrollbar-width:thin}
 .ychip{all:unset;cursor:pointer;flex:none;padding:5px 11px;border-radius:999px;font-size:.85rem;font-weight:600;color:var(--muted);background:var(--sunk)}
 .ychip small{font-weight:500;opacity:.75;margin-left:2px}
@@ -665,6 +685,19 @@ dialog.dlg::backdrop{background:rgba(12,18,21,.55)}
 #toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:60;max-width:calc(100vw - 32px)}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 #toast.bad{background:var(--bad);color:#fff}
+.fab{display:none}
+@media (max-width:980px){
+  .fab{display:block;position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:30}
+  body:has(.split.has-sel) .fab,body:has(dialog[open]) .fab{display:none}
+  .fab-btn{all:unset;cursor:pointer;width:58px;height:58px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:2rem;line-height:58px;text-align:center;box-shadow:0 6px 18px rgba(0,0,0,.25);display:block}
+  .fab-btn[aria-expanded=true]{transform:rotate(45deg)}
+  .fab-menu{position:absolute;right:0;bottom:70px;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+  .fab-menu button{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;white-space:nowrap;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:10px 16px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+  .fab-menu .ico{width:18px;height:18px;color:var(--accent)}
+  #toast{bottom:calc(88px + env(safe-area-inset-bottom,0px))}
+}
+#toast.undo{pointer-events:auto;display:flex;align-items:center;gap:14px}
+#toast button{all:unset;cursor:pointer;font-weight:700;color:var(--accent-line);text-decoration:underline;text-underline-offset:3px}
 @media (prefers-reduced-motion:reduce){#toast,details.oroom > summary .chev{transition:none}}
 
 /* ---------- Écrans moyens & téléphone ---------- */
@@ -825,6 +858,7 @@ dialog.dlg::backdrop{background:rgba(12,18,21,.55)}
 </div>
 <div id="print"></div>
 <div id="toast" role="status" aria-live="polite"></div>
+<div class="fab" id="fab"><div class="fab-menu" hidden><button data-act="new-int"><span data-icon="report"></span>Nouveau rapport</button><button data-act="quick-move" data-type="sortie"><span data-icon="move"></span>Mouvement de stock</button><button data-act="scan"><span data-icon="scan"></span>Scanner un QR</button></div><button class="fab-btn" data-act="fab" aria-label="Ajouter" aria-expanded="false">+</button></div>
 <input type="file" id="file-json" accept=".json,application/json" hidden>
 <datalist id="dl-lieux"></datalist>
 <datalist id="dl-pieces"></datalist>
@@ -2438,7 +2472,10 @@ async function startCloud(){
   }
 }
 /* Toute modification passe par tx() : si une étape échoue, rien n'est enregistré. */
-function tx(fn){ const snap = JSON.stringify(db); try { const r = fn(); save(); return r; } catch(e){ db = JSON.parse(snap); throw e; } }
+let REV = 0, LASTTX = null;
+function tx(fn){ const snap = JSON.stringify(db); try { const r = fn(); REV++; LASTTX = {snap, rev:REV}; save(); return r; } catch(e){ db = JSON.parse(snap); throw e; } }
+/* Annule la dernière modification (si rien d'autre n'a été modifié depuis) */
+function undoLast(rev){ if (!LASTTX || LASTTX.rev !== rev){ toast('Impossible d’annuler : d’autres changements ont eu lieu depuis.', 'bad'); return; } db = JSON.parse(LASTTX.snap); LASTTX = null; REV++; save(); render(); toast('Modification annulée'); }
 
 /* ---------------- Accès ---------------- */
 const get = (col, id) => db[col].find(x => x.id === id);
@@ -2483,6 +2520,14 @@ const persName = p => p ? `${p.prenom || ''} ${p.nom}`.trim() : '(supprimé)';
 /* Intervenants d'un rapport : figés tels qu'ils étaient lors du rapport (nom + groupe). */
 const persSnap = p => ({nom:p.nom, prenom:p.prenom || '', groupe:p.groupe || ''});
 /* Entreprises externes (liste des fournisseurs) comme intervenants : id « four:Nom » */
+/* « Moi » : la personne de la liste qui utilise ce poste (liée à l'adresse de connexion, sinon mémorisée dans ce navigateur) */
+function meId(){ const e = (CLOUD.user?.email || '').toLowerCase(); let id = e && db.reglages.moi ? db.reglages.moi[e] : null; if (!id){ try { id = localStorage.getItem('tf-moi'); } catch(x){} } return id && getPers(id) ? id : null; }
+function setMe(id){ const e = (CLOUD.user?.email || '').toLowerCase(); if (e) tx(() => { db.reglages.moi = {...(db.reglages.moi || {}), [e]:id || undefined}; }); try { id ? localStorage.setItem('tf-moi', id) : localStorage.removeItem('tf-moi'); } catch(x){} }
+function meDialog(){
+  const ps = db.personnes.filter(p => live(p) && p.actif !== false).sort(persSort), cur = meId();
+  dialog({title:'Qui êtes-vous ?', saveLabel:'Valider', body:`<p class="hint">L’accueil affichera d’abord vos tâches et celles de votre corps de métier.</p><label>Je suis<select name="me"><option value="">— personne en particulier —</option>${db.listes.groupes.filter(g => ps.some(p => p.groupe === g)).map(g => `<optgroup label="${esc(g)}">${ps.filter(p => p.groupe === g).map(p => opt(p.id, persName(p), cur)).join('')}</optgroup>`).join('')}</select></label>`,
+    onSave(f){ setMe(val(f, 'me')); S.homeAll = false; S.pourInit = false; render(); toast(val(f, 'me') ? `Bonjour ${persName(getPers(val(f, 'me')))}` : 'Accueil pour tout le monde'); }});
+}
 const FOUR_GRP = 'Entreprise externe';
 const fourSnap = n => ({nom:n, prenom:'', groupe:FOUR_GRP});
 const isFourId = id => String(id).startsWith('four:');
@@ -2544,7 +2589,7 @@ function archiveItem(col, x){
   if (col === 'salles'){ const ids = new Set(db.lieux.filter(l => l.salleId === x.id).map(l => l.id)); if (db.pieces.some(p => p.stock.some(s => ids.has(s.lieuId) && s.qte > 0))) throw new Error('Des pièces sont encore rangées dans ce local : déplacez-les avant d’archiver.'); }
   tx(() => { x.arch = todayISO(); });
   const v = col === 'salles' ? 'lieux' : col; if (S.sel[v] === x.id) S.sel[v] = null;
-  render(); toast(`${ARCH_LBL[col][0]} · retrouvez-la dans « Plus › Archives »`.replace('retrouvez-la', /archivé$/.test(ARCH_LBL[col][0]) ? 'retrouvez-le' : 'retrouvez-la'));
+  render(); toast(`${ARCH_LBL[col][0]} · retrouvez-la dans « Plus › Archives »`.replace('retrouvez-la', /archivé$/.test(ARCH_LBL[col][0]) ? 'retrouvez-le' : 'retrouvez-la'), '', true);
 }
 function unarchiveItem(col, x){ tx(() => { delete x.arch; delete x.mergedInto; }); render(); toast(`${ARCH_LBL[col][0].replace(/archivée?$/, '')}restauré${/archivée$/.test(ARCH_LBL[col][0]) ? 'e' : ''}`); }
 /* Bouton du bas des fenêtres « Modifier » : Archiver (réversible), ou Supprimer définitivement si déjà archivé */
@@ -2689,9 +2734,10 @@ if (!db){ db = seed(); save(); }
 /* ---------------- État d'affichage ---------------- */
 const S = {pour:'', tvue:'afaire', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:'', optfour:''}, lowOnly:false, zeroOnly:false, psort:'iddesc', plimit:300, rlimit:300, back:[], statut:'toutes', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux', arch:{}};
 
-function toast(msg, kind = ''){
-  const t = $('#toast'); t.textContent = msg; t.className = 'show ' + kind;
-  clearTimeout(toast.t); toast.t = setTimeout(() => t.className = '', kind === 'bad' ? 5000 : 2600);
+function toast(msg, kind = '', undo = false){
+  const t = $('#toast'); t.textContent = msg; t.className = 'show ' + kind + (undo ? ' undo' : '');
+  if (undo && LASTTX){ const rev = LASTTX.rev, b = document.createElement('button'); b.type = 'button'; b.textContent = 'Annuler'; b.onclick = () => { t.className = ''; undoLast(rev); }; t.append(b); }
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.className = '', kind === 'bad' ? 5000 : undo ? 7000 : 2600);
 }
 function refreshDatalists(){
   const uniq = arr => [...new Set(arr.map(x => String(x || '').trim()).filter(Boolean))].sort(coll.compare).map(c => `<option value="${esc(c)}"></option>`).join('');
@@ -2760,13 +2806,15 @@ VIEWS.accueil = {
     const qa = (act, type, ic, t) => `<button class="qa" data-act="${act}" ${type ? `data-type="${type}"` : ''}><span class="qi">${icon(ic)}</span><strong>${t}</strong></button>`;
     return `${db.meta.demo ? `<div class="notice"><p><strong>Données d'exemple.</strong> Elles sont fictives et servent à essayer l'outil.</p><button class="btn" data-act="clear-demo">Effacer les exemples</button></div>` : ''}
     <header class="page-head"><h1>Accueil</h1></header>
-    ${(() => { const low = db.pieces.filter(p => live(p) && isLow(p)).length, zero = db.pieces.filter(p => live(p) && isOut(p)).length, late = db.taches.filter(t => live(t) && t.actif !== false && daysTo(t.prochaine) < 0).length;
+    ${(() => { const low = db.pieces.filter(p => live(p) && isLow(p)).length, zero = db.pieces.filter(p => live(p) && isOut(p)).length, me = !S.homeAll && meId(), late = db.taches.filter(t => live(t) && t.actif !== false && daysTo(t.prochaine) < 0 && (!me || forWho(t, 'p:' + me))).length;
       const k = (act, n, t, ic, tone, extra = '') => `<button class="kpi ${n ? tone : 'calm'}" data-act="${act}" ${extra}><span class="ki">${icon(ic)}</span><span class="kn">${num(n)}</span><span class="kt">${t}</span></button>`;
-      return `<div class="kpis">${k('show-low', low, 'Sous le stock minimum', 'box', 'warn')}${k('show-zero', zero, 'Pièces à zéro', 'box', 'bad')}${k('nav', late, 'Tâches en retard', 'repeat', 'bad', 'data-view="taches"')}${k('nav', open.length, 'Rapports ouverts', 'report', 'info', 'data-view="interventions"')}</div>`; })()}
+      return `<div class="kpis">${k('show-low', low, 'Sous le stock minimum', 'box', 'warn')}${k('show-zero', zero, 'Pièces à zéro', 'box', 'bad')}${k(me ? 'my-tasks' : 'nav', late, me ? 'Mes tâches en retard' : 'Tâches en retard', 'repeat', 'bad', 'data-view="taches"')}${k('nav', open.length, 'Rapports ouverts', 'report', 'info', 'data-view="interventions"')}</div>`; })()}
     <div class="quick">${qa('scan', '', 'scan', 'Scanner un QR')}${qa('quick-move', 'sortie', 'move', 'Mouvement de stock')}${qa('new-int', '', 'report', 'Nouveau rapport')}${qa('labels-pick', '', 'qr', 'Étiquettes QR')}</div>
     <div class="cols">
       <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
-      ${(() => { const dueAll = db.taches.filter(t => live(t) && t.actif !== false && daysTo(t.prochaine) <= 7).sort((a, b) => a.prochaine.localeCompare(b.prochaine)), due = dueAll.slice(0, 5); return `<section class="panel"><div class="panel-head"><h2>Tâches à faire${dueAll.length ? ` <span class="muted" style="font-size:.9rem">${dueAll.length}</span>` : ''}</h2><button class="link" data-act="nav" data-view="taches">${dueAll.length > 5 ? `Voir les ${dueAll.length}` : 'Toutes'}</button></div>${due.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${due.map(t => tacheRow(t, false)).join('')}</tbody></table></div>` : '<div style="padding:0 16px 16px"><p class="empty-line">Rien en retard ni dans les 7 prochains jours.</p></div>'}</section>`; })()}
+      ${(() => { const me = meId(), mine = me && !S.homeAll; const dueAll = db.taches.filter(t => live(t) && t.actif !== false && daysTo(t.prochaine) <= 7 && (!mine || forWho(t, 'p:' + me))).sort((a, b) => a.prochaine.localeCompare(b.prochaine)), due = dueAll.slice(0, 5);
+        const who = me ? `<span class="who-line">${mine ? `Pour <b>${esc(persName(getPers(me)))}</b>${getPers(me).groupe ? ` et les ${esc(getPers(me).groupe.toLowerCase())}s` : ''}` : 'Pour tout le monde'} · <button class="link" data-act="home-all">${mine ? 'Voir tout le monde' : 'Seulement les miennes'}</button> · <button class="link" data-act="me">Changer</button></span>` : `<span class="who-line"><button class="link" data-act="me">${icon('person')}Qui êtes-vous ? Choisissez votre nom pour voir vos tâches</button></span>`;
+        return `<section class="panel"><div class="panel-head"><h2>${mine ? 'Mes tâches' : 'Tâches à faire'}${dueAll.length ? ` <span class="muted" style="font-size:.9rem">${dueAll.length}</span>` : ''}</h2><button class="link" data-act="${mine ? 'my-tasks' : 'nav'}" data-view="taches">${dueAll.length > 5 ? `Voir les ${dueAll.length}` : 'Toutes'}</button></div>${who}${due.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${due.map(t => tacheRow(t, false)).join('')}</tbody></table></div>` : '<div style="padding:0 16px 16px"><p class="empty-line">Rien en retard ni dans les 7 prochains jours.</p></div>'}</section>`; })()}
       <section class="panel"><div class="panel-head"><h2>Rapports en cours</h2><button class="link" data-act="nav" data-view="interventions">Toutes</button></div>${open.length ? intTable(open) : '<div style="padding:0 16px 16px"><p class="empty-line">Aucun rapport en cours.</p></div>'}</section>
       </div>
       <section class="panel"><div class="panel-head"><h2>Installation</h2><button class="link" data-act="nav" data-view="kks">Tout voir</button></div>
@@ -2839,6 +2887,8 @@ VIEWS.pieces = {
         ${p.fournisseur && p.fournisseur !== p.fabricant ? `<dt>Fournisseur</dt><dd>${esc(p.fournisseur)}</dd>` : ''}
         ${(p.fours || []).filter(n => n !== p.fournisseur && n !== p.fabricant).length ? `<dt>Aussi cités</dt><dd>${esc(p.fours.filter(n => n !== p.fournisseur && n !== p.fabricant).join(', '))}</dd>` : ''}
         ${noteRows.map(([k, v]) => k ? `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>` : `<dd class="full">${esc(v)}</dd>`).join('')}</dl></section>` : ''}
+      ${(() => { const ids = matIndex().usedIn.get(p.id); if (!ids || !ids.size) return ''; const ints = [...ids].map(getInt).filter(Boolean).sort((a, b) => b.date.localeCompare(a.date)), all = S.pAll === p.id;
+        return `<section class="pd-sec"><h3>${icon('report')}Utilisée dans les rapports <span class="muted">${ints.length}</span></h3>${intTable(all ? ints : ints.slice(0, 5))}${ints.length > 5 ? `<button class="link" data-act="p-all" data-id="${p.id}">${all ? 'Réduire' : `Voir les ${ints.length} rapports`}</button>` : ''}</section>`; })()}
       <section class="pd-sec"><h3>${icon('repeat')}Historique <span class="muted">${hist.length || ''}</span></h3>
         ${hist.length ? `<div class="pd-hist">${(showAll ? hist : hist.slice(0, 8)).map(h => `<div class="ph"><span class="d">${fmtD(h.date)}</span><span class="q ${h.neutral ? '' : h.qte < 0 ? 'neg' : 'pos'}">${h.neutral ? '' : h.qte > 0 ? '+' : h.qte < 0 ? '−' : ''}${num(Math.abs(h.qte))}</span><span class="m">${esc(h.motif)}${h.who ? ` <span class="muted">· ${esc(h.who)}</span>` : ''}${h.lieu ? `<span class="lw">${esc(h.lieu)}</span>` : ''}</span></div>`).join('')}</div>
           ${hist.length > 8 ? `<button class="link" data-act="hist-all" data-id="${p.id}">${showAll ? 'Réduire' : `Voir les ${hist.length} mouvements`}</button>` : ''}` : '<p class="empty-line">Aucun mouvement enregistré.</p>'}</section>`;
@@ -2883,11 +2933,31 @@ function dupDialog(){
         if (mb){ const ids = mb.dataset.dmerge.split(','), keepId = $(`input[name="keep-${ids[0]}"]:checked`, box)?.value, keep = getPiece(keepId), others = ids.filter(id => id !== keepId).map(getPiece).filter(Boolean);
           if (!keep || !others.length) return;
           if (!mb.dataset.armed){ mb.dataset.armed = 1; mb.innerHTML = `Confirmer : garder l’ID ${esc(keep.ref)}, archiver ${others.map(o => 'l’ID ' + esc(o.ref)).join(', ')}`; return; }
-          try { mergePieces(keep, others); toast(`Fusionné dans l’ID ${keep.ref} · ${others.length} pièce(s) archivée(s)`); } catch(x){ toast(x.message, 'bad'); }
+          try { mergePieces(keep, others); toast(`Fusionné dans l’ID ${keep.ref} · ${others.length} pièce(s) archivée(s)`, '', true); } catch(x){ toast(x.message, 'bad'); }
           box.innerHTML = body(); render(); }
         const ob = e.target.closest('[data-dopen]'); if (ob){ d.close(); go('pieces', ob.dataset.dopen); return; }
         if (nb){ const key = nb.dataset.dnot.split(',').sort().join('|'); tx(() => { db.meta.notDup = [...(db.meta.notDup || []), key]; }); box.innerHTML = body(); }
       }); }});
+}
+
+/* Matériel des rapports CareOffice (« · 2 × Désignation ») relié à une pièce du stock quand la désignation est identique et unique */
+const normDes = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const MAT_RX = /^·\s*(?:([\d.,]+)\s*×\s*)?(.+)$/;
+let MATIDX = null;
+function matIndex(){
+  if (MATIDX && MATIDX.db === db && MATIDX.rev === REV) return MATIDX;
+  const byDes = new Map(); for (const p of db.pieces){ if (!live(p)) continue; const k = normDes(p.designation); if (k.length < 5) continue; byDes.set(k, byDes.has(k) ? null : p); }
+  const usedIn = new Map(), add = (pid, iid) => { if (!usedIn.has(pid)) usedIn.set(pid, new Set()); usedIn.get(pid).add(iid); };
+  for (const i of db.interventions){ if (!live(i)) continue; for (const x of i.pieces || []) add(x.pieceId, i.id);
+    const t = i.travaux || '', k = t.indexOf('Matériel utilisé'); if (k < 0) continue;
+    for (const ln of t.slice(k).split('\n')){ const m = ln.match(MAT_RX); if (m){ const p = byDes.get(normDes(m[2])); if (p) add(p.id, i.id); } } }
+  return MATIDX = {db, rev:REV, byDes, usedIn};
+}
+const matPiece = des => matIndex().byDes.get(normDes(des)) || null;
+function travauxHTML(t){
+  const k = t.indexOf('Matériel utilisé :'); const head = k >= 0 ? t.slice(0, k).trim() : t, mat = k >= 0 ? t.slice(k).split('\n').slice(1).filter(l => l.trim()) : [];
+  return `${head ? `<p class="pre">${esc(head)}</p>` : ''}${mat.length ? `<div class="matl"><div class="matl-h">${icon('box')}Matériel utilisé</div>${mat.map(l => { const m = l.match(MAT_RX); const des = m ? m[2] : l.replace(/^·\s*/, ''), q = m && m[1] ? m[1] : '', p = matPiece(des);
+    return `<div class="matl-r"><span class="q">${q ? esc(q) + ' ×' : ''}</span>${p ? `<button class="link" data-act="goto" data-view="pieces" data-id="${p.id}" title="Ouvrir la pièce ID ${esc(p.ref)}">${esc(des)}</button><span class="pid">ID ${esc(p.ref)}</span>` : `<span>${esc(des)}</span>`}</div>`; }).join('')}</div>` : ''}`;
 }
 
 /* Historique d'une pièce : mouvements TriFlow + historique repris de CareOffice */
@@ -2962,6 +3032,7 @@ function filteredTaches(){
   let rows = db.taches.filter(t => S.arch.taches ? t.arch : !t.arch).filter(t => S.arch.taches || S.tvue === 'toutes' || t.actif !== false).filter(t => forWho(t, S.pour));
   const q = norm(S.q.taches || '');
   if (q) rows = rows.filter(t => norm([t.titre, t.description, getKks(t.kksId)?.code, getKks(t.kksId)?.designation, assignLabel(t.assign)].join(' ')).includes(q));
+  if (S.tlate) rows = rows.filter(t => t.actif !== false && daysTo(t.prochaine) < -365);
   return rows.sort((a, b) => (a.actif === false) - (b.actif === false) || a.prochaine.localeCompare(b.prochaine));
 }
 function pourSelect(){
@@ -2976,9 +3047,10 @@ function tacheRow(t, withSel = true){
     <td class="num"><span class="trow-r">${off ? '<span class="chip ok">Faite</span>' : run ? '<span class="chip info">En cours</span>' : dueInfo(t).chip}${!off && !run && !t.arch ? `<button class="tick" data-act="do-tache" data-id="${t.id}" title="C’est fait : remplir le rapport" aria-label="Faire la tâche ${esc(t.titre)}">${icon('check')}</button>` : ''}</span></td></tr>`;
 }
 VIEWS.taches = {
-  shell: () => `<header class="page-head"><h1>Tâches</h1><div class="tools">${searchBox('taches', 'Rechercher une tâche…')}${pourSelect()}
+  shell: () => (S.pourInit || (S.pourInit = true, meId() && !S.pour && (S.pour = 'p:' + meId())), '') + `<header class="page-head"><h1>Tâches</h1><div class="tools">${searchBox('taches', 'Rechercher une tâche…')}${pourSelect()}
     <button class="btn primary" data-act="new-tache">${icon('plus')}Nouvelle tâche</button>
-    ${menu([['print-taches', 'Imprimer la liste de travail', 'printer', {}], ['toggle-tvue', S.tvue === 'toutes' ? 'Masquer les tâches faites' : 'Afficher aussi les tâches faites', 'list', {}], ['xl-taches', 'Exporter la liste (Excel)', 'excel', {}], '-', archItem('taches')])}</div></header>
+    ${menu([['print-taches', 'Imprimer la liste de travail', 'printer', {}], ['toggle-tvue', S.tvue === 'toutes' ? 'Masquer les tâches faites' : 'Afficher aussi les tâches faites', 'list', {}], ['toggle-tlate', S.tlate ? 'Toutes les tâches' : 'En retard depuis plus d’un an', 'repeat', {}], ['xl-taches', 'Exporter la liste (Excel)', 'excel', {}], '-', archItem('taches')])}</div></header>
+    ${S.tlate ? `<p class="tools" style="margin:-6px 0 14px"><span class="chip bad">En retard depuis plus d’un an<button class="icon-btn" style="width:20px;height:20px;font-size:1rem;color:inherit" data-act="toggle-tlate" aria-label="Afficher toutes les tâches">×</button></span></p>` : ''}
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list(){
     if (!db.taches.length) return empty('Aucune tâche', '<p>Créez une tâche récurrente (graissage, contrôle, étalonnage…) avec « Nouvelle tâche ».</p>');
@@ -3001,6 +3073,7 @@ VIEWS.taches = {
         <div class="pd-qty">${off ? '<span class="l" style="font-size:1rem">Tâche unique, déjà faite</span>' : `<span class="l">Prochaine fois</span><span class="n" style="font-size:1.5rem">${fmtD(t.prochaine)}</span>${di.k === 'plus' ? '' : di.chip}`}</div>
         ${off || t.arch ? '' : run ? `<button class="btn primary" data-act="edit-int" data-id="${run.id}">${icon('report')}Compléter le rapport ${esc(run.num)}</button>` : `<button class="btn primary" data-act="do-tache" data-id="${t.id}">${icon('check')}C’est fait</button>`}
       </div>
+      ${!off && !t.arch && daysTo(t.prochaine) < 0 ? `<p class="recal">${icon('repeat')}<span>En retard depuis le ${fmtD(t.prochaine)}. Si elle a été faite sans rapport, ou n’est plus d’actualité à cette date :</span><button class="btn small" data-act="recaler" data-id="${t.id}">Recaler sur ${t.freq.unite === 'once' ? 'aujourd’hui' : 'la prochaine échéance'}</button></p>` : ''}
       ${off || t.arch || run ? '' : '<p class="hint" style="margin:4px 0 0">« C’est fait » ouvre le rapport déjà rempli ; à l’enregistrement, la date passe à l’échéance suivante.</p>'}
       ${k ? `<section class="pd-sec"><h3>${icon('plant')}Équipement</h3><div class="pd-k">${kksTag(k)}<span class="t">${esc(k.designation)}</span></div></section>` : ''}
       ${t.description ? `<section class="pd-sec"><h3>${icon('list')}Ce qu’il faut faire</h3><p class="pre">${esc(t.description)}</p></section>` : ''}
@@ -3092,7 +3165,7 @@ VIEWS.interventions = {
     if (!i) return placeholder('report', 'Choisissez un rapport.');
     const k = kInfo(i), T = tInfo(i);
     const names = intPers(i).map(x => `${getPers(x.id) ? `<button class="link" data-act="pers-ints" data-id="${x.id}">${esc(persName(x))}</button>` : esc(persName(x))}${x.groupe ? ` <span class="muted">(${esc(x.groupe)})</span>` : ''}`).join(', ');
-    const pills = intPers(i).map(x => `<span class="pp ${isFourId(x.id) ? 'four' : ''}">${isFourId(x.id) ? icon('truck') : ''}${getPers(x.id) ? `<button class="link" data-act="pers-ints" data-id="${x.id}">${esc(persName(x))}</button>` : esc(persName(x))}${x.groupe ? `<small>${esc(x.groupe)}</small>` : ''}</span>`).join('');
+    const pills = intPers(i).map(x => `<span class="pp ${isFourId(x.id) ? 'four' : ''}">${isFourId(x.id) ? icon('truck') : ''}${getPers(x.id) ? `<button class="link" data-act="pers-ints" data-id="${x.id}" title="Tous ses rapports">${esc(persName(x))}</button>` : isFourId(x.id) ? `<button class="link" data-act="four-ints" data-name="${esc(x.id.slice(5))}" title="Tous ses rapports">${esc(persName(x))}</button>` : `<button class="link" data-act="name-ints" data-name="${esc(x.nom)}" title="Tous ses rapports">${esc(persName(x))}</button>`}${x.groupe ? `<small>${esc(x.groupe)}</small>` : ''}</span>`).join('');
     return `${archBanner('interventions', i)}<div class="pd-head"><span class="pd-id">${esc(i.num)}</span><div class="pd-tools">${i.statut !== 'terminee' ? statutChip(i.statut) : ''}<button class="btn small" data-act="edit-int" data-id="${i.id}">${icon('edit')}${i.statut === 'terminee' ? 'Modifier' : 'Compléter'}</button><button class="btn small" data-act="print-int" data-id="${i.id}">${icon('printer')}Imprimer</button></div></div>
       <h2 class="pd-title">${esc(i.titre)}</h2>
       <p class="pd-sub">${fmtD(i.date)}${i.type ? ` · ${esc(i.type)}` : ''}${i.duree ? ` · ${num(i.duree)} h` : ''}${i.statut === 'terminee' ? ' · <span style="color:var(--ok)">terminé</span>' : ''}</p>
@@ -3101,7 +3174,7 @@ VIEWS.interventions = {
         ${T ? `<dt>Tâche</dt><dd>${get('taches', i.tacheId) ? `<button class="link" data-act="goto" data-view="taches" data-id="${i.tacheId}">${esc(T.titre)}</button>` : esc(T.titre)} <span class="muted">· ${esc(T.freq)}</span></dd>` : ''}
         <dt>Intervenants</dt><dd>${pills ? `<span class="pps">${pills}</span>` : '—'}</dd></dl>
       ${i.constat ? `<section class="pd-sec"><h3>${icon('report')}Constat / demande</h3><p class="pre">${esc(i.constat)}</p></section>` : ''}
-      ${i.travaux ? `<section class="pd-sec"><h3>${icon('wrench')}Travaux réalisés</h3><p class="pre">${esc(i.travaux)}</p></section>` : ''}
+      ${i.travaux ? `<section class="pd-sec"><h3>${icon('wrench')}Travaux réalisés</h3>${travauxHTML(i.travaux)}</section>` : ''}
       ${i.pieces.length ? `<section class="block"><h3>Pièces utilisées</h3><div class="tbl-wrap"><table class="tbl compact"><tbody>${i.pieces.map(x => { const p = getPiece(x.pieceId), s = lineInfo(x, i); return `<tr ${p ? `data-act="goto" data-view="pieces" data-id="${p.id}" tabindex="0"` : ''}><td><span class="ref">${esc(s.ref)}</span> ${esc(s.designation)}${s.lieu ? `<span class="sub">${esc(s.lieu)}</span>` : ''}</td><td class="num qty">${num(x.qte)} ${esc(s.unite || '')}</td></tr>`; }).join('')}</tbody></table></div></section>` : ''}`;
   }
 };
@@ -3296,7 +3369,7 @@ function fourDialog(name){
 }
 OPT.connexion = () => {
   const c = CLOUD.cfg();
-  return `<section class="opt-sec"><div class="head"><h2>Base partagée</h2></div><div class="pad">
+  return `<section class="opt-sec"><div class="head"><h2>Sur ce poste</h2></div><div class="pad"><p>${meId() ? `Vous êtes <strong>${esc(persName(getPers(meId())))}</strong>. L’accueil affiche d’abord vos tâches.` : 'Personne n’est choisi : l’accueil affiche les tâches de tout le monde.'}</p><div class="tools"><button class="btn" data-act="me">${icon('person')}${meId() ? 'Changer' : 'Choisir mon nom'}</button></div></div></section><section class="opt-sec"><div class="head"><h2>Base partagée</h2></div><div class="pad">
     ${CLOUD.on ? `<p>Connecté en tant que <strong>${esc(CLOUD.user?.email || '')}</strong>. Les données sont partagées par tous les postes connectés.</p>
       <div class="tools"><button class="btn" data-act="logout">Se déconnecter</button></div>` : `<p>Pour l’instant, les données sont enregistrées <strong>dans ce navigateur seulement</strong>. Pour les partager entre tous les postes et téléphones, renseignez la base Supabase.</p>`}</div></section>
   ${c.fixed ? '' : `<section class="opt-sec"><div class="head"><h2>Réglages Supabase</h2></div><form class="pad" data-form="cloud">
@@ -3381,7 +3454,8 @@ $('#gq').addEventListener('keydown', e => {
 });
 window.addEventListener('scroll', e => { if (!e.target.closest?.('.menu-list')) closeMenus(); }, true);
 window.addEventListener('resize', () => closeMenus());
-document.addEventListener('mousedown', e => { if (!e.target.closest('.gsearch')) closeSearch(); if (!e.target.closest('.menu')) closeMenus(); });
+document.addEventListener('mousedown', e => { if (!e.target.closest('.gsearch')) closeSearch(); if (!e.target.closest('.menu')) closeMenus(); if (!e.target.closest('#fab .fab-btn')){ const m = $('#fab .fab-menu'); if (m && !m.hidden && !e.target.closest('#fab .fab-menu')){ m.hidden = true; $('#fab .fab-btn').setAttribute('aria-expanded', 'false'); } } });
+document.getElementById('fab').addEventListener('click', e => { if (e.target.closest('.fab-menu button')){ setTimeout(() => { $('#fab .fab-menu').hidden = true; $('#fab .fab-btn').setAttribute('aria-expanded', 'false'); }, 0); } });
 document.addEventListener('keydown', e => {
   const list = e.target.closest?.('.menu-list');
   if (e.key === 'Escape' && document.querySelector('.menu-list:not([hidden])')){ const open = document.querySelector('.menu-list:not([hidden])'); closeMenus(); open.previousElementSibling.focus(); }
@@ -3574,7 +3648,7 @@ function moveDialog(p0, type = 'sortie'){
           if (delta) addStock(p, l.id, delta, motif || 'Inventaire');
         }
       });
-      render(); toast(`${p.ref} : ${num(total(p))} ${p.unite} en stock`);
+      render(); toast(`${p.ref} : ${num(total(p))} ${p.unite} en stock`, '', true);
     }
   });
 }
@@ -3917,18 +3991,20 @@ function interventionDialog(it, kksId, tache){
   const recents = [...new Set(db.interventions.slice().sort((a, b) => b.date.localeCompare(a.date)).flatMap(i => i.intervenants))].filter(id => people.some(p => p.id === id)).slice(0, 12);
   const tabsP = [...(recents.length ? [['__r', 'Récents']] : []), ...db.listes.groupes.filter(g => people.some(p => p.groupe === g)).map(g => [g, g]), ...(people.some(p => !p.groupe) ? [['', 'Sans groupe']] : []), ['__f', 'Entreprises']];
   const old = new Map(); (it?.pieces || []).forEach(x => old.set(x.pieceId + '|' + x.lieuId, (old.get(x.pieceId + '|' + x.lieuId) || 0) + x.qte));
-  dialog({title: isNew ? 'Nouveau rapport d’intervention' : `Rapport ${esc(v.num)}`, wide:true,
+  dialog({title: isNew ? 'Nouveau rapport' : `Rapport ${esc(v.num)}`, wide:true,
     body:`${T ? `<p class="task-note">${icon('repeat')}<span>Tâche « ${esc(T.titre)} » · ${esc(freqLabel(T.freq))}${T.actif !== false ? ` · prévue le ${fmtD(T.prochaine)}` : ''}. ${it?.tacheFait ? '' : 'Elle passera à l’échéance suivante quand ce rapport sera « Terminé ».'}</span></p>` : ''}
-      <div class="grid4"><label>N°<input value="${esc(v.num)}" disabled></label><label>Date<input name="date" type="date" value="${esc(v.date)}" required></label><label>Type<select name="type">${optList(db.listes.types, v.type)}</select></label><label>Statut<select name="statut">${Object.entries(STATUTS).map(([a, b]) => opt(a, b[0], v.statut)).join('')}</select></label></div>
-      <label>Titre<input name="titre" value="${esc(v.titre)}" required placeholder="ex. Fuite garniture pompe alimentaire"></label>
-      <div class="grid2"><label>Équipement (repère KKS)<input name="kks" list="dl-kks" value="${k ? esc(kksLabel(k)) : ''}" placeholder="Code ou désignation" autocomplete="off"></label><label>Durée (heures)<input name="duree" type="number" min="0" step="0.25" value="${esc(v.duree)}"></label></div>
-      <label>Constat / demande<textarea name="constat" rows="3">${esc(v.constat)}</textarea></label>
-      <label>Travaux réalisés<textarea name="travaux" rows="4">${esc(v.travaux)}</textarea></label>
+      <label>Quoi ?<input name="titre" value="${esc(v.titre)}" required placeholder="ex. Fuite garniture pompe alimentaire"></label>
+      <label>Où ? · équipement (KKS)<input name="kks" list="dl-kks" value="${k ? esc(kksLabel(k)) : ''}" placeholder="Code ou désignation" autocomplete="off"></label>
+      <label>Ce qui a été fait<textarea name="travaux" rows="4" placeholder="Décrivez l’intervention…">${esc(v.travaux)}</textarea></label>
+      <div class="grid2"><label>Date<input name="date" type="date" value="${esc(v.date)}" required></label><label>Statut<select name="statut">${Object.entries(STATUTS).map(([a, b]) => opt(a, b[0], v.statut)).join('')}</select></label></div>
       <fieldset><legend>Intervenants</legend>${people.length ? `<div class="chips" data-psel></div>
         <input data-padd placeholder="Ajouter : une personne ou une entreprise externe…" aria-label="Ajouter un intervenant">
         <div class="ptabs" role="tablist">${tabsP.map(([k, t], i) => `<button type="button" role="tab" data-ptab="${esc(k)}" aria-selected="${i === 0}">${esc(t)}</button>`).join('')}</div>
         <div class="pgrid" data-pgrid></div>` : '<p class="hint">Aucune personne enregistrée.</p>'}</fieldset>
-      <fieldset><legend>Pièces consommées</legend><div class="plines"></div><div class="tools"><button type="button" class="btn ghost small" data-addline>${icon('plus')}Ajouter une pièce</button></div><p class="hint">Les quantités sont retirées du stock à l’enregistrement ; modifier ou supprimer une ligne remet la différence en stock.</p></fieldset>`,
+      <details class="more" ${!isNew && (v.constat || v.duree || v.pieces.length) ? 'open' : ''}><summary>${icon('chev')}Plus de détails <span class="muted">type, durée, constat, pièces utilisées</span></summary>
+      <div class="grid2"><label>Type<select name="type">${optList(db.listes.types, v.type)}</select></label><label>Durée (heures)<input name="duree" type="number" min="0" step="0.25" value="${esc(v.duree)}"></label></div>
+      <label>Constat / demande<textarea name="constat" rows="3">${esc(v.constat)}</textarea></label>
+      <fieldset><legend>Pièces consommées</legend><div class="plines"></div><div class="tools"><button type="button" class="btn ghost small" data-addline>${icon('plus')}Ajouter une pièce</button></div><p class="hint">Les quantités sont retirées du stock à l’enregistrement ; modifier ou supprimer une ligne remet la différence en stock.</p></fieldset></details>`,
     del: isNew ? null : archDel('interventions', it, function(){
       tx(() => { it.pieces.forEach(x => { const p = getPiece(x.pieceId); if (p && getLieu(x.lieuId)) addStock(p, x.lieuId, x.qte, 'Annulation intervention', it.num); }); db.interventions = db.interventions.filter(i => i !== it); });
       S.sel.interventions = null; render(); toast('Rapport supprimé, pièces remises en stock');
@@ -4231,6 +4307,14 @@ function exportKksLinks(){
    ===================================================================== */
 const ACT = {
   scan: () => scanDialog(),
+  me: () => meDialog(),
+  'p-all'(d){ S.pAll = S.pAll === d.id ? null : d.id; fillDetail(); },
+  'home-all'(){ S.homeAll = !S.homeAll; render(); },
+  'my-tasks'(){ const me = meId(); if (me) S.pour = 'p:' + me; S.pourInit = true; go('taches'); },
+  'name-ints'(d){ S.q.interventions = d.name; S.statut = 'toutes'; S.arch.interventions = false; S.ryear = null; go('interventions'); },
+  recaler(d){ const t = get('taches', d.id); if (!t) return; const today = todayISO(); tx(() => { if (t.freq.unite === 'once') t.prochaine = today; else { let n = t.prochaine; while (n < today) n = addFreq(n, t.freq.n, t.freq.unite); t.prochaine = n; } }); render(); toast(`Prochaine fois : ${fmtD(t.prochaine)}`, '', true); },
+  'toggle-tlate'(){ S.tlate = !S.tlate; S.tvue = 'afaire'; render(); },
+  fab(d, t){ const m = $('#fab .fab-menu'); m.hidden = !m.hidden; t.setAttribute('aria-expanded', String(!m.hidden)); },
   ryear(d){ S.ryear = d.y; S.sel.interventions = null; fillList(); fillDetail(); },
   rmore(d){ S.rmore = d.k; fillList(); },
   'four-ints'(d){ S.q.interventions = d.name; S.statut = 'toutes'; S.arch.interventions = false; S.ryear = 'all'; go('interventions'); },
@@ -4242,7 +4326,7 @@ const ACT = {
   arch(d){ const x = get(d.col, d.id); if (!x) return; try { archiveItem(d.col, x); } catch(e){ toast(e.message, 'bad'); } },
   unarch(d){ const x = get(d.col, d.id); if (x) unarchiveItem(d.col, x); },
   'arch-view'(d){ S.arch[d.v] = !S.arch[d.v]; S.sel[d.v] = null; render(); window.scrollTo(0, 0); },
-  'four-arch'(d){ tx(() => { db.listes.fournisseurs = db.listes.fournisseurs.filter(x => x !== d.name); if (!db.listes.fournArch.includes(d.name)) db.listes.fournArch.push(d.name); }); S.fourOpen = null; render(); toast(`« ${d.name} » archivé (les pièces gardent leur valeur)`); },
+  'four-arch'(d){ tx(() => { db.listes.fournisseurs = db.listes.fournisseurs.filter(x => x !== d.name); if (!db.listes.fournArch.includes(d.name)) db.listes.fournArch.push(d.name); }); S.fourOpen = null; render(); toast(`« ${d.name} » archivé (les pièces gardent leur valeur)`, '', true); },
   'four-unarch'(d){ tx(() => { db.listes.fournArch = db.listes.fournArch.filter(x => x !== d.name); if (!db.listes.fournisseurs.includes(d.name)) db.listes.fournisseurs.push(d.name); db.listes.fournisseurs.sort(coll.compare); }); render(); toast(`« ${d.name} » restauré`); },
   'four-del'(d){ confirmDialog('Supprimer le fournisseur', `« ${esc(d.name)} » sera retiré définitivement de la liste. Les pièces gardent le nom écrit dans leur fiche.`, 'Supprimer', () => { tx(() => { db.listes.fournArch = db.listes.fournArch.filter(x => x !== d.name); }); render(); }); },
   menu(d, t){
@@ -4312,7 +4396,7 @@ const ACT = {
   'edit-int': d => interventionDialog(getInt(d.id)),
   'print-int': d => doPrint(reportHTML(getInt(d.id))),
   'print-piece': d => doPrint(pieceSheetHTML(getPiece(d.id))),
-  'pers-ints'(d){ const p = getPers(d.id); S.q.interventions = p.nom; S.statut = 'toutes'; go('interventions'); },
+  'pers-ints'(d){ const p = getPers(d.id); S.q.interventions = p.nom; S.statut = 'toutes'; S.ryear = null; S.arch.interventions = false; go('interventions'); },
   'new-kks': () => kksDialog(),
   'edit-kks': d => kksDialog(getKks(d.id)),
   'import-kks': () => importKksDialog(),
