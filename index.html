@@ -488,6 +488,8 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .dlg-warn{display:flex;gap:8px;align-items:center;padding:8px 12px;border-radius:10px;background:var(--bad-soft);color:var(--bad);font-weight:600;margin:0}
 .dlg-warn .ico{width:16px;height:16px}
 .pdchk{display:flex;flex-wrap:wrap;gap:6px 14px}
+legend .chk{display:flex !important;flex-direction:row !important;align-items:center;gap:6px;margin:0;font-weight:700}
+legend .chk input{width:auto;min-height:0}
 .pdchk .chk{display:flex !important;flex-direction:row !important;align-items:center;gap:6px;margin:0;font-weight:500}
 .pdchk .chk input{width:auto;min-height:0}
 .pdchk .chk.abs{color:var(--muted)}
@@ -3415,10 +3417,24 @@ const isoWeek = iso => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getD
 const DAYN = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'], DAYS = ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'];
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const dayLbl = iso => `${DAYN[(new Date(iso + 'T12:00:00').getDay() + 6) % 7].toLowerCase()} ${+iso.slice(8)} ${MOIS[+iso.slice(5, 7) - 1]}`;
+/* Personnes masquées du planning : réglage commun à tous (Options partagées). Par défaut : équipes de rotation, administration et la dernière personne de la liste. */
+function planHide(){
+  const h = db.reglages.planHide; if (h) return {g:new Set(h.g || []), p:new Set(h.p || [])};
+  const P = PLANS[(S.pweek || todayISO()).slice(0, 4)]; let last = null;
+  if (P && P.order.size){ let mx = -1; for (const x of db.personnes){ const o = P.order.get(String(x.nom).toUpperCase()); if (live(x) && x.actif !== false && o != null && o > mx){ mx = o; last = x.id; } } }
+  return {g:new Set(['Équipe', 'Administration']), p:new Set(last ? [last] : [])};
+}
+function planHideDialog(){
+  const h = planHide(), ppl = db.personnes.filter(p => live(p) && p.actif !== false).sort(persSort), grps = db.listes.groupes.filter(g => ppl.some(p => p.groupe === g));
+  dialog({title:'Qui apparaît dans le planning ?', saveLabel:'Enregistrer', wide:true,
+    body:`<p class="hint">Réglage commun à tous les postes. Décochez un groupe entier, ou seulement certaines personnes.</p>${grps.map(g => `<fieldset><legend><label class="chk"><input type="checkbox" name="g" value="${esc(g)}" ${h.g.has(g) ? '' : 'checked'}> ${esc(g)}</label></legend><div class="pdchk">${ppl.filter(p => p.groupe === g).map(p => `<label class="chk"><input type="checkbox" name="p" value="${p.id}" ${h.p.has(p.id) ? '' : 'checked'}> ${esc(persName(p))}</label>`).join('')}</div></fieldset>`).join('')}`,
+    onSave(f){ const g = [...f.querySelectorAll('input[name=g]')].filter(x => !x.checked).map(x => x.value), pp = [...f.querySelectorAll('input[name=p]')].filter(x => !x.checked).map(x => x.value);
+      tx(() => { db.reglages.planHide = {g, p:pp}; }); render(); toast('Planning mis à jour', '', true); }});
+}
 function planPeople(){
-  const hide = S.phide || (S.phide = new Set(['Cadres', 'Administration']));
+  const hide = planHide();
   const P = PLANS[(S.pweek || '').slice(0, 4)], ord = n => P?.order.get(String(n).toUpperCase()) ?? 999;
-  return db.personnes.filter(p => live(p) && p.actif !== false && !hide.has(p.groupe || '')).sort((a, b) => ((a.groupe === 'Équipe' ? -1 : grpIdx(a.groupe)) - (b.groupe === 'Équipe' ? -1 : grpIdx(b.groupe))) || (ord(a.nom) - ord(b.nom)) || coll.compare(a.nom, b.nom));
+  return db.personnes.filter(p => live(p) && p.actif !== false && !hide.g.has(p.groupe || '') && !hide.p.has(p.id)).sort((a, b) => ((a.groupe === 'Équipe' ? -1 : grpIdx(a.groupe)) - (b.groupe === 'Équipe' ? -1 : grpIdx(b.groupe))) || (ord(a.nom) - ord(b.nom)) || coll.compare(a.nom, b.nom));
 }
 function planCell(who, iso, p){
   const items = db.plan.filter(x => x.who === who && x.date === iso), pr = p ? presOf(p, iso) : null, pc = pr && pr.code ? PCODE[pr.code] || [pr.code, 'on'] : null;
@@ -3453,7 +3469,7 @@ VIEWS.planning = {
     return `<header class="page-head"><h1>Planning</h1><div class="tools">
         <div class="pweek"><button class="btn icon-only" data-act="pweek" data-n="-7" aria-label="Semaine précédente">${icon('chev')}</button><div class="pw-l"><b>Semaine ${isoWeek(mon)}</b><span>${range}</span></div><button class="btn icon-only" data-act="pweek" data-n="7" aria-label="Semaine suivante">${icon('chev')}</button></div>
         ${mon !== mondayOf(today) ? `<button class="btn small" data-act="pweek" data-n="0">Cette semaine</button>` : ''}
-        ${menu([['plan-print', 'Imprimer la semaine (A4 paysage)', 'printer', {}], ['plan-copy', 'Reprendre le texte libre de la semaine précédente', 'repeat', {}], ['plan-we', S.pwe ? 'Masquer le week-end' : 'Afficher le week-end', 'calendar', {}], '-', ...grps.map(g => ['plan-grp', `${S.phide?.has(g) ? 'Afficher' : 'Masquer'} : ${g}`, 'person', {g}])])}</div></header>
+        ${menu([['plan-print', 'Imprimer la semaine (A4 paysage)', 'printer', {}], ['plan-copy', 'Reprendre le texte libre de la semaine précédente', 'repeat', {}], ['plan-we', S.pwe ? 'Masquer le week-end' : 'Afficher le week-end', 'calendar', {}], '-', ['plan-hide', 'Personnes affichées…', 'person', {}]])}</div></header>
       <p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez dans une case pour attribuer une tâche ou écrire le travail à faire. Les codes (R, RM, VA…) viennent du Planning Tridel.</p>
       <div class="wkgrid-wrap"><table class="wkgrid"><thead><tr><th></th>${days.map((d, i) => `<th class="${d === today ? 'today' : ''}">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
       <div class="pmobile">${mobile}</div>`;
@@ -4554,7 +4570,7 @@ const ACT = {
   'plan-add'(d, t, e){ if (e && e.target.closest('.pit')) return; planDialog(d.who, d.date, null); },
   'plan-edit'(d){ const x = db.plan.find(y => y.id === d.id); if (x) planDialog(x.who, x.date, x); },
   'plan-we'(){ S.pwe = !S.pwe; render(); },
-  'plan-grp'(d){ S.phide = S.phide || new Set(['Cadres', 'Administration']); S.phide.has(d.g) ? S.phide.delete(d.g) : S.phide.add(d.g); render(); },
+  'plan-hide': () => planHideDialog(),
   'plan-print'(){ document.body.classList.add('land'); doPrint(planSheetHTML()); },
   'plan-copy'(){ const mon = S.pweek, prev = isoAdd(mon, -7); const src = db.plan.filter(x => x.date >= prev && x.date < mon && !x.tacheId && x.text); if (!src.length){ toast('Aucun texte libre la semaine précédente.'); return; }
     tx(() => { for (const x of src){ const dd = isoAdd(x.date, 7); if (!db.plan.some(y => y.who === x.who && y.date === dd && y.text === x.text)) db.plan.push({id:uid(), date:dd, who:x.who, text:x.text}); } }); render(); toast(`${src.length} ligne(s) reprise(s)`, '', true); },
