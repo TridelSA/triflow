@@ -3735,10 +3735,12 @@ function planHideDialog(){
 }
 /* Congé = vacances et récupérations (même règle que le Planning Tridel : VA, VJ, HOR, HSR, PI). Maladie, accident, formation… ne sont pas des congés. */
 const CONGE = new Set(['VA', 'VJ', 'HOR', 'HSR', 'PI']);
+/* N'apparaît au planning que la personne qui a au moins un de ces codes dans la semaine (lundi–vendredi) */
+const DISPO = new Set(['R', 'PIQ', 'EN', 'PI', 'CA']);
 /* En congé toute la semaine (lundi–vendredi) : au moins un jour de congé, les autres jours vides ou en reprise férié, et rien de planifié */
 function enConge(p, mon){
   const days = Array.from({length:5}, (_, i) => isoAdd(mon, i)), codes = days.map(d => presOf(p, d)?.code || '');
-  return codes.some(c => CONGE.has(c)) && codes.every(c => CONGE.has(c) || c === '' || c === 'RF') && !db.plan.some(x => x.who === p.id && x.date >= days[0] && x.date <= isoAdd(mon, 6));
+  return !codes.some(c => DISPO.has(c)) && codes.some(Boolean) && !db.plan.some(x => x.who === p.id && x.date >= days[0] && x.date <= isoAdd(mon, 6));
 }
 function planPeople(withLeave = false){
   const hide = planHide(), mon = S.pweek || thisWeek();
@@ -3785,7 +3787,7 @@ VIEWS.planning = {
         ${menu([['plan-print', 'Imprimer en A4 paysage', 'printer', {f:'a4'}], ['plan-copy', 'Reprendre le texte libre de la semaine précédente', 'repeat', {}], ['plan-we', S.pwe ? 'Masquer le week-end' : 'Afficher le week-end', 'calendar', {}], '-', ['plan-hide', 'Personnes affichées…', 'person', {}]])}</div></header>
       <div class="ptip-row"><p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez dans une case et tapez le travail à faire : <b>Entrée</b> valide, <b>Tab</b> passe au jour suivant. « Plus… » pour lier une tâche ou remplir plusieurs jours.</p>${planLegend()}</div>
       <div class="pwrap ${S.pside ? '' : 'noside'}"><div class="wkgrid-wrap"><table class="wkgrid"><thead><tr><th></th>${days.map((d, i) => `<th class="${d === today ? 'today' : ''}">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>${S.pside ? planSideHTML(days, ppl) : ''}</div>
-      ${conge.length ? `<p class="hint pconge">${icon('calendar')}En congé cette semaine, masqués du planning : ${conge.sort(persSort).map(p => esc(persName(p))).join(', ')}.</p>` : ''}
+      ${conge.length ? `<p class="hint pconge">${icon('calendar')}Pas disponibles cette semaine (ni R, PIQ, EN, PI ou CA), masqués : ${conge.sort(persSort).map(p => esc(persName(p))).join(', ')}.</p>` : ''}
       <div class="pmobile">${mobile}</div>`;
   },
   list: () => '', detail: () => ''
