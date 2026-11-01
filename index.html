@@ -2844,7 +2844,7 @@ function tachesSheetHTML(){
 VIEWS.interventions = {
   shell: () => `<header class="page-head"><h1>Rapports</h1><div class="tools">${searchBox('interventions', 'Rechercher un rapport…')}
     <select class="mini" data-change="statut" aria-label="Filtrer par statut">${[['actives', 'En cours'], ['terminee', 'Terminées'], ['toutes', 'Toutes']].map(([v, t]) => `<option value="${v}" ${S.statut === v ? 'selected' : ''}>${t}</option>`).join('')}</select>
-    <button class="btn primary" data-act="new-int">${icon('plus')}Nouveau rapport</button></div></header>
+    <button class="btn primary" data-act="new-int">${icon('plus')}Nouveau rapport</button>${menu([['import-travaux', 'Importer depuis CareOffice (fichier)', 'save', {}]])}</div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list(){
     const q = norm(S.q.interventions);
@@ -3374,6 +3374,42 @@ function ensureLieu(codeTxt){
   if (!s){ s = c.libre ? {id:uid(), code:c.local, nom:'', ...(STATUT_RE.test(c.local) ? {statut:true} : {})} : {id:uid(), batiment:c.batiment, etage:c.etage, numero:c.numero, nom:''}; db.salles.push(s); }
   const l = {id:uid(), salleId:s.id, chemin:c.chemin, note:''}; db.lieux.push(l); return l;
 }
+/* Import des travaux CareOffice : travaux faits -> rapports terminés (figés), travaux à faire / récurrents -> tâches */
+function importTravauxDialog(){
+  dialog({title:'Importer les travaux depuis CareOffice', saveLabel:'Importer', wide:true,
+    body:`<p>Choisissez le fichier <span class="mono">travaux-triflow.json</span>. Les travaux réalisés deviennent des <strong>rapports terminés</strong> (figés tels quels) ; les travaux récurrents ou encore à faire deviennent des <strong>tâches</strong>. Un rapport ou une tâche déjà importé n’est pas créé deux fois.</p>
+      <label>Fichier<input type="file" name="file" accept=".json,application/json"></label><p class="hint" data-prev></p>`,
+    onOpen(f, d){ f.elements.file.addEventListener('change', async () => { try { const j = JSON.parse(await f.elements.file.files[0].text()); d._data = j; $('[data-prev]', d).textContent = `${(j.rapports || []).length} rapport(s) et ${(j.taches || []).length} tâche(s), dont ${(j.taches || []).filter(t => t.freq.unite !== 'once').length} récurrente(s).`; } catch(e){ d._data = null; $('[data-prev]', d).textContent = 'Fichier illisible.'; } }); },
+    onSave(f, d){
+      const j = d._data; if (!j || !Array.isArray(j.rapports)) throw new Error('Choisissez le fichier travaux-triflow.json.');
+      const n0 = s => norm(s).replace(/[^a-z ]/g, '').trim();
+      const pers = name => { const nn = n0(name); return db.personnes.filter(p => p.nom).sort((a, b) => b.nom.length - a.nom.length).find(p => { const pn = n0(p.nom); return nn === pn || nn.startsWith(pn + ' ') || nn.endsWith(' ' + pn); }); };
+      const kByCode = new Map(db.kks.map(k => [k.code.replace(/\s+/g, '').toUpperCase(), k]));
+      const kOf = code => kByCode.get(String(code || '').replace(/\s+/g, '').toUpperCase());
+      let nr = 0, nt = 0;
+      tx(() => {
+        const tKey = new Map();
+        for (const t of j.taches || []){
+          let ex = db.taches.find(x => x.coKey === t.key);
+          const k = kOf(t.kks), p = t.inter && t.inter.length ? pers(t.inter[0]) : null;
+          const desc = [t.description, !k && t.kks ? `Équipement CareOffice : ${t.kks} ${t.obj || ''}`.trim() : '', t.inter && t.inter.length && !p ? `Intervenant CareOffice : ${t.inter.join(', ')}` : ''].filter(Boolean).join('\n\n');
+          if (!ex){ ex = {id:uid(), coKey:t.key, titre:t.titre || '(sans titre)', description:desc, kksId:k ? k.id : '', assign:p ? {type:'personne', v:p.id} : {type:'groupe', v:''}, freq:t.freq, prochaine:t.prochaine, actif:true, ...(t.derniere ? {derniere:t.derniere} : {})}; db.taches.push(ex); nt++; }
+          tKey.set(t.key, ex);
+        }
+        for (const r of j.rapports){
+          if (db.interventions.some(i => i.num === r.num)) continue;
+          const k = kOf(r.kks), ids = [], snap = {};
+          for (const name of r.inter || []){ const p = pers(name); const id = p ? p.id : 'ext:' + n0(name).replace(/ /g, '-'); if (ids.includes(id)) continue; ids.push(id); snap[id] = p ? persSnap(p) : {nom:name, prenom:'', groupe:'Externe'}; }
+          if (r.type && !db.listes.types.includes(r.type)) db.listes.types.push(r.type);
+          const tk = r.tache ? tKey.get(r.tache) : null;
+          db.interventions.push({id:uid(), num:r.num, date:r.date, type:r.type, statut:'terminee', titre:r.titre, kksId:k ? k.id : '', constat:r.constat || '', travaux:r.travaux || '', duree:r.duree || '', intervenants:ids, snap, pieces:[],
+            ks:k ? kSnap(k) : (r.kks || r.obj ? {code:r.kks || '', designation:r.obj || '', aic:''} : null), ...(tk ? {tacheId:tk.id, tacheFait:true, ts:tSnap(tk)} : {})});
+          nr++;
+        }
+      });
+      render(); toast(`${nr} rapport(s) et ${nt} tâche(s) importés`);
+    }});
+}
 function importPiecesDialog(){
   dialog({title:'Importer des pièces depuis CareOffice', saveLabel:'Importer', wide:true,
     body:`<p>Choisissez le fichier <span class="mono">pieces-triflow.json</span>. Chaque pièce garde son ID CareOffice ; une pièce dont l’ID existe déjà est mise à jour (désignation, fournisseur, stock, repères KKS). Les emplacements et repères KKS manquants sont créés.</p>
@@ -3870,6 +3906,7 @@ const ACT = {
   'edit-kks': d => kksDialog(getKks(d.id)),
   'import-kks': () => importKksDialog(),
   'import-pieces': () => importPiecesDialog(),
+  'import-travaux': () => importTravauxDialog(),
   'new-pers': () => persDialog(),
   async logout(){ await CLOUD.sb.auth.signOut(); location.reload(); },
   'cloud-off'(){ confirmDialog('Revenir aux données du navigateur', 'Ce poste n’utilisera plus la base partagée. Les données de la base ne sont pas supprimées.', 'Revenir', () => { try { localStorage.removeItem('gmao-cloud'); } catch(e){} location.reload(); }); },
