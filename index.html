@@ -433,6 +433,50 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .back-nav{margin:0 0 10px}
 .back-nav .ico{transform:rotate(180deg)}
 .pd-info.rep{margin-top:6px}
+.itbl td.ref{white-space:nowrap;width:1%}
+.page-head .tools > .menu:not(:last-child){margin-left:0}
+.pd-head{flex-wrap:wrap}
+.pd-tools{margin-left:auto}
+.kp{border-bottom:1px solid var(--line)}.kp:last-child{border-bottom:0}.kp .four-p{border-bottom:0}
+.quick{grid-template-columns:repeat(4,minmax(0,1fr))}
+.btn.icon-only{padding:0;width:42px;justify-content:center}
+.btn.icon-only .ico{margin:0}
+.scanbox{position:relative;border-radius:14px;overflow:hidden;background:#111;aspect-ratio:4/3;max-height:52vh}
+.scanbox video{width:100%;height:100%;object-fit:cover;display:block}
+.scan-frame{position:absolute;inset:18% 22%;border:3px solid rgba(255,255,255,.9);border-radius:14px;box-shadow:0 0 0 999px rgba(0,0,0,.25)}
+.dupg{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.dup-t{font-weight:600;margin-bottom:6px}
+.dup-p{display:flex !important;flex-direction:row !important;align-items:center;gap:10px;padding:6px 4px;border-top:1px solid var(--line);font-size:.88rem;margin:0}
+.dup-p input{width:auto;min-height:0;margin:0}
+.dup-p .pid{font-family:var(--f-mono);font-weight:700;min-width:5em}
+.dup-p .t{flex:1;min-width:0;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.dup-a{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.pd-stock.late{background:var(--bad-soft)}
+.trow-r{display:inline-flex;align-items:center;gap:8px;justify-content:flex-end}
+.tick{all:unset;cursor:pointer;flex:none;width:30px;height:30px;display:grid;place-items:center;border-radius:999px;border:1.5px solid var(--line);color:var(--muted);background:var(--surface)}
+.tick .ico{width:16px;height:16px}
+.tick:hover,.tick:focus-visible{border-color:var(--ok);color:#fff;background:var(--ok)}
+.kstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
+.kst{display:flex;flex-direction:column;gap:1px;padding:10px 12px;border-radius:12px;background:var(--sunk)}
+.kst b{font-family:var(--f-mono);font-size:1.4rem;line-height:1.1}
+.kst span{font-size:.82rem}
+.kst small{color:var(--muted);font-size:.75rem}
+.kst.bad b,.kst.bad small{color:var(--bad)}
+.kacts{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 6px}
+.kp{display:flex;align-items:center;gap:4px}
+.kp .four-p{flex:1;min-width:0}
+.four-p .q.zero{color:var(--bad)}
+.arch-banner,.arch-mode{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;border-radius:12px;background:var(--sunk);border:1px solid var(--line);color:var(--ink);margin-bottom:12px;font-size:.9rem}
+.arch-banner .ico,.arch-mode .ico{width:18px;height:18px;flex:none}
+.arch-banner span,.arch-mode span{flex:1;min-width:180px}
+.arch-mode{margin:-4px 0 14px}
+.arch-row{cursor:default}
+.arch-sec{border-top:1px solid var(--line)}
+.arch-sec summary{display:flex;align-items:center;gap:8px;padding:12px 18px;cursor:pointer;color:var(--muted);font-weight:600;font-size:.9rem;list-style:none}
+.arch-sec summary::-webkit-details-marker{display:none}
+.arch-sec summary .ico{width:16px;height:16px}
+.arch-line{display:flex;align-items:center;gap:10px;padding:8px 18px;border-top:1px solid var(--line)}
+.arch-line .t{flex:1;min-width:0}
 .pps{display:flex;flex-wrap:wrap;gap:6px}
 .pp{display:inline-flex;align-items:baseline;gap:5px;padding:3px 9px;border-radius:999px;background:var(--sunk);font-size:.85rem}
 .pp small{color:var(--muted);font-size:.72rem}
@@ -601,7 +645,7 @@ dialog.dlg::backdrop{background:rgba(12,18,21,.55)}
 
 /* ---------- Écrans moyens & téléphone ---------- */
 @media (max-width:1180px){
-  .quick{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .quick{grid-template-columns:repeat(2,minmax(0,1fr))}
   .syn-flow{grid-template-columns:repeat(2,minmax(0,1fr) 26px) minmax(0,1fr);row-gap:10px}
   .syn-flow > :nth-child(6){display:none}
 }
@@ -611,7 +655,8 @@ dialog.dlg::backdrop{background:rgba(12,18,21,.55)}
   .pd-mbar .btn{min-height:56px;font-size:1.1rem;font-weight:700;border-radius:14px;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.18)}
   .pd-mbar .big-out{background:var(--bad);border-color:var(--bad);color:#fff}
   .pd-mbar .big-in{background:var(--ok);border-color:var(--ok);color:#fff}
-  .pd-stock .btn{display:none}
+  .pd-stock .btn[data-act=move]{display:none}
+  .pd-stock .btn{width:100%;justify-content:center}
   .prow{padding:12px 14px}
   .fill-bar{width:44px}
 }
@@ -641,7 +686,16 @@ dialog.dlg::backdrop{background:rgba(12,18,21,.55)}
   .page-head{position:relative}
   .page-head .tools > .menu:last-child{position:absolute;top:0;right:0}
   .page-head .tools > .menu:last-child > .btn{min-height:38px}
-  .quick{grid-template-columns:minmax(0,1fr)}
+  .quick{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .quick .qa strong{font-size:.88rem}
+  .list-bar{flex-wrap:nowrap;padding:8px 12px;gap:8px}
+  .list-bar > .muted{flex:none;font-size:.78rem;max-width:30%}
+  .list-bar .lb-r{gap:6px;flex-wrap:nowrap;margin-left:auto;min-width:0}
+  .list-bar label{gap:0;font-size:0}
+  .list-bar select{max-width:118px}
+  .kstats{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .kst{padding:8px}
+  .kst b{font-size:1.15rem}
   .syn-flow{grid-template-columns:minmax(0,1fr)}
   .syn-flow > :nth-child(6){display:grid}
   .arrow{height:18px}
@@ -2063,6 +2117,10 @@ const ICONS = {
   report:'M7 3h7l5 5v13H7zM14 3v5h5M10 12h6M10 16h6',
   move:'M4 8h13l-3.5-3.5M20 16H7l3.5 3.5',
   more:'M5 12h.01M12 12h.01M19 12h.01',
+  archive:'M3 4h18v4H3zM5 8v12h14V8M10 12h4',
+  scan:'M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3M7 12h10',
+  merge:'M6 3v6a6 6 0 006 6h6M15 12l3 3-3 3M6 21v-6',
+  excel:'M14 3H6a1 1 0 00-1 1v16a1 1 0 001 1h12a1 1 0 001-1V8zM14 3v5h5M9 12l5 6M14 12l-5 6',
   edit:'M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4',
   chev:'M9 6l6 6-6 6',
   arrow:'M4 12h15M14 7l5 5-5 5',
@@ -2136,7 +2194,7 @@ function mergeStaff(d, list, full = false){
 }
 function blank(){
   return {version:2, meta:{demo:false}, reglages:{qrBase:'', labelFmt:'sheet'},
-    listes:{fournisseurs:[], categories:['Mécanique','Électrique','Instrumentation','Hydraulique','Pneumatique','Consommable'], unites:['pce','jeu','m','l','kg','rouleau','boîte'], types:['Corrective','Préventive','Contrôle','Amélioration'], groupes:['Électricien','Automaticien','Mécanicien','Intendance','Chauffeurs-grutiers','Cadres','Équipe','Administration'], systemes:{}},
+    listes:{fournisseurs:[], fournArch:[], categories:['Mécanique','Électrique','Instrumentation','Hydraulique','Pneumatique','Consommable'], unites:['pce','jeu','m','l','kg','rouleau','boîte'], types:['Corrective','Préventive','Contrôle','Amélioration'], groupes:['Électricien','Automaticien','Mécanicien','Intendance','Chauffeurs-grutiers','Cadres','Équipe','Administration'], systemes:{}},
     salles:[], lieux:[], personnes:[], kks:[], pieces:[], interventions:[], mouvements:[], taches:[], histo:[]};
 }
 /* Retire des notes d'une pièce les codes KKS déjà liés à la pièce (écrits d'un bloc, avec espaces ou « 1 / 2 HTQ30AA310 ») */
@@ -2190,7 +2248,7 @@ function migrate(d){
   }
   if (!d.meta.staffV){ mergeStaff(d, PLANNING_STAFF); d.meta.staffV = 1; }
   const G0 = blank().listes.groupes; d.listes.groupes = [...G0, ...d.listes.groupes.filter(g => !G0.includes(g))];
-  for (const p of d.pieces) for (const n of [p.fabricant, p.fournisseur]) if (n && !d.listes.fournisseurs.some(x => norm(x) === norm(n))) d.listes.fournisseurs.push(n);
+  for (const p of d.pieces) for (const n of [p.fabricant, p.fournisseur]) if (n && !d.listes.fournisseurs.some(x => norm(x) === norm(n)) && !d.listes.fournArch.some(x => norm(x) === norm(n))) d.listes.fournisseurs.push(n);
   d.listes.fournisseurs.sort(coll.compare);
   for (const l of d.lieux) if (!Array.isArray(l.chemin)){ l.chemin = [(l.rayonnage || '') + (l.niveau || ''), l.bac || ''].filter(Boolean); delete l.rayonnage; delete l.niveau; delete l.bac; }
   { const byId = new Map(d.kks.map(k => [k.id, k])); for (const p of d.pieces) if (p.notes && p.kks?.length){ const codes = new Set(p.kks.map(id => byId.get(id)?.code.replace(/\s+/g, '').toUpperCase()).filter(Boolean)); const n = cleanNotes(p.notes, codes); if (n !== p.notes) p.notes = n; }
@@ -2432,6 +2490,23 @@ const kInfo = i => (i.statut !== 'terminee' && getKks(i.kksId) ? kSnap(getKks(i.
 const tSnap = t => ({titre:t.titre, description:t.description || '', freq:freqLabel(t.freq), assign:assignLabel(t.assign)});
 const tInfo = i => (i.statut !== 'terminee' && get('taches', i.tacheId) ? tSnap(get('taches', i.tacheId)) : null) || i.ts || (get('taches', i.tacheId) ? tSnap(get('taches', i.tacheId)) : null);
 const kTagI = i => { const k = kInfo(i), live = getKks(i.kksId); return k ? (live ? `<button class="kks" data-act="goto" data-view="kks" data-id="${live.id}">${esc(k.code)}</button>` : `<span class="kks">${esc(k.code)}</span>`) : ''; };
+/* ---------- Archives : rien n'est supprimé par défaut, tout peut être restauré ---------- */
+const live = x => !!x && !x.arch;
+const liveLieu = l => live(l) && live(getSalle(l.salleId));
+const ARCH_LBL = {pieces:['Pièce archivée', 'la pièce'], kks:['Équipement archivé', 'l’équipement'], taches:['Tâche archivée', 'la tâche'], interventions:['Rapport archivé', 'le rapport'], personnes:['Personne archivée', 'la personne'], lieux:['Emplacement archivé', 'l’emplacement'], salles:['Local archivé', 'le local']};
+function archiveItem(col, x){
+  if (col === 'lieux' && db.pieces.some(p => p.stock.some(s => s.lieuId === x.id && s.qte > 0))) throw new Error('Cet emplacement contient du stock : déplacez-le avant d’archiver.');
+  if (col === 'salles'){ const ids = new Set(db.lieux.filter(l => l.salleId === x.id).map(l => l.id)); if (db.pieces.some(p => p.stock.some(s => ids.has(s.lieuId) && s.qte > 0))) throw new Error('Des pièces sont encore rangées dans ce local : déplacez-les avant d’archiver.'); }
+  tx(() => { x.arch = todayISO(); });
+  const v = col === 'salles' ? 'lieux' : col; if (S.sel[v] === x.id) S.sel[v] = null;
+  render(); toast(`${ARCH_LBL[col][0]} · retrouvez-la dans « Plus › Archives »`.replace('retrouvez-la', /archivé$/.test(ARCH_LBL[col][0]) ? 'retrouvez-le' : 'retrouvez-la'));
+}
+function unarchiveItem(col, x){ tx(() => { delete x.arch; delete x.mergedInto; }); render(); toast(`${ARCH_LBL[col][0].replace(/archivée?$/, '')}restauré${/archivée$/.test(ARCH_LBL[col][0]) ? 'e' : ''}`); }
+/* Bouton du bas des fenêtres « Modifier » : Archiver (réversible), ou Supprimer définitivement si déjà archivé */
+const archDel = (col, x, hard) => x.arch ? {label:'Supprimer définitivement', run:hard} : {label:'Archiver', soft:true, run(){ archiveItem(col, x); }};
+const archBanner = (col, x) => x && x.arch ? `<div class="arch-banner">${icon('archive')}<span><strong>${ARCH_LBL[col][0]}</strong> le ${fmtD(x.arch)}${x.mergedInto ? ` · fusionnée dans l’ID ${esc(x.mergedInto)}` : ''}. Elle n’apparaît plus dans les listes.</span><button class="btn small" data-act="unarch" data-col="${col}" data-id="${x.id}">Restaurer</button></div>`.replace('Elle n’apparaît', /archivé$/.test(ARCH_LBL[col][0]) ? 'Il n’apparaît' : 'Elle n’apparaît') : '';
+const archCount = col => db[col].filter(x => x.arch).length;
+const archItem = v => ['arch-view', S.arch[v] ? 'Quitter les archives' : `Archives${archCount(v) ? ` (${archCount(v)})` : ''}`, 'archive', {v}];
 const usedInInterventions = pieceId => db.interventions.filter(i => i.pieces.some(l => l.pieceId === pieceId));
 const sortedStock = p => [...p.stock].filter(s => getLieu(s.lieuId)).sort((a, b) => lieuSort(getLieu(a.lieuId), getLieu(b.lieuId)));
 const mainPlace = p => { const l = [...p.stock].filter(s => getLieu(s.lieuId)).sort((a, b) => (isStatut(getLieu(a.lieuId)) - isStatut(getLieu(b.lieuId))) || (b.qte - a.qte))[0]; return l ? getLieu(l.lieuId) : null; };
@@ -2567,7 +2642,7 @@ let db = CLOUD.cfg().url ? migrate(blank()) : load();
 if (!db){ db = seed(); save(); }
 
 /* ---------------- État d'affichage ---------------- */
-const S = {pour:'', tvue:'afaire', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:'', optfour:''}, lowOnly:false, zeroOnly:false, psort:'iddesc', plimit:300, back:[], statut:'toutes', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux'};
+const S = {pour:'', tvue:'afaire', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:'', optfour:''}, lowOnly:false, zeroOnly:false, psort:'iddesc', plimit:300, back:[], statut:'toutes', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux', arch:{}};
 
 function toast(msg, kind = ''){
   const t = $('#toast'); t.textContent = msg; t.className = 'show ' + kind;
@@ -2577,13 +2652,13 @@ function refreshDatalists(){
   const uniq = arr => [...new Set(arr.map(x => String(x || '').trim()).filter(Boolean))].sort(coll.compare).map(c => `<option value="${esc(c)}"></option>`).join('');
   const set = (id, html) => { if (refreshDatalists[id] !== html){ refreshDatalists[id] = html; $(id).innerHTML = html; } };
   set('#dl-marques', uniq(db.listes.fournisseurs));
-  set('#dl-lieux', [...db.lieux].sort(lieuSort).map(l => `<option value="${esc(lieuCode(l))}">${esc(getSalle(l.salleId)?.nom || '')}</option>`).join(''));
-  set('#dl-pieces', db.pieces.map(p => `<option value="${esc(pieceLabel(p))}"></option>`).join(''));
-  set('#dl-kks', db.kks.map(k => `<option value="${esc(kksLabel(k))}"></option>`).join(''));
+  set('#dl-lieux', db.lieux.filter(liveLieu).sort(lieuSort).map(l => `<option value="${esc(lieuCode(l))}">${esc(getSalle(l.salleId)?.nom || '')}</option>`).join(''));
+  set('#dl-pieces', db.pieces.filter(live).map(p => `<option value="${esc(pieceLabel(p))}"></option>`).join(''));
+  set('#dl-kks', db.kks.filter(live).map(k => `<option value="${esc(kksLabel(k))}"></option>`).join(''));
   $('#dl-fonctions').innerHTML = [...new Set(db.personnes.map(p => p.fonction).filter(Boolean))].map(c => `<option value="${esc(c)}"></option>`).join('');
 }
 function refreshCounts(){
-  const c = {pieces:db.pieces.length, lieux:db.lieux.length, interventions:db.interventions.filter(i => i.statut !== 'terminee').length, kks:db.kks.length};
+  const c = {pieces:db.pieces.filter(live).length, lieux:db.lieux.filter(liveLieu).length, interventions:db.interventions.filter(i => live(i) && i.statut !== 'terminee').length, kks:db.kks.filter(live).length};
   $$('[data-count]').forEach(el => { el.textContent = c[el.dataset.count] || ''; });
 }
 function hydrateIcons(root = document){ $$('[data-icon]', root).forEach(el => { el.outerHTML = icon(el.dataset.icon); }); }
@@ -2593,7 +2668,8 @@ function render(){
   $$('#nav button').forEach(b => b.setAttribute('aria-current', b.dataset.view === S.view ? 'page' : 'false'));
   const bk = S.back[S.back.length - 1], VN = {accueil:'l’accueil', pieces:'la pièce', kks:'l’installation', lieux:'les emplacements', interventions:'le rapport', taches:'la tâche', options:'les options'};
   const bl = bk ? (bk.view === 'pieces' && getPiece(bk.sel.pieces) ? `la pièce ${getPiece(bk.sel.pieces).ref}` : bk.view === 'pieces' && bk.q.pieces ? `la recherche « ${bk.q.pieces} »` : bk.view === 'kks' && getKks(bk.sel.kks) ? getKks(bk.sel.kks).code : VN[bk.view] || 'la page précédente') : '';
-  $('#main').innerHTML = (bk ? `<button class="btn small back-nav" data-act="nav-back">${icon('chev')}Retour à ${esc(bl)}</button>` : '') + VIEWS[S.view].shell();
+  const am = S.arch[S.view] ? `<div class="arch-mode">${icon('archive')}<span><strong>Archives</strong> · éléments retirés des listes, restaurables à tout moment.</span><button class="btn small" data-act="arch-view" data-v="${S.view}">Revenir à la liste</button></div>` : '';
+  $('#main').innerHTML = (bk ? `<button class="btn small back-nav" data-act="nav-back">${icon('chev')}Retour à ${esc(bl)}</button>` : '') + VIEWS[S.view].shell().replace('</header>', '</header>' + am);
   fillList(); fillDetail();
 }
 function fillList(){ contIdx = null; const el = $('#list'); if (el) el.innerHTML = VIEWS[S.view].list(); }
@@ -2620,9 +2696,9 @@ function mvTable(list, withPiece){
     return `<tr><td class="qty">${fmtD(m.date)}</td>${withPiece ? `<td>${p ? esc(p.designation) : '—'}</td>` : ''}<td>${plate(getLieu(m.lieuId))}</td><td class="num qty" style="color:var(${m.qte < 0 ? '--bad' : '--ok'})">${m.qte > 0 ? '+' : '−'}${num(Math.abs(m.qte))}</td><td>${esc(m.motif)}${m.ref ? ` <span class="ref">${esc(m.ref)}</span>` : ''}</td></tr>`;
   }).join('')}</tbody></table></div>`;
 }
-function intTable(list){
-  if (!list.length) return '<p class="empty-line">Aucune intervention.</p>';
-  return `<div class="tbl-wrap"><table class="tbl compact"><tbody>${[...list].sort((a, b) => b.date.localeCompare(a.date)).map(i => `<tr data-act="goto" data-view="interventions" data-id="${i.id}" tabindex="0"><td class="ref">${esc(i.num)}</td><td>${esc(i.titre)}<span class="sub">${fmtD(i.date)}${kInfo(i) ? ' · ' + esc(kInfo(i).code) : ''}</span></td><td class="num">${statutChip(i.statut)}</td></tr>`).join('')}</tbody></table></div>`;
+function intTable(list, noK = false){
+  if (!list.length) return '<p class="empty-line">Aucun rapport.</p>';
+  return `<div class="tbl-wrap"><table class="tbl compact itbl"><tbody>${[...list].sort((a, b) => b.date.localeCompare(a.date)).map(i => `<tr data-act="goto" data-view="interventions" data-id="${i.id}" tabindex="0"><td class="ref">${esc(i.num)}</td><td>${esc(i.titre || '(sans titre)')}<span class="sub">${fmtD(i.date)}${!noK && kInfo(i)?.code ? ' · ' + esc(kInfo(i).code) : ''}</span></td><td class="num">${i.statut !== 'terminee' ? statutChip(i.statut) : ''}</td></tr>`).join('')}</tbody></table></div>`;
 }
 
 /* =====================================================================
@@ -2633,19 +2709,19 @@ const VIEWS = {};
 /* ---------- Accueil ---------- */
 VIEWS.accueil = {
   shell(){
-    const open = db.interventions.filter(i => i.statut !== 'terminee').sort((a, b) => b.date.localeCompare(a.date));
-    const zc = new Map(); for (const k of db.kks){ const c = sysEff(k.code)[0]; if (c) zc.set(c, (zc.get(c) || 0) + 1); }
+    const open = db.interventions.filter(i => live(i) && i.statut !== 'terminee').sort((a, b) => b.date.localeCompare(a.date));
+    const zc = new Map(); for (const k of db.kks.filter(live)){ const c = sysEff(k.code)[0]; if (c) zc.set(c, (zc.get(c) || 0) + 1); }
     const zones = [...zc].sort((a, b) => a[0].localeCompare(b[0]));
     const qa = (act, type, ic, t) => `<button class="qa" data-act="${act}" ${type ? `data-type="${type}"` : ''}><span class="qi">${icon(ic)}</span><strong>${t}</strong></button>`;
     return `${db.meta.demo ? `<div class="notice"><p><strong>Données d'exemple.</strong> Elles sont fictives et servent à essayer l'outil.</p><button class="btn" data-act="clear-demo">Effacer les exemples</button></div>` : ''}
     <header class="page-head"><h1>Accueil</h1></header>
-    ${(() => { const low = db.pieces.filter(isLow).length, zero = db.pieces.filter(p => isOut(p)).length, late = db.taches.filter(t => t.actif !== false && daysTo(t.prochaine) < 0).length;
+    ${(() => { const low = db.pieces.filter(p => live(p) && isLow(p)).length, zero = db.pieces.filter(p => live(p) && isOut(p)).length, late = db.taches.filter(t => live(t) && t.actif !== false && daysTo(t.prochaine) < 0).length;
       const k = (act, n, t, ic, tone, extra = '') => `<button class="kpi ${n ? tone : 'calm'}" data-act="${act}" ${extra}><span class="ki">${icon(ic)}</span><span class="kn">${num(n)}</span><span class="kt">${t}</span></button>`;
       return `<div class="kpis">${k('show-low', low, 'Sous le stock minimum', 'box', 'warn')}${k('show-zero', zero, 'Pièces à zéro', 'box', 'bad')}${k('nav', late, 'Tâches en retard', 'repeat', 'bad', 'data-view="taches"')}${k('nav', open.length, 'Rapports ouverts', 'report', 'info', 'data-view="interventions"')}</div>`; })()}
-    <div class="quick">${qa('quick-move', 'sortie', 'move', 'Mouvement de stock')}${qa('new-int', '', 'report', 'Nouveau rapport')}${qa('labels-pick', '', 'qr', 'Étiquettes QR')}</div>
+    <div class="quick">${qa('scan', '', 'scan', 'Scanner un QR')}${qa('quick-move', 'sortie', 'move', 'Mouvement de stock')}${qa('new-int', '', 'report', 'Nouveau rapport')}${qa('labels-pick', '', 'qr', 'Étiquettes QR')}</div>
     <div class="cols">
       <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
-      ${(() => { const dueAll = db.taches.filter(t => t.actif !== false && daysTo(t.prochaine) <= 7).sort((a, b) => a.prochaine.localeCompare(b.prochaine)), due = dueAll.slice(0, 5); return `<section class="panel"><div class="panel-head"><h2>Tâches à faire${dueAll.length ? ` <span class="muted" style="font-size:.9rem">${dueAll.length}</span>` : ''}</h2><button class="link" data-act="nav" data-view="taches">${dueAll.length > 5 ? `Voir les ${dueAll.length}` : 'Toutes'}</button></div>${due.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${due.map(t => tacheRow(t, false)).join('')}</tbody></table></div>` : '<div style="padding:0 16px 16px"><p class="empty-line">Rien en retard ni dans les 7 prochains jours.</p></div>'}</section>`; })()}
+      ${(() => { const dueAll = db.taches.filter(t => live(t) && t.actif !== false && daysTo(t.prochaine) <= 7).sort((a, b) => a.prochaine.localeCompare(b.prochaine)), due = dueAll.slice(0, 5); return `<section class="panel"><div class="panel-head"><h2>Tâches à faire${dueAll.length ? ` <span class="muted" style="font-size:.9rem">${dueAll.length}</span>` : ''}</h2><button class="link" data-act="nav" data-view="taches">${dueAll.length > 5 ? `Voir les ${dueAll.length}` : 'Toutes'}</button></div>${due.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${due.map(t => tacheRow(t, false)).join('')}</tbody></table></div>` : '<div style="padding:0 16px 16px"><p class="empty-line">Rien en retard ni dans les 7 prochains jours.</p></div>'}</section>`; })()}
       <section class="panel"><div class="panel-head"><h2>Rapports en cours</h2><button class="link" data-act="nav" data-view="interventions">Toutes</button></div>${open.length ? intTable(open) : '<div style="padding:0 16px 16px"><p class="empty-line">Aucun rapport en cours.</p></div>'}</section>
       </div>
       <section class="panel"><div class="panel-head"><h2>Installation</h2><button class="link" data-act="nav" data-view="kks">Tout voir</button></div>
@@ -2658,7 +2734,7 @@ VIEWS.accueil = {
 /* ---------- Pièces ---------- */
 function filteredPieces(){
   const q = norm(S.q.pieces);
-  let rows = db.pieces.filter(p => !q || norm([p.ref, p.designation, p.fabricant, p.fournisseur, ...(p.fours || []), p.refFab, p.categorie, ...p.kks.map(id => getKks(id)?.code), ...p.stock.map(s => lieuCode(getLieu(s.lieuId)))].join(' ')).includes(q));
+  let rows = db.pieces.filter(p => S.arch.pieces ? p.arch : !p.arch).filter(p => !q || norm([p.ref, p.designation, p.fabricant, p.fournisseur, ...(p.fours || []), p.refFab, p.categorie, ...p.kks.map(id => getKks(id)?.code), ...p.stock.map(s => lieuCode(getLieu(s.lieuId)))].join(' ')).includes(q));
   if (S.lowOnly) rows = rows.filter(isLow);
   if (S.zeroOnly) rows = rows.filter(p => isOut(p));
   const idn = p => /^\d+$/.test(p.ref) ? +p.ref : Infinity;
@@ -2673,15 +2749,15 @@ function filteredPieces(){
   return rows.sort((a, b) => idn(a) - idn(b) || coll.compare(a.ref, b.ref));
 }
 VIEWS.pieces = {
-  shell: () => `<header class="page-head"><h1>Pièces</h1><div class="tools">${searchBox('pieces', 'Rechercher une pièce…')}<button class="btn primary" data-act="new-piece">${icon('plus')}Nouvelle pièce</button>
-    ${menu([['labels-list', 'Étiquettes QR de la liste', 'qr', {}], ['import-pieces', 'Importer depuis CareOffice (fichier)', 'save', {}], ['toggle-low', S.lowOnly ? 'Afficher toutes les pièces' : 'Pièces sous le stock minimum', 'list', {}]])}</div></header>
+  shell: () => `<header class="page-head"><h1>Pièces</h1><div class="tools">${searchBox('pieces', 'Rechercher une pièce…')}<button class="btn icon-only" data-act="scan" title="Scanner un QR code" aria-label="Scanner un QR code">${icon('scan')}</button><button class="btn primary" data-act="new-piece">${icon('plus')}Nouvelle pièce</button>
+    ${menu([['labels-list', 'Étiquettes QR de la liste', 'qr', {}], ['toggle-low', S.lowOnly ? 'Afficher toutes les pièces' : 'Pièces sous le stock minimum', 'list', {}], ['xl-pieces', 'Exporter la liste (Excel)', 'excel', {}], '-', ['dups', 'Rechercher les doublons', 'merge', {}], archItem('pieces'), '-', ['import-pieces', 'Importer depuis CareOffice (fichier)', 'save', {}]])}</div></header>
     ${S.zeroOnly ? `<p class="tools" style="margin:-6px 0 14px"><span class="chip bad">Pièces à zéro<button class="icon-btn" style="width:20px;height:20px;font-size:1rem;color:inherit" data-act="toggle-zero" aria-label="Afficher toutes les pièces">×</button></span></p>` : ''}
     ${S.lowOnly ? `<p class="tools" style="margin:-6px 0 14px"><span class="chip warn">Sous le stock minimum<button class="icon-btn" style="width:20px;height:20px;font-size:1rem;color:inherit" data-act="toggle-low" aria-label="Afficher toutes les pièces">×</button></span></p>` : ''}
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list(){
     const rows = filteredPieces();
     if (!db.pieces.length) return empty('Aucune pièce', '<p>Créez la première avec « Nouvelle pièce ».</p>');
-    if (!rows.length) return empty('Aucune pièce ne correspond', '');
+    if (!rows.length) return S.arch.pieces ? empty('Aucune pièce archivée', '') : empty('Aucune pièce ne correspond', '');
     const more = `<div class="list-bar"><span class="muted">${rows.length} pièce(s)${rows.length > S.plimit ? ` · ${S.plimit} affichées` : ''}</span><span class="lb-r"><label>Afficher<select class="mini" data-change="plimit" aria-label="Nombre de pièces affichées">${[[300, '300'], [500, '500'], [1000, '1000'], [1e9, 'Toutes']].map(([v, t]) => `<option value="${v}" ${S.plimit === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label><label>Trier<select class="mini" data-change="psort" aria-label="Trier les pièces">${[['iddesc', 'Par ID (décroissant)'], ['id', 'Par ID (croissant)'], ['alpha', 'Alphabétique'], ['recent', 'Mouvement le plus récent'], ['old', 'Mouvement le plus ancien']].map(([v, t]) => `<option value="${v}" ${S.psort === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label></span></div>`;
     return `${more}<div class="plist">${rows.slice(0, S.plimit).map(p => {
       const mp = mainPlace(p), n = sortedStock(p).length, hm = horsMag(p);
@@ -2700,7 +2776,7 @@ VIEWS.pieces = {
     const salleOf = l => { const sa = l && getSalle(l.salleId); return sa && sa.nom ? sa.nom : ''; };
     const noteRows = String(p.notes || '').split('\n').reduce((acc, ln) => { const m = ln.match(/^([^:]{2,30}?)\s:\s(.*)$/); if (m) acc.push([m[1], m[2]]); else if (ln.trim()) { if (acc.length && acc[acc.length - 1][0] !== '') acc[acc.length - 1][1] += '\n' + ln; else acc.push(['', ln]); } return acc; }, []);
     const low = p.stockMin > 0 && dispo(p) < p.stockMin;
-    return `<button class="btn small m-only back-list" data-act="desel">${icon('chev')}Liste des pièces</button><div class="pd-head"><span class="pd-id">ID ${esc(p.ref)}</span><div class="pd-tools"><button class="btn small" data-act="edit-piece" data-id="${p.id}">${icon('edit')}Modifier</button>${menu([['labels-one', 'Étiquette QR', 'qr', {id:p.id}], ['print-piece', 'Fiche A4', 'printer', {id:p.id}], ['add-place', 'Ranger à un autre emplacement', 'shelf', {id:p.id}]], 'Plus', 'cog', 'small')}</div></div>
+    return `<button class="btn small m-only back-list" data-act="desel">${icon('chev')}Liste des pièces</button>${archBanner('pieces', p)}<div class="pd-head"><span class="pd-id">ID ${esc(p.ref)}</span><div class="pd-tools"><button class="btn small" data-act="edit-piece" data-id="${p.id}">${icon('edit')}Modifier</button>${menu([['labels-one', 'Étiquette QR', 'qr', {id:p.id}], ['print-piece', 'Fiche A4', 'printer', {id:p.id}], ['add-place', 'Ranger à un autre emplacement', 'shelf', {id:p.id}], '-', p.arch ? ['unarch', 'Restaurer la pièce', 'archive', {col:'pieces', id:p.id}] : ['arch', 'Archiver la pièce', 'archive', {col:'pieces', id:p.id}]], 'Plus', 'more', 'small')}</div></div>
       <h2 class="pd-title">${esc(p.designation)}</h2>
       ${p.fabricant || p.refFab ? `<p class="pd-sub">${esc(p.fabricant || '')}${p.refFab ? ` <span class="muted">· réf.</span> <span class="mono">${esc(p.refFab)}</span>` : ''}</p>` : ''}
       <div class="pd-stock ${low ? 'low' : ''}">
@@ -2724,6 +2800,51 @@ VIEWS.pieces = {
   }
 };
 
+/* ---------- Doublons : seulement des pièces strictement identiques (désignation, marque, réf. et notes), jamais fusionnées sans accord ---------- */
+const dupKey = p => [p.designation, p.fabricant, p.refFab, p.notes].map(x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '')).join('|');
+function dupGroups(){
+  const ok = new Set(db.meta.notDup || []), m = new Map();
+  for (const p of db.pieces){ if (!live(p)) continue; const k = dupKey(p); if (k.split('|')[0].length < 6) continue; if (!m.has(k)) m.set(k, []); m.get(k).push(p); }
+  const idn = p => /^\d+$/.test(p.ref) ? +p.ref : Infinity;
+  return [...m.values()].filter(g => g.length > 1).map(g => g.sort((a, b) => idn(a) - idn(b))).filter(g => !ok.has(g.map(p => p.id).sort().join('|')));
+}
+function mergePieces(keep, others){
+  tx(() => {
+    for (const o of others){
+      for (const st of o.stock.filter(x => x.qte)){ if (getLieu(st.lieuId)){ const q = st.qte; addStock(o, st.lieuId, -q, 'Fusion doublon', `vers ID ${keep.ref}`); addStock(keep, st.lieuId, q, 'Fusion doublon', `de l’ID ${o.ref}`); } else { const k = keep.stock.find(x => x.lieuId === st.lieuId); if (k) k.qte = round(k.qte + st.qte); else keep.stock.push({...st}); st.qte = 0; } }
+      o.stock = o.stock.filter(x => x.qte);
+      for (const id of o.kks) if (!keep.kks.includes(id)) keep.kks.push(id);
+      if (o.fours?.length) keep.fours = [...new Set([...(keep.fours || []), ...o.fours])];
+      if (!keep.fournisseur && o.fournisseur) keep.fournisseur = o.fournisseur;
+      keep.stockMin = Math.max(keep.stockMin || 0, o.stockMin || 0);
+      for (const m of db.mouvements) if (m.pieceId === o.id && m.motif !== 'Fusion doublon') m.pieceId = keep.id;
+      for (const i of db.interventions) for (const x of i.pieces) if (x.pieceId === o.id) x.pieceId = keep.id;
+      const ho = db.histo.find(h => h.id === o.id);
+      if (ho?.l?.length){ let hk = db.histo.find(h => h.id === keep.id); if (!hk){ hk = {id:keep.id, l:[]}; db.histo.push(hk); } hk.l = [...hk.l, ...ho.l.map(h => ({...h, t:`${h.t} (ID ${o.ref})`}))].sort((a, b) => String(b.d).localeCompare(String(a.d))); }
+      o.arch = todayISO(); o.mergedInto = keep.ref;
+    }
+  });
+}
+function dupDialog(){
+  const body = () => { const gs = dupGroups(); return gs.length ? `<p class="hint">Seules les pièces <strong>strictement identiques</strong> sont proposées : même désignation, même marque, même référence et mêmes notes. Rien n’est fusionné sans votre accord. La pièce fusionnée n’est pas supprimée : elle est archivée, et son stock, ses KKS et son historique passent sur la pièce gardée.</p>
+    ${gs.map(g => { const gid = g.map(p => p.id).join(','); return `<div class="dupg" data-g="${gid}"><div class="dup-t">${esc(g[0].designation)}${g[0].fabricant ? ` <span class="muted">· ${esc(g[0].fabricant)}</span>` : ''}${g[0].refFab ? ` <span class="muted">· réf. <span class="mono">${esc(g[0].refFab)}</span></span>` : ''}</div>
+      <p class="hint" style="margin:0 0 4px">Ouvrez chaque fiche pour comparer si besoin :${g.map(p => ` <button type="button" class="link" data-dopen="${p.id}">ID ${esc(p.ref)}</button>`).join(',')}</p>
+      ${g.map((p, n) => { const ls = sortedStock(p); return `<label class="dup-p"><input type="radio" name="keep-${g[0].id}" value="${p.id}" ${n === 0 ? 'checked' : ''}><span class="pid">ID ${esc(p.ref)}</span><span class="t">${ls.length ? ls.map(x => `${plate(getLieu(x.lieuId), false)} ${num(x.qte)}`).join(' ') : '<span class="muted">sans emplacement</span>'}</span><span class="muted">${p.kks.length} KKS · ${pieceHistory(p).length} mvt</span></label>`; }).join('')}
+      <div class="dup-a"><button type="button" class="btn small primary" data-dmerge="${gid}">${icon('merge')}Fusionner dans la pièce cochée</button><button type="button" class="btn small" data-dnot="${gid}">Ce ne sont pas des doublons</button></div></div>`; }).join('')}` : '<p>Aucun doublon : aucune pièce n’est strictement identique à une autre.</p>'; };
+  dialog({title:'Doublons de pièces', wide:true, saveLabel:'Fermer', body:`<div data-dups>${body()}</div>`, onSave(){},
+    onOpen(f, d){ const box = $('[data-dups]', d);
+      box.addEventListener('click', e => {
+        const mb = e.target.closest('[data-dmerge]'), nb = e.target.closest('[data-dnot]');
+        if (mb){ const ids = mb.dataset.dmerge.split(','), keepId = $(`input[name="keep-${ids[0]}"]:checked`, box)?.value, keep = getPiece(keepId), others = ids.filter(id => id !== keepId).map(getPiece).filter(Boolean);
+          if (!keep || !others.length) return;
+          if (!mb.dataset.armed){ mb.dataset.armed = 1; mb.innerHTML = `Confirmer : garder l’ID ${esc(keep.ref)}, archiver ${others.map(o => 'l’ID ' + esc(o.ref)).join(', ')}`; return; }
+          try { mergePieces(keep, others); toast(`Fusionné dans l’ID ${keep.ref} · ${others.length} pièce(s) archivée(s)`); } catch(x){ toast(x.message, 'bad'); }
+          box.innerHTML = body(); render(); }
+        const ob = e.target.closest('[data-dopen]'); if (ob){ d.close(); go('pieces', ob.dataset.dopen); return; }
+        if (nb){ const key = nb.dataset.dnot.split(',').sort().join('|'); tx(() => { db.meta.notDup = [...(db.meta.notDup || []), key]; }); box.innerHTML = body(); }
+      }); }});
+}
+
 /* Historique d'une pièce : mouvements TriFlow + historique repris de CareOffice */
 function pieceHistory(p){
   const own = db.mouvements.filter(m => m.pieceId === p.id).map(m => ({date:m.date, qte:m.qte, motif:m.motif + (m.ref ? ' ' + m.ref : ''), lieu:getLieu(m.lieuId) ? lieuCode(getLieu(m.lieuId)) : '', who:m.who || ''}));
@@ -2746,16 +2867,22 @@ function lieuTree(ls, act, selId){
   return (root.lieu ? `<div class="slots">${slot('Dans la salle', root.lieu)}</div>` : '') + draw(root, 0);
 }
 VIEWS.lieux = {
-  shell: () => `<header class="page-head"><h1>Emplacements</h1><div class="tools">${searchBox('lieux', 'Filtrer : code, salle ou pièce rangée…')}${menu([['opt', 'Gérer les emplacements', 'shelf', {sec:'lieux'}], '-', ['new-salle', 'Nouvelle salle', 'plus', {}], ['new-lieu', 'Nouvel emplacement', 'plus', {}], ['gen-series', 'Créer une série', 'plus', {}]])}</div></header>
+  shell: () => `<header class="page-head"><h1>Emplacements</h1><div class="tools">${searchBox('lieux', 'Filtrer : code, salle ou pièce rangée…')}${menu([['opt', 'Gérer les emplacements', 'shelf', {sec:'lieux'}], '-', ['new-salle', 'Nouvelle salle', 'plus', {}], ['new-lieu', 'Nouvel emplacement', 'plus', {}], ['gen-series', 'Créer une série', 'plus', {}], '-', ['arch-view', S.arch.lieux ? 'Quitter les archives' : 'Archives', 'archive', {v:'lieux'}]])}</div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list(){
     if (!db.salles.length) return empty('Aucun emplacement défini', '<p>Les salles et emplacements se créent dans Options › Emplacements.</p>');
+    if (S.arch.lieux){
+      const ss = db.salles.filter(x => x.arch), ls = db.lieux.filter(l => l.arch && live(getSalle(l.salleId))).sort(lieuSort);
+      if (!ss.length && !ls.length) return empty('Aucun emplacement archivé', '');
+      return `<div class="plist">${ss.map(x => `<div class="prow arch-row"><span class="pm"><span class="pdes"><span class="plate">${esc(salleCode(x))}</span> ${esc(x.nom || '')}</span><span class="ploc"><span class="muted">Local archivé le ${fmtD(x.arch)} · ${db.lieux.filter(l => l.salleId === x.id).length} emplacement(s)</span></span></span><button class="btn small" data-act="unarch" data-col="salles" data-id="${x.id}">Restaurer</button></div>`).join('')}
+        ${ls.map(l => `<div class="prow arch-row"><span class="pm"><span class="pdes"><span class="plate">${esc(lieuCode(l))}</span></span><span class="ploc"><span class="muted">Archivé le ${fmtD(l.arch)}</span></span></span><button class="btn small" data-act="unarch" data-col="lieux" data-id="${l.id}">Restaurer</button></div>`).join('')}</div>`;
+    }
     const q = norm(S.q.lieux), out = [];
-    const sorted = [...db.salles].sort((a, b) => (!!a.statut - !!b.statut) || coll.compare(salleCode(a), salleCode(b)));
+    const sorted = db.salles.filter(live).sort((a, b) => (!!a.statut - !!b.statut) || coll.compare(salleCode(a), salleCode(b)));
     let statHead = false;
     for (const s of sorted){
       const salleMatch = !q || norm(salleCode(s) + ' ' + s.nom).includes(q);
-      let ls = db.lieux.filter(l => l.salleId === s.id).sort(lieuSort);
+      let ls = db.lieux.filter(l => l.salleId === s.id && live(l)).sort(lieuSort);
       if (q && !salleMatch) ls = ls.filter(l => norm(lieuCode(l) + ' ' + l.note + ' ' + contentsOf(l.id).map(x => x.p.designation + ' ' + x.p.ref).join(' ')).includes(q));
       if (q && !salleMatch && !ls.length) continue;
       if (s.statut && !statHead){ statHead = true; out.push(`<div class="stat-head">${icon('out')}<div><strong>Hors magasin</strong><span>Pièces sorties du stock mais suivies : en prêt, en révision, en attente…</span></div></div>`); }
@@ -2768,6 +2895,7 @@ VIEWS.lieux = {
   },
   detail(){
     const l = getLieu(S.sel.lieux);
+    if (l && !liveLieu(l)) return archBanner(l.arch ? 'lieux' : 'salles', l.arch ? l : getSalle(l.salleId));
     if (!l) return placeholder('shelf', 'Choisissez un emplacement pour voir ce qui y est rangé et imprimer les étiquettes du matériel.');
     const s = getSalle(l.salleId), items = contentsOf(l.id);
     const parts = [...(s?.code ? [esc(s.code)] : [`Bâtiment ${esc(s?.batiment || 'E')}`, `étage ${esc(s?.etage)}`, `local ${esc(s?.numero)}`]), ...pathOf(l).map(esc)].join(' › ');
@@ -2777,7 +2905,7 @@ VIEWS.lieux = {
       <section class="block"><h3>Pièces concernées</h3>${items.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${items.map(x => `<tr data-act="goto" data-view="pieces" data-id="${x.p.id}" tabindex="0"><td><span class="ref">${esc(x.p.ref)}</span> ${esc(x.p.designation)}</td><td class="num qty">${num(x.qte)} <span class="muted">${esc(x.p.unite)}</span></td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-line">Aucune pièce.</p>'}</section>`;
     return `<div class="d-head"><div class="d-title"><span><span class="plate big">${esc(lieuCode(l))}</span></span><h2>${esc(s?.nom || '')}</h2><p class="muted">${parts}</p></div>
       <div class="d-actions"><button class="btn primary" data-act="labels-here" data-id="${l.id}" ${withStock.length ? '' : 'disabled'}>${icon('qr')}Étiquettes du matériel (${withStock.length})</button>
-        ${menu([['edit-lieu', 'Modifier l’emplacement', 'edit', {id:l.id}], ['edit-salle', 'Modifier la salle', 'edit', {id:l.salleId}], ['labels-loc', 'Étiquette d’emplacement', 'tag', {ids:l.id}], '-', ['opt', 'Gérer les emplacements', 'shelf', {sec:'lieux'}]])}</div></div>
+        ${menu([['edit-lieu', 'Modifier l’emplacement', 'edit', {id:l.id}], ['edit-salle', 'Modifier la salle', 'edit', {id:l.salleId}], ['labels-loc', 'Étiquette d’emplacement', 'tag', {ids:l.id}], '-', ['opt', 'Gérer les emplacements', 'shelf', {sec:'lieux'}], ['arch', 'Archiver l’emplacement', 'archive', {col:'lieux', id:l.id}]])}</div></div>
       <section class="block"><h3>Rangé ici</h3>${items.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${items.map(x => `<tr data-act="goto" data-view="pieces" data-id="${x.p.id}" tabindex="0"><td><span class="ref">${esc(x.p.ref)}</span> ${esc(x.p.designation)}</td><td class="num qty">${num(x.qte)} <span class="muted">${esc(x.p.unite)}</span></td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-line">Emplacement vide.</p>'}</section>
       ${l.note ? `<section class="block"><h3>Note</h3><p class="pre">${esc(l.note)}</p></section>` : ''}`;
   }
@@ -2786,31 +2914,31 @@ VIEWS.lieux = {
 /* ---------- Interventions ---------- */
 /* ---------- Tâches ---------- */
 function filteredTaches(){
-  let rows = db.taches.filter(t => S.tvue === 'toutes' || t.actif !== false).filter(t => forWho(t, S.pour));
+  let rows = db.taches.filter(t => S.arch.taches ? t.arch : !t.arch).filter(t => S.arch.taches || S.tvue === 'toutes' || t.actif !== false).filter(t => forWho(t, S.pour));
   const q = norm(S.q.taches || '');
   if (q) rows = rows.filter(t => norm([t.titre, t.description, getKks(t.kksId)?.code, getKks(t.kksId)?.designation, assignLabel(t.assign)].join(' ')).includes(q));
   return rows.sort((a, b) => (a.actif === false) - (b.actif === false) || a.prochaine.localeCompare(b.prochaine));
 }
 function pourSelect(){
   const groups = db.listes.groupes.filter(g => db.personnes.some(p => p.groupe === g && p.actif !== false));
-  const people = db.personnes.filter(p => p.actif !== false).sort(persSort);
+  const people = db.personnes.filter(p => p.actif !== false && live(p)).sort(persSort);
   return `<select class="mini" data-change="pour" aria-label="Pour qui"><option value="">Tout le monde</option><optgroup label="Corps de métier">${groups.map(g => opt('g:' + g, g, S.pour)).join('')}</optgroup><optgroup label="Personne">${people.map(p => opt('p:' + p.id, persName(p) + (p.groupe ? ' · ' + p.groupe : ''), S.pour)).join('')}</optgroup></select>`;
 }
 function tacheRow(t, withSel = true){
   const k = getKks(t.kksId), run = openRun(t), off = t.actif === false;
   return `<tr data-act="${withSel ? 'select' : 'goto'}" ${withSel ? '' : 'data-view="taches"'} data-id="${t.id}" class="${withSel && S.sel.taches === t.id ? 'sel' : ''}" tabindex="0">
     <td><span class="des">${esc(t.titre)}</span><span class="sub">${k ? esc(k.code) + ' · ' : ''}${esc(assignLabel(t.assign))} · ${esc(freqLabel(t.freq))}</span></td>
-    <td class="num">${off ? '<span class="chip ok">Faite</span>' : run ? '<span class="chip info">En cours</span>' : dueInfo(t).chip}</td></tr>`;
+    <td class="num"><span class="trow-r">${off ? '<span class="chip ok">Faite</span>' : run ? '<span class="chip info">En cours</span>' : dueInfo(t).chip}${!off && !run && !t.arch ? `<button class="tick" data-act="do-tache" data-id="${t.id}" title="C’est fait : remplir le rapport" aria-label="Faire la tâche ${esc(t.titre)}">${icon('check')}</button>` : ''}</span></td></tr>`;
 }
 VIEWS.taches = {
   shell: () => `<header class="page-head"><h1>Tâches</h1><div class="tools">${searchBox('taches', 'Rechercher une tâche…')}${pourSelect()}
     <button class="btn primary" data-act="new-tache">${icon('plus')}Nouvelle tâche</button>
-    ${menu([['print-taches', 'Imprimer la liste de travail', 'printer', {}], ['toggle-tvue', S.tvue === 'toutes' ? 'Masquer les tâches faites' : 'Afficher aussi les tâches faites', 'list', {}]])}</div></header>
+    ${menu([['print-taches', 'Imprimer la liste de travail', 'printer', {}], ['toggle-tvue', S.tvue === 'toutes' ? 'Masquer les tâches faites' : 'Afficher aussi les tâches faites', 'list', {}], ['xl-taches', 'Exporter la liste (Excel)', 'excel', {}], '-', archItem('taches')])}</div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list(){
     if (!db.taches.length) return empty('Aucune tâche', '<p>Créez une tâche récurrente (graissage, contrôle, étalonnage…) avec « Nouvelle tâche ».</p>');
     const rows = filteredTaches();
-    if (!rows.length) return empty('Rien à faire', '<p>Aucune tâche pour cette sélection.</p>');
+    if (!rows.length) return S.arch.taches ? empty('Aucune tâche archivée', '') : empty('Rien à faire', '<p>Aucune tâche pour cette sélection.</p>');
     const grp = {retard:[], semaine:[], plus:[], fait:[]};
     rows.forEach(t => grp[t.actif === false ? 'fait' : dueInfo(t).k].push(t));
     const sec = (key, title) => grp[key].length ? `<tbody><tr class="grp"><th colspan="2"><span>${title}</span> <span class="muted" style="font-family:var(--f-body);font-size:.8rem">${grp[key].length}</span></th></tr>${grp[key].map(t => tacheRow(t)).join('')}</tbody>` : '';
@@ -2819,14 +2947,19 @@ VIEWS.taches = {
   detail(){
     const t = get('taches', S.sel.taches);
     if (!t) return placeholder('check', 'Choisissez une tâche pour la faire, voir son historique ou la modifier.');
-    const k = getKks(t.kksId), run = openRun(t), done = db.interventions.filter(i => i.tacheId === t.id);
-    return `<div class="d-head"><div class="d-title"><span class="ref">${esc(freqLabel(t.freq))}</span><h2>${esc(t.titre)}</h2></div>
-      <div class="d-actions">${t.actif === false ? '' : run ? `<button class="btn primary" data-act="edit-int" data-id="${run.id}">${icon('report')}Compléter le rapport ${esc(run.num)}</button>` : `<button class="btn primary" data-act="do-tache" data-id="${t.id}">${icon('check')}Faire la tâche</button>`}
-        ${menu([['edit-tache', 'Modifier la tâche', 'edit', {id:t.id}]])}</div></div>
-      <dl class="facts"><div><dt>Prochaine fois</dt><dd>${t.actif === false ? '<span class="chip ok">Faite</span>' : `${fmtD(t.prochaine)} ${dueInfo(t).k === 'plus' ? '' : dueInfo(t).chip}`}</dd></div><div><dt>Attribuée à</dt><dd>${esc(assignLabel(t.assign))}</dd></div>
-        <div class="wide"><dt>Équipement</dt><dd>${k ? `${kksTag(k)} ${esc(k.designation)}` : '—'}</dd></div></dl>
-      ${t.description ? `<section class="block"><h3>Ce qu’il faut faire</h3><p class="pre">${esc(t.description)}</p></section>` : ''}
-      <section class="block"><h3>Historique</h3>${intTable(done)}</section>`;
+    const k = getKks(t.kksId), run = openRun(t), done = db.interventions.filter(i => i.tacheId === t.id && live(i)).sort((a, b) => b.date.localeCompare(a.date));
+    const off = t.actif === false, di = dueInfo(t);
+    return `${archBanner('taches', t)}<div class="pd-head"><span class="pd-id">${esc(freqLabel(t.freq))}</span><div class="pd-tools"><button class="btn small" data-act="edit-tache" data-id="${t.id}">${icon('edit')}Modifier</button>${menu([t.arch ? ['unarch', 'Restaurer la tâche', 'archive', {col:'taches', id:t.id}] : ['arch', 'Archiver la tâche', 'archive', {col:'taches', id:t.id}]], 'Plus', 'more', 'small')}</div></div>
+      <h2 class="pd-title">${esc(t.titre)}</h2>
+      <p class="pd-sub">${t.assign?.v ? `Pour <strong style="font-weight:600">${esc(assignLabel(t.assign))}</strong>` : '<span class="muted">Non attribuée</span>'}${done[0] ? ` · faite la dernière fois le ${fmtD(done[0].date)}` : ''}</p>
+      <div class="pd-stock ${!off && di.k === 'retard' ? 'late' : ''}">
+        <div class="pd-qty">${off ? '<span class="l" style="font-size:1rem">Tâche unique, déjà faite</span>' : `<span class="l">Prochaine fois</span><span class="n" style="font-size:1.5rem">${fmtD(t.prochaine)}</span>${di.k === 'plus' ? '' : di.chip}`}</div>
+        ${off || t.arch ? '' : run ? `<button class="btn primary" data-act="edit-int" data-id="${run.id}">${icon('report')}Compléter le rapport ${esc(run.num)}</button>` : `<button class="btn primary" data-act="do-tache" data-id="${t.id}">${icon('check')}C’est fait</button>`}
+      </div>
+      ${off || t.arch || run ? '' : '<p class="hint" style="margin:4px 0 0">« C’est fait » ouvre le rapport déjà rempli ; à l’enregistrement, la date passe à l’échéance suivante.</p>'}
+      ${k ? `<section class="pd-sec"><h3>${icon('plant')}Équipement</h3><div class="pd-k">${kksTag(k)}<span class="t">${esc(k.designation)}</span></div></section>` : ''}
+      ${t.description ? `<section class="pd-sec"><h3>${icon('list')}Ce qu’il faut faire</h3><p class="pre">${esc(t.description)}</p></section>` : ''}
+      <section class="pd-sec"><h3>${icon('report')}Historique <span class="muted">${done.length || ''}</span></h3>${intTable(done)}</section>`;
   }
 };
 function tacheDialog(t, kksId){
@@ -2835,7 +2968,7 @@ function tacheDialog(t, kksId){
   const k = getKks(v.kksId);
   const assignItems = () => [
     ...db.listes.groupes.filter(g => db.personnes.some(p => p.groupe === g && p.actif !== false)).map(g => ({id:'g:' + g, label:g, search:'groupe métier ' + g, html:`<strong>${esc(g)}</strong>`, right:'<span class="muted">Corps de métier</span>'})),
-    ...db.personnes.filter(p => p.actif !== false).sort(persSort).map(p => ({id:'p:' + p.id, label:persName(p), search:persName(p) + ' ' + (p.groupe || ''), html:esc(persName(p)), right:`<span class="muted">${esc(p.groupe || '')}</span>`}))];
+    ...db.personnes.filter(p => p.actif !== false && live(p)).sort(persSort).map(p => ({id:'p:' + p.id, label:persName(p), search:persName(p) + ' ' + (p.groupe || ''), html:esc(persName(p)), right:`<span class="muted">${esc(p.groupe || '')}</span>`}))];
   const aId = v.assign?.v ? (v.assign.type === 'personne' ? 'p:' : 'g:') + v.assign.v : '';
   dialog({title: isNew ? 'Nouvelle tâche' : 'Modifier la tâche',
     body:`<label>Tâche<input name="titre" value="${esc(v.titre)}" required placeholder="ex. Graissage des paliers"></label>
@@ -2848,13 +2981,13 @@ function tacheDialog(t, kksId){
         <p class="hint" data-fprev></p></fieldset>
       <label>Ce qu’il faut faire<textarea name="description" rows="4" placeholder="Consignes, points de contrôle…">${esc(v.description)}</textarea></label>`,
     onOpen(f, d){
-      combo(f.elements.kks, {items: () => db.kks.map(x => ({id:x.id, key:x.code, label:kksLabel(x), search:x.code + ' ' + x.designation, html:`<span class="kks">${esc(x.code)}</span> ${esc(x.designation)}`}))});
+      combo(f.elements.kks, {items: () => db.kks.filter(live).map(x => ({id:x.id, key:x.code, label:kksLabel(x), search:x.code + ' ' + x.designation, html:`<span class="kks">${esc(x.code)}</span> ${esc(x.designation)}`}))});
       combo(f.elements.assign, {items:assignItems});
       const u = () => { const un = val(f, 'unite'), n = Math.max(1, +val(f, 'n') || 1); $('[data-n]', d).hidden = un === 'once'; const p = val(f, 'prochaine');
         $('[data-fprev]', d).textContent = un === 'once' || !p ? '' : `${freqLabel({n, unite:un})} : ${fmtD(p)}, puis ${fmtD(addFreq(p, n, un))}, ${fmtD(addFreq(addFreq(p, n, un), n, un))}…`; };
       f.addEventListener('input', u); f.addEventListener('change', u); u();
     },
-    del: isNew ? null : {label:'Supprimer la tâche', run(){ tx(() => { db.taches = db.taches.filter(x => x !== t); db.interventions.forEach(i => { if (i.tacheId === t.id) delete i.tacheId; }); }); S.sel.taches = null; render(); toast('Tâche supprimée (les rapports sont conservés)'); }},
+    del: isNew ? null : archDel('taches', t, function(){ tx(() => { db.taches = db.taches.filter(x => x !== t); db.interventions.forEach(i => { if (i.tacheId === t.id) delete i.tacheId; }); }); S.sel.taches = null; render(); toast('Tâche supprimée (les rapports sont conservés)'); }),
     onSave(f){
       const titre = val(f, 'titre'), prochaine = val(f, 'prochaine'), unite = val(f, 'unite'), n = Math.max(1, Math.round(+val(f, 'n') || 1));
       if (!titre) throw new Error('Indiquez la tâche.');
@@ -2875,17 +3008,21 @@ function tachesSheetHTML(){
     <footer class="rpt-foot">Tâches en retard et des 7 prochains jours · imprimé le ${fmtDT(new Date().toISOString())} · TriFlow</footer></article>`;
 }
 
+function filteredInts(){
+  const q = norm(S.q.interventions);
+  let rows = db.interventions.filter(i => S.arch.interventions ? i.arch : !i.arch).filter(i => S.arch.interventions || S.statut === 'toutes' || (S.statut === 'actives' ? i.statut !== 'terminee' : i.statut === S.statut));
+  if (q) rows = rows.filter(i => norm([i.num, i.titre, i.type, i.constat, i.travaux, kInfo(i)?.code, kInfo(i)?.designation, ...intPers(i).map(snapLabel)].join(' ')).includes(q));
+  return rows.sort((a, b) => b.date.localeCompare(a.date) || b.num.localeCompare(a.num));
+}
 VIEWS.interventions = {
   shell: () => `<header class="page-head"><h1>Rapports</h1><div class="tools">${searchBox('interventions', 'Rechercher un rapport…')}
     <select class="mini" data-change="statut" aria-label="Filtrer par statut">${[['actives', 'En cours'], ['terminee', 'Terminées'], ['toutes', 'Toutes']].map(([v, t]) => `<option value="${v}" ${S.statut === v ? 'selected' : ''}>${t}</option>`).join('')}</select>
-    <button class="btn primary" data-act="new-int">${icon('plus')}Nouveau rapport</button>${menu([['import-travaux', 'Importer depuis CareOffice (fichier)', 'save', {}]])}</div></header>
+    <button class="btn primary" data-act="new-int">${icon('plus')}Nouveau rapport</button>${menu([['xl-ints', 'Exporter la liste (Excel)', 'excel', {}], archItem('interventions'), '-', ['import-travaux', 'Importer depuis CareOffice (fichier)', 'save', {}]])}</div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list(){
-    const q = norm(S.q.interventions);
-    let rows = db.interventions.filter(i => S.statut === 'toutes' || (S.statut === 'actives' ? i.statut !== 'terminee' : i.statut === S.statut));
-    if (q) rows = rows.filter(i => norm([i.num, i.titre, i.type, i.constat, i.travaux, kInfo(i)?.code, kInfo(i)?.designation, ...intPers(i).map(snapLabel)].join(' ')).includes(q));
-    rows.sort((a, b) => b.date.localeCompare(a.date) || b.num.localeCompare(a.num));
+    const rows = filteredInts();
     if (!db.interventions.length) return empty('Aucun rapport', '<p>Créez le premier avec « Nouveau rapport ».</p>');
+    if (!rows.length && S.arch.interventions) return empty('Aucun rapport archivé', '');
     if (!rows.length) return empty(S.statut === 'actives' ? 'Aucun rapport en cours' : 'Aucun rapport ne correspond', S.statut !== 'toutes' ? `<p><button class="btn small" data-act="int-all">Afficher les ${db.interventions.length} rapports</button></p>` : '');
     return `<div class="list-bar"><span class="muted">${rows.length} rapport(s)</span></div><div class="plist">${rows.slice(0, 400).map(i => { const k = kInfo(i); return `<button class="prow ${S.sel.interventions === i.id ? 'sel' : ''}" data-act="select" data-id="${i.id}">
         <span class="pm"><span class="pdes">${esc(i.titre)}</span><span class="ploc"><span class="pid">${fmtD(i.date)}</span>${k ? `<span class="kks">${esc(k.code)}</span>` : ''}${i.type ? `<span class="muted">${esc(i.type)}</span>` : ''}</span></span>
@@ -2897,7 +3034,7 @@ VIEWS.interventions = {
     const k = kInfo(i), T = tInfo(i);
     const names = intPers(i).map(x => `${getPers(x.id) ? `<button class="link" data-act="pers-ints" data-id="${x.id}">${esc(persName(x))}</button>` : esc(persName(x))}${x.groupe ? ` <span class="muted">(${esc(x.groupe)})</span>` : ''}`).join(', ');
     const pills = intPers(i).map(x => `<span class="pp">${getPers(x.id) ? `<button class="link" data-act="pers-ints" data-id="${x.id}">${esc(persName(x))}</button>` : esc(persName(x))}${x.groupe ? `<small>${esc(x.groupe)}</small>` : ''}</span>`).join('');
-    return `<div class="pd-head"><span class="pd-id">${esc(i.num)}</span><div class="pd-tools">${i.statut !== 'terminee' ? statutChip(i.statut) : ''}<button class="btn small" data-act="edit-int" data-id="${i.id}">${icon('edit')}${i.statut === 'terminee' ? 'Modifier' : 'Compléter'}</button><button class="btn small" data-act="print-int" data-id="${i.id}">${icon('printer')}Imprimer</button></div></div>
+    return `${archBanner('interventions', i)}<div class="pd-head"><span class="pd-id">${esc(i.num)}</span><div class="pd-tools">${i.statut !== 'terminee' ? statutChip(i.statut) : ''}<button class="btn small" data-act="edit-int" data-id="${i.id}">${icon('edit')}${i.statut === 'terminee' ? 'Modifier' : 'Compléter'}</button><button class="btn small" data-act="print-int" data-id="${i.id}">${icon('printer')}Imprimer</button></div></div>
       <h2 class="pd-title">${esc(i.titre)}</h2>
       <p class="pd-sub">${fmtD(i.date)}${i.type ? ` · ${esc(i.type)}` : ''}${i.duree ? ` · ${num(i.duree)} h` : ''}${i.statut === 'terminee' ? ' · <span style="color:var(--ok)">terminé</span>' : ''}</p>
       <dl class="pd-info rep">
@@ -2931,19 +3068,20 @@ function kksGroups(rows){
 const kksSort = (a, b) => coll.compare(a.code.replace(/^\d+/, ''), b.code.replace(/^\d+/, '')) || coll.compare(a.code, b.code);
 VIEWS.kks = {
   shell: () => `<header class="page-head"><h1>Installation</h1><div class="tools">${searchBox('kks', 'KKS, AIC ou équipement…')}
-    ${menu([['new-kks', 'Un équipement', 'plus', {}], ['import-kks', 'Coller une liste', 'list', {}]], 'Ajouter', 'plus', 'primary')}</div></header>
+    ${menu([['new-kks', 'Un équipement', 'plus', {}], ['import-kks', 'Coller une liste', 'list', {}]], 'Ajouter', 'plus', 'primary')}${menu([['xl-kks', 'Exporter (Excel)', 'excel', {}], archItem('kks')])}</div></header>
     <div class="split tsplit"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list(){
     if (!db.kks.length) return empty('Aucun équipement', '<p>Ajoutez-les avec « Coller une liste ».</p>');
+    if (S.arch.kks){ const ar = db.kks.filter(k => k.arch).sort(kksSort); return ar.length ? `<p class="list-note">${ar.length} équipement(s) archivé(s)</p>${kksRows(ar)}` : empty('Aucun équipement archivé', ''); }
     const q = norm(S.q.kks);
     if (q){
-      const rows = db.kks.filter(k => norm(`${k.code} ${k.designation} ${k.aic || ''}`).includes(q) || norm(k.code.replace(/\s+/g, '')).includes(q.replace(/\s+/g, ''))).sort(kksSort);
+      const rows = db.kks.filter(live).filter(k => norm(`${k.code} ${k.designation} ${k.aic || ''}`).includes(q) || norm(k.code.replace(/\s+/g, '')).includes(q.replace(/\s+/g, ''))).sort(kksSort);
       if (!rows.length) return empty('Rien ne correspond', '');
       return `<p class="list-note">${rows.length} équipement(s)${rows.length > 300 ? ', les 300 premiers affichés' : ''}</p>${kksRows(rows.slice(0, 300))}`;
     }
     const k = getKks(S.sel.kks);
     if (k && S.sysAuto !== k.id){ S.sysAuto = k.id; S.sys = sysEff(k.code) || '?'; if (S.sys !== '?'){ S.sysExp.add(S.sys[0]); S.sysExp.add(S.sys.slice(0, 2)); } }
-    const cnt = new Map(); for (const x of db.kks){ const c = sysEff(x.code) || '?'; cnt.set(c, (cnt.get(c) || 0) + 1); }
+    const cnt = new Map(); for (const x of db.kks.filter(live)){ const c = sysEff(x.code) || '?'; cnt.set(c, (cnt.get(c) || 0) + 1); }
     const s3 = [...cnt.keys()].filter(c => c !== '?').sort();
     const n = pre => s3.filter(c => c.startsWith(pre)).reduce((a, c) => a + cnt.get(c), 0);
     const node = (c, lvl, open, label) => `<button class="tnode l${lvl} ${S.sys === c ? 'sel' : ''}" data-act="sys-sel" data-sys="${c}" ${lvl < 3 ? `aria-expanded="${open}"` : ''}>${lvl < 3 ? `<span class="chev ${open ? 'open' : ''}">${icon('chev')}</span>` : '<span class="tdot"></span>'}<span class="t"><b class="code">${c}</b>${label}</span><span class="cnt">${lvl < 3 ? n(c) : cnt.get(c)}</span></button>`;
@@ -2962,12 +3100,12 @@ VIEWS.kks = {
   detail(){
     const k = getKks(S.sel.kks);
     if (!k){
-      const cnt = new Map(); for (const x of db.kks){ const c = sysEff(x.code) || '?'; cnt.set(c, (cnt.get(c) || 0) + 1); }
+      const cnt = new Map(); for (const x of db.kks.filter(live)){ const c = sysEff(x.code) || '?'; cnt.set(c, (cnt.get(c) || 0) + 1); }
       const n = pre => [...cnt].filter(([c]) => c !== '?' && c.startsWith(pre)).reduce((a, [, v]) => a + v, 0);
       const cur = S.sys === '?' ? '' : S.sys;
       const crumb = `<nav class="crumbs"><button class="link" data-act="sys-sel" data-sys="">Installation</button>${[...cur].map((_, i) => cur.slice(0, i + 1)).map(c => ` <span class="muted">›</span> ${c === cur ? `<strong>${c}</strong>` : `<button class="link" data-act="sys-sel" data-sys="${c}">${c}</button>`}`).join('')}</nav>`;
       if (S.sys === '?' || cur.length === 3){
-        const rows = db.kks.filter(x => (S.sys === '?' ? !sysEff(x.code) : sysEff(x.code) === S.sys)).sort(kksSort);
+        const rows = db.kks.filter(x => live(x) && (S.sys === '?' ? !sysEff(x.code) : sysEff(x.code) === S.sys)).sort(kksSort);
         return `${crumb}<div class="sys-head"><h3><b class="code">${S.sys === '?' ? '' : cur}</b>${S.sys === '?' ? 'Sans système' : esc(sysName(cur))}</h3><span class="cnt">${rows.length} équip.</span></div>
           ${rows.length ? (rows.length > 12 && S.sys !== '?' ? kksGroups(rows) : kksRows(rows)) : '<p class="empty-line" style="padding:16px 0">Aucun équipement.</p>'}`;
       }
@@ -2975,16 +3113,20 @@ VIEWS.kks = {
       return `${crumb}${cur ? `<div class="sys-head"><h3><b class="code">${cur}</b>${esc(sysName(cur))}</h3><span class="cnt">${n(cur)} équip.</span></div>` : '<p class="hint" style="margin:0 0 10px">Choisissez un système : il se déplie dans le menu de gauche.</p>'}
         <div class="sys-kids">${kids.map(c => `<button class="sys-kid" data-act="sys-sel" data-sys="${c}"><b class="code">${c}</b><span class="t">${esc(sysName(c)) || '<span class="muted">Sans nom</span>'}</span><span class="cnt">${n(c)}</span>${icon('chev')}</button>`).join('')}</div>`;
     }
-    const ps = db.pieces.filter(p => p.kks.includes(k.id)), ints = db.interventions.filter(i => i.kksId === k.id);
-    return `${S.q.kks ? '' : `<button class="btn small back" data-act="kks-back">${icon('chev')}${sysEff(k.code) ? `${sysEff(k.code)} ${esc(sysName(sysEff(k.code)))}` : 'Retour'}</button>`}<div class="d-head"><div class="d-title"><span><span class="kks big">${esc(k.code)}</span></span><h2>${esc(k.designation)}</h2></div>
-      <div class="d-actions"><button class="btn primary" data-act="new-int" data-kks="${k.id}">${icon('report')}Nouveau rapport</button>
-        <button class="btn" data-act="edit-kks" data-id="${k.id}">${icon('edit')}Modifier</button></div></div>
-      <dl class="facts">${sysEff(k.code) ? `<div><dt>Système</dt><dd><button class="link" data-act="sys-sel" data-sys="${sysEff(k.code)}">${esc(sysLabel(k.code))}</button></dd></div>` : ''}${k.aic ? `<div><dt>AIC</dt><dd><span class="aic">${esc(k.aic)}</span></dd></div>` : ''}</dl>
-      <section class="block"><h3>Pièces de rechange</h3>
-        ${ps.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${ps.map(p => `<tr data-act="goto" data-view="pieces" data-id="${p.id}" tabindex="0"><td><span class="ref">${esc(p.ref)}</span> ${esc(p.designation)}</td><td class="num qty">${num(total(p))} <span class="muted">${esc(p.unite)}</span></td><td class="row-tools" style="width:1%"><button class="icon-btn" data-act="unlink-kks" data-piece="${p.id}" data-id="${k.id}" aria-label="Retirer ${esc(p.ref)}" title="Retirer le lien">×</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-line">Aucune pièce liée.</p>'}
-        <form class="inline-form" data-form="link-piece" data-kks="${k.id}"><input name="piece" list="dl-pieces" placeholder="Lier une pièce" aria-label="Pièce à lier" autocomplete="off"><button class="btn">Lier</button></form></section>
-      ${db.taches.some(t => t.kksId === k.id) ? `<section class="block"><h3>Tâches</h3><div class="tbl-wrap"><table class="tbl compact"><tbody>${db.taches.filter(t => t.kksId === k.id).map(t => tacheRow(t, false)).join('')}</tbody></table></div></section>` : ''}
-      ${ints.length ? `<section class="block"><h3>Interventions</h3>${intTable(ints)}</section>` : ''}`;
+    const ps = db.pieces.filter(p => live(p) && p.kks.includes(k.id)).sort((a, b) => coll.compare(a.designation, b.designation)), ints = db.interventions.filter(i => live(i) && i.kksId === k.id).sort((a, b) => b.date.localeCompare(a.date)), ts = db.taches.filter(t => live(t) && t.kksId === k.id);
+    const nxt = ts.filter(t => t.actif !== false).sort((a, b) => a.prochaine.localeCompare(b.prochaine))[0], inStock = ps.filter(p => dispo(p) > 0).length, allI = S.kAll === k.id;
+    const stat = (n, t, sub, tone = '') => `<div class="kst ${tone}"><b>${n}</b><span>${t}</span>${sub ? `<small>${sub}</small>` : ''}</div>`;
+    return `${S.q.kks || S.arch.kks ? '' : `<button class="btn small back" data-act="kks-back">${icon('chev')}${sysEff(k.code) ? `${sysEff(k.code)} ${esc(sysName(sysEff(k.code)))}` : 'Retour'}</button>`}${archBanner('kks', k)}
+      <div class="pd-head"><span class="kks big">${esc(k.code)}</span><div class="pd-tools"><button class="btn small" data-act="edit-kks" data-id="${k.id}">${icon('edit')}Modifier</button>${menu([['new-tache', 'Nouvelle tâche sur cet équipement', 'repeat', {kks:k.id}], '-', k.arch ? ['unarch', 'Restaurer l’équipement', 'archive', {col:'kks', id:k.id}] : ['arch', 'Archiver l’équipement', 'archive', {col:'kks', id:k.id}]], 'Plus', 'more', 'small')}</div></div>
+      <h2 class="pd-title">${esc(k.designation)}</h2>
+      <p class="pd-sub">${sysEff(k.code) ? `<button class="link" data-act="sys-sel" data-sys="${sysEff(k.code)}">${esc(sysLabel(k.code))}</button>` : '<span class="muted">Sans système</span>'}${k.aic ? ` · AIC <span class="aic">${esc(k.aic)}</span>` : ''}</p>
+      <div class="kstats">${stat(ps.length, 'pièce(s) de rechange', ps.length ? `${inStock} en stock` : '', ps.length && !inStock ? 'bad' : '')}${stat(ints.length, 'rapport(s)', ints[0] ? `dernier le ${fmtD(ints[0].date)}` : '')}${stat(ts.length, 'tâche(s)', nxt ? `prochaine le ${fmtD(nxt.prochaine)}` : '', nxt && daysTo(nxt.prochaine) < 0 ? 'bad' : '')}</div>
+      <div class="kacts"><button class="btn primary" data-act="new-int" data-kks="${k.id}">${icon('report')}Nouveau rapport</button><button class="btn" data-act="new-tache" data-kks="${k.id}">${icon('repeat')}Nouvelle tâche</button></div>
+      ${ts.length ? `<section class="pd-sec"><h3>${icon('repeat')}Tâches</h3><div class="tbl-wrap"><table class="tbl compact"><tbody>${ts.map(t => tacheRow(t, false)).join('')}</tbody></table></div></section>` : ''}
+      <section class="pd-sec"><h3>${icon('report')}Rapports <span class="muted">${ints.length || ''}</span></h3>${ints.length ? intTable(allI ? ints : ints.slice(0, 6), true) + (ints.length > 6 ? `<button class="link" data-act="k-all" data-id="${k.id}">${allI ? 'Réduire' : `Voir les ${ints.length} rapports`}</button>` : '') : '<p class="empty-line">Aucun rapport sur cet équipement.</p>'}</section>
+      <section class="pd-sec"><h3>${icon('box')}Pièces de rechange <span class="muted">${ps.length || ''}</span></h3>
+        ${ps.length ? `<div class="four-list">${ps.map(p => { const mp = mainPlace(p); return `<div class="kp"><button class="four-p" data-act="goto" data-view="pieces" data-id="${p.id}"><span class="pid">${esc(p.ref)}</span><span class="t">${esc(p.designation)}</span>${mp ? plate(mp, false) : ''}<span class="q ${isOut(p) ? 'zero' : ''}">${num(dispo(p))} <small>${esc(p.unite)}</small></span></button><button class="icon-btn" data-act="unlink-kks" data-piece="${p.id}" data-id="${k.id}" aria-label="Retirer ${esc(p.ref)}" title="Retirer le lien">×</button></div>`; }).join('')}</div>` : '<p class="empty-line">Aucune pièce liée.</p>'}
+        <form class="inline-form" data-form="link-piece" data-kks="${k.id}"><input name="piece" list="dl-pieces" placeholder="Lier une pièce (ID ou désignation)" aria-label="Pièce à lier" autocomplete="off"><button class="btn">Lier</button></form></section>`;
   }
 };
 
@@ -2992,19 +3134,20 @@ VIEWS.kks = {
 const OPT_SECS = [['lieux', 'Emplacements', 'shelf'], ['kks', 'Équipements (KKS)', 'plant'], ['personnes', 'Personnes', 'person'], ['fournisseurs', 'Fournisseurs', 'truck'], ['listes', 'Listes', 'list'], ['etiquettes', 'Étiquettes & QR', 'qr'], ['donnees', 'Sauvegarde', 'save'], ['connexion', 'Connexion', 'person']];
 const OPT = {};
 OPT.lieux = () => {
-  const salles = [...db.salles].sort((a, b) => (!!a.statut - !!b.statut) || coll.compare(salleCode(a), salleCode(b)));
+  const salles = db.salles.filter(live).sort((a, b) => (!!a.statut - !!b.statut) || coll.compare(salleCode(a), salleCode(b))), sArch = db.salles.filter(x => x.arch);
   const add = menu([['new-lieu', 'Un emplacement', 'shelf'], ['new-salle', 'Un local', 'plus'], ['gen-series', 'Une série (ex. A / 1 à 20)', 'list'], '-', ['import-lieux', 'Coller une liste', 'save']], 'Ajouter', 'plus', 'primary');
-  const room = (s, i) => { const ls = db.lieux.filter(l => l.salleId === s.id).sort(lieuSort);
+  const room = (s, i) => { const ls = db.lieux.filter(l => l.salleId === s.id && live(l)).sort(lieuSort);
     return `${s.statut && !salles[i - 1]?.statut ? `<div class="stat-head" style="margin:0">${icon('out')}<div><strong>Hors magasin</strong><span>En prêt, en révision, en attente… : suivi, mais pas compté dans le stock.</span></div></div>` : ''}<details class="oroom"><summary><span class="chev">${icon('chev')}</span>${s.statut ? `<span class="stat">${icon('out')}${esc(salleCode(s))}</span>` : `<span class="plate">${esc(salleCode(s))}</span>`}${s.nom && s.nom !== salleCode(s) ? `<span class="rname">${esc(s.nom)}</span>` : ''}<span class="cnt">${ls.length}</span></summary>
       <div class="otree">${ls.length ? lieuTree(ls, 'edit-lieu', null) : '<span class="muted">Aucun emplacement.</span>'}
-        <div class="rtools"><button class="btn small" data-act="new-lieu" data-salle="${s.id}">${icon('plus')}Emplacement</button><button class="btn small" data-act="edit-salle" data-id="${s.id}">${icon('edit')}Modifier le local</button><button class="link danger del-salle" data-act="del-salle" data-id="${s.id}">Supprimer</button></div></div></details>`; };
+        <div class="rtools"><button class="btn small" data-act="new-lieu" data-salle="${s.id}">${icon('plus')}Emplacement</button><button class="btn small" data-act="edit-salle" data-id="${s.id}">${icon('edit')}Modifier le local</button><button class="link del-salle" data-act="arch" data-col="salles" data-id="${s.id}">Archiver</button></div></div></details>`; };
   return `<section class="opt-sec"><div class="head"><h2>Emplacements</h2><div class="tools">${add}</div></div>
     <div class="pad"><p class="hint">Ouvrez un local pour voir ses emplacements. Cliquez sur un emplacement pour le modifier.</p></div>
-    ${salles.length ? salles.map(room).join('') : `<div class="pad">${empty('Aucun local', '<p>Utilisez « Ajouter ».</p>')}</div>`}</section>`;
+    ${salles.length ? salles.map(room).join('') : `<div class="pad">${empty('Aucun local', '<p>Utilisez « Ajouter ».</p>')}</div>`}
+    ${sArch.length ? `<details class="arch-sec"><summary>${icon('archive')}Locaux archivés <span class="muted">${sArch.length}</span></summary>${sArch.map(x => `<div class="arch-line"><span class="plate">${esc(salleCode(x))}</span><span class="t">${esc(x.nom && x.nom !== salleCode(x) ? x.nom : '')} <span class="muted">· archivé le ${fmtD(x.arch)}</span></span><button class="btn small" data-act="unarch" data-col="salles" data-id="${x.id}">Restaurer</button><button class="link danger" data-act="del-salle" data-id="${x.id}">Supprimer</button></div>`).join('')}</details>` : ''}</section>`;
 };
 OPT.kks = () => {
   const q = norm(S.q.optkks);
-  const rows = db.kks.filter(k => !q || norm(`${k.code} ${k.designation} ${k.aic || ''}`).includes(q)).sort(kksSort);
+  const rows = db.kks.filter(k => live(k) && (!q || norm(`${k.code} ${k.designation} ${k.aic || ''}`).includes(q))).sort(kksSort);
   return `<section class="opt-sec"><div class="head"><h2>Équipements (KKS)</h2><div class="tools">${menu([['new-kks', 'Un équipement', 'plus'], ['import-kks', 'Coller une liste', 'list']], 'Ajouter', 'plus', 'primary')}</div></div>
     <div class="pad"><p class="hint">Le système (H › HA › HAC…) est lu directement dans le code KKS. Le code AIC est facultatif.</p>
     <input type="search" data-search="optkks" data-opt="1" placeholder="Filtrer la liste…" value="${esc(S.q.optkks)}" aria-label="Filtrer les repères" style="max-width:320px"></div>
@@ -3016,12 +3159,13 @@ function optKksTable(rows){
 }
 OPT.personnes = () => {
   const g = S.optGrp || '';
-  const rows = db.personnes.filter(p => !g || p.groupe === g).sort((a, b) => (b.actif - a.actif) || persSort(a, b));
+  const rows = db.personnes.filter(p => live(p) && (!g || p.groupe === g)).sort((a, b) => (b.actif - a.actif) || persSort(a, b)), pArch = db.personnes.filter(p => p.arch).sort(persSort);
   const groups = db.listes.groupes.filter(x => db.personnes.some(p => p.groupe === x));
   return `<section class="opt-sec"><div class="head"><h2>Personnes <span class="muted" style="font-family:var(--f-mono);font-size:.9rem">${db.personnes.length}</span></h2><div class="tools"><button class="btn primary" data-act="new-pers">${icon('plus')}Personne</button></div></div>
     <div class="pad"><p class="hint">Le personnel et les groupes sont repris automatiquement du Planning Tridel. Une personne qui n’y figure plus n’est plus proposée dans les nouveaux rapports, mais reste dans les anciens.</p>
     ${groups.length ? `<div><select class="mini" data-change="optGrp" aria-label="Filtrer par groupe"><option value="">Tous les groupes</option>${groups.map(x => opt(x, x, g)).join('')}</select></div>` : ''}</div>
-    ${rows.length ? `<div class="tbl-wrap"><table class="tbl compact"><thead><tr><th>Nom</th><th>Groupe</th><th class="num hide-sm">Rapports</th></tr></thead><tbody>${rows.map(p => `<tr data-act="edit-pers" data-id="${p.id}" tabindex="0"><td><strong style="font-weight:500">${esc(p.nom)}</strong> ${esc(p.prenom || '')}${p.actif ? '' : ' <span class="chip off">Plus au planning</span>'}</td><td>${grpChip(p.groupe) || '<span class="muted">—</span>'}</td><td class="num qty hide-sm">${db.interventions.filter(i => i.intervenants.includes(p.id)).length || ''}</td></tr>`).join('')}</tbody></table></div>` : `<div class="pad">${empty('Aucune personne', '<p>Utilisez « Reprendre du Planning Tridel ».</p>')}</div>`}</section>`;
+    ${rows.length ? `<div class="tbl-wrap"><table class="tbl compact"><thead><tr><th>Nom</th><th>Groupe</th><th class="num hide-sm">Rapports</th></tr></thead><tbody>${rows.map(p => `<tr data-act="edit-pers" data-id="${p.id}" tabindex="0"><td><strong style="font-weight:500">${esc(p.nom)}</strong> ${esc(p.prenom || '')}${p.actif ? '' : ' <span class="chip off">Plus au planning</span>'}</td><td>${grpChip(p.groupe) || '<span class="muted">—</span>'}</td><td class="num qty hide-sm">${db.interventions.filter(i => i.intervenants.includes(p.id)).length || ''}</td></tr>`).join('')}</tbody></table></div>` : `<div class="pad">${empty('Aucune personne', '<p>Utilisez « Reprendre du Planning Tridel ».</p>')}</div>`}
+    ${pArch.length ? `<details class="arch-sec"><summary>${icon('archive')}Personnes archivées <span class="muted">${pArch.length}</span></summary>${pArch.map(p => `<div class="arch-line"><span class="t"><strong style="font-weight:500">${esc(p.nom)}</strong> ${esc(p.prenom || '')} <span class="muted">· ${esc(p.groupe || '')} · archivée le ${fmtD(p.arch)}</span></span><button class="btn small" data-act="unarch" data-col="personnes" data-id="${p.id}">Restaurer</button><button class="link" data-act="edit-pers" data-id="${p.id}">Ouvrir</button></div>`).join('')}</details>` : ''}</section>`;
 };
 OPT.fournisseurs = () => {
   const q = norm(S.q.optfour || '');
@@ -3033,8 +3177,9 @@ OPT.fournisseurs = () => {
     <div id="opt-four">${rows.length ? `<div class="tbl-wrap"><table class="tbl compact"><thead><tr><th>Nom</th><th class="num">Pièces</th></tr></thead><tbody>${rows.map(n => { const open = S.fourOpen === n, c = cnt.get(norm(n)) || 0;
       const ps = open ? db.pieces.filter(p => [p.fabricant, p.fournisseur, ...(p.fours || [])].some(x => x && norm(x) === norm(n))).sort((a, b) => coll.compare(a.designation, b.designation)) : [];
       return `<tr class="four-row ${open ? 'open' : ''}" data-act="four-open" data-name="${esc(n)}" tabindex="0"><td><span class="chev ${open ? 'open' : ''}">${icon('chev')}</span>${esc(n)}</td><td class="num qty">${c || ''}</td></tr>
-      ${open ? `<tr class="four-sub"><td colspan="2"><div class="four-tools"><button class="btn small" data-act="four-pieces" data-name="${esc(n)}">${icon('box')}Ouvrir dans Pièces</button><button class="btn small" data-act="edit-four" data-name="${esc(n)}">${icon('edit')}Renommer</button></div>
-        ${ps.length ? `<div class="four-list">${ps.slice(0, 200).map(p => { const mp = mainPlace(p); return `<button class="four-p" data-act="goto" data-view="pieces" data-id="${p.id}"><span class="pid">${esc(p.ref)}</span><span class="t">${esc(p.designation)}</span>${mp ? plate(mp, false) : ''}<span class="q">${num(dispo(p))} <small>${esc(p.unite)}</small></span></button>`; }).join('')}${ps.length > 200 ? `<p class="list-note">${ps.length - 200} autre(s) : « Ouvrir dans Pièces » pour tout voir.</p>` : ''}</div>` : '<p class="empty-line" style="padding:8px 0">Aucune pièce reliée.</p>'}</td></tr>` : ''}`; }).join('')}</tbody></table></div>` : `<div class="pad">${empty('Aucun fournisseur', '')}</div>`}</div></section>`;
+      ${open ? `<tr class="four-sub"><td colspan="2"><div class="four-tools"><button class="btn small" data-act="four-pieces" data-name="${esc(n)}">${icon('box')}Ouvrir dans Pièces</button><button class="btn small" data-act="edit-four" data-name="${esc(n)}">${icon('edit')}Renommer</button><button class="btn small ghost" data-act="four-arch" data-name="${esc(n)}">${icon('archive')}Archiver</button></div>
+        ${ps.length ? `<div class="four-list">${ps.slice(0, 200).map(p => { const mp = mainPlace(p); return `<button class="four-p" data-act="goto" data-view="pieces" data-id="${p.id}"><span class="pid">${esc(p.ref)}</span><span class="t">${esc(p.designation)}</span>${mp ? plate(mp, false) : ''}<span class="q">${num(dispo(p))} <small>${esc(p.unite)}</small></span></button>`; }).join('')}${ps.length > 200 ? `<p class="list-note">${ps.length - 200} autre(s) : « Ouvrir dans Pièces » pour tout voir.</p>` : ''}</div>` : '<p class="empty-line" style="padding:8px 0">Aucune pièce reliée.</p>'}</td></tr>` : ''}`; }).join('')}</tbody></table></div>` : `<div class="pad">${empty('Aucun fournisseur', '')}</div>`}</div>
+    ${db.listes.fournArch.length ? `<details class="arch-sec"><summary>${icon('archive')}Fournisseurs archivés <span class="muted">${db.listes.fournArch.length}</span></summary>${[...db.listes.fournArch].sort(coll.compare).map(n => `<div class="arch-line"><span class="t">${esc(n)}</span><button class="btn small" data-act="four-unarch" data-name="${esc(n)}">Restaurer</button><button class="link danger" data-act="four-del" data-name="${esc(n)}">Supprimer</button></div>`).join('')}</details>` : ''}</section>`;
 };
 /* Relie chaque pièce aux fournisseurs dont le nom apparaît dans sa désignation ou ses notes (à appeler dans tx) */
 function linkFournisseurs(){
@@ -3076,9 +3221,7 @@ function fourDialog(name){
   const isNew = name == null;
   dialog({title: isNew ? 'Nouveau fournisseur' : 'Modifier le fournisseur',
     body:`<label>Nom<input name="nom" value="${esc(name || '')}" required placeholder="ex. SKF, Hydac, Brütsch Rüegger…"></label>`,
-    del: isNew ? null : {label:'Retirer de la liste', run(){
-      tx(() => db.listes.fournisseurs = db.listes.fournisseurs.filter(x => x !== name)); render(); toast(`« ${name} » retiré de la liste (les pièces gardent leur valeur)`);
-    }},
+    del: isNew ? null : {label:'Archiver', soft:true, run(){ ACT['four-arch']({name}); }},
     onSave(f){
       const n = val(f, 'nom'); if (!n) throw new Error('Indiquez un nom.');
       if (db.listes.fournisseurs.some(x => x !== name && norm(x) === norm(n))) throw new Error(`« ${n} » est déjà dans la liste.`);
@@ -3120,8 +3263,8 @@ OPT.etiquettes = () => `<section class="opt-sec"><div class="head"><h2>Étiquett
     <div><button class="btn primary">Enregistrer</button></div></form></section>`;
 OPT.donnees = () => `<section class="opt-sec"><div class="head"><h2>Sauvegarde</h2></div><div class="pad"><p>${CLOUD.on ? 'Les données sont dans la base partagée. Une copie de sauvegarde téléchargée de temps en temps reste une bonne précaution.' : 'Les données restent dans ce navigateur, sur ce poste. Exportez régulièrement une sauvegarde : elle permet de restaurer les données ou de les passer sur un autre ordinateur.'}</p>
     <div class="tools"><button class="btn primary" data-act="export-json">${icon('save')}Exporter la sauvegarde</button><button class="btn" data-act="import-json">Restaurer une sauvegarde…</button></div></div></section>
-  <section class="opt-sec"><div class="head"><h2>Exports pour Excel</h2></div><div class="pad"><p>Fichiers CSV (séparateur point-virgule) qui s’ouvrent directement dans Excel.</p>
-    <div class="tools"><button class="btn" data-act="export-csv-stock">Stock par emplacement</button><button class="btn" data-act="export-csv-int">Interventions</button><button class="btn" data-act="export-csv-kks">Liens pièces ↔ KKS</button></div></div></section>
+  <section class="opt-sec"><div class="head"><h2>Exports pour Excel</h2></div><div class="pad"><p>Fichiers Excel (.xlsx). Chaque liste (pièces, rapports, tâches, installation) s’exporte aussi depuis son menu « Plus », avec les filtres en cours.</p>
+    <div class="tools"><button class="btn" data-act="export-csv-stock">Stock par emplacement</button><button class="btn" data-act="export-csv-int">Rapports</button><button class="btn" data-act="export-csv-kks">Liens pièces ↔ KKS</button></div></div></section>
   <section class="opt-sec"><div class="head"><h2>Réinitialiser</h2></div><div class="pad"><p>${db.meta.demo ? 'Les données actuelles sont des exemples. Effacez-les pour commencer avec vos vraies données.' : (CLOUD.on ? 'Efface toutes les données de la base partagée, pour tout le monde.' : 'Efface toutes les pièces, emplacements, personnes, repères et rapports de ce navigateur.')}</p>
     <div class="tools">${db.meta.demo ? '<button class="btn" data-act="clear-demo">Effacer les exemples</button>' : '<button class="btn danger-ghost" data-act="clear-all">Tout effacer…</button>'}<button class="btn" data-act="load-demo">Recharger les exemples</button></div></div></section>`;
 VIEWS.options = {
@@ -3140,10 +3283,10 @@ function searchAll(raw){
   const m = q.match(/#(piece|lieu|int)=(.+)$/); if (m){ try { q = decodeURIComponent(m[2]); } catch(e){ q = m[2]; } }
   const n = norm(q), has = s => norm(s).includes(n);
   return {
-    pieces: db.pieces.filter(p => has([p.ref, p.designation, p.fabricant, p.refFab].join(' '))).slice(0, 6),
-    lieux: db.lieux.filter(l => has(lieuCode(l) + ' ' + (getSalle(l.salleId)?.nom || ''))).sort(lieuSort).slice(0, 5),
-    kks: db.kks.filter(k => has(`${k.code} ${k.designation} ${k.aic || ''}`)).slice(0, 5),
-    ints: db.interventions.filter(i => has(i.num + ' ' + i.titre)).slice(0, 4), q
+    pieces: db.pieces.filter(p => live(p) && has([p.ref, p.designation, p.fabricant, p.refFab].join(' '))).slice(0, 6),
+    lieux: db.lieux.filter(l => liveLieu(l) && has(lieuCode(l) + ' ' + (getSalle(l.salleId)?.nom || ''))).sort(lieuSort).slice(0, 5),
+    kks: db.kks.filter(k => live(k) && has(`${k.code} ${k.designation} ${k.aic || ''}`)).slice(0, 5),
+    ints: db.interventions.filter(i => live(i) && has(i.num + ' ' + i.titre)).slice(0, 4), q
   };
 }
 function renderSearch(){
@@ -3184,6 +3327,52 @@ document.addEventListener('keydown', e => {
   if (list && (e.key === 'ArrowDown' || e.key === 'ArrowUp')){ e.preventDefault(); const b = [...list.querySelectorAll('button')], i = b.indexOf(e.target); b[(i + (e.key === 'ArrowDown' ? 1 : b.length - 1)) % b.length].focus(); }
 });
 
+/* Scanner un QR code avec la caméra (téléphone ou PC) */
+let jsQRp = null;
+const loadJsQR = () => window.jsQR ? Promise.resolve() : jsQRp || (jsQRp = new Promise((ok, ko) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js'; sc.onload = ok; sc.onerror = () => { jsQRp = null; ko(new Error('Lecteur de QR indisponible (pas de connexion ?).')); }; document.head.append(sc); }));
+function openCode(raw){
+  const t = String(raw || '').trim(); if (!t) return false;
+  const m = t.match(/#(piece|lieu|int)=(.+)$/); let v = m ? m[2] : t; try { v = decodeURIComponent(v); } catch(e){}
+  const c = normCode(v);
+  const p = (!m || m[1] === 'piece') && (db.pieces.find(x => x.ref.toUpperCase() === c) || (!m ? null : findPiece(v)));
+  if (p){ go('pieces', p.id); return true; }
+  const l = (!m || m[1] === 'lieu') && findLieu(c); if (l){ go('lieux', l.id); return true; }
+  const k = !m && db.kks.find(x => x.code.replace(/\s+/g, '').toUpperCase() === c.replace(/\s+/g, '')); if (k){ go('kks', k.id); return true; }
+  const i = (!m || m[1] === 'int') && db.interventions.find(x => x.num.toUpperCase() === c); if (i){ go('interventions', i.id); return true; }
+  toast(`Code « ${v} » : rien trouvé.`, 'bad'); return false;
+}
+function scanDialog(){
+  let stream = null, raf = 0, done = false;
+  const d = dialog({title:'Scanner un QR code', saveLabel:'Fermer', body:`<div class="scanbox"><video playsinline muted></video><span class="scan-frame"></span></div><p class="hint" data-sm>Visez l’étiquette QR d’une pièce ou d’un emplacement.</p>
+      <label>Ou tapez le code<input name="code" placeholder="ID de pièce, emplacement, KKS ou n° de rapport" autocomplete="off"></label>`,
+    onSave(f){ const v = val(f, 'code'); if (!v) return; if (!openCode(v)) return false; },
+    async onOpen(f, dd){
+      const video = $('video', dd), msg = $('[data-sm]', dd), cv = document.createElement('canvas'), cx = cv.getContext('2d', {willReadFrequently:true});
+      dd.addEventListener('close', () => { done = true; cancelAnimationFrame(raf); stream?.getTracks().forEach(t => t.stop()); });
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) throw new Error('La caméra n’est pas disponible dans ce navigateur.');
+        stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}, audio:false});
+        if (done){ stream.getTracks().forEach(t => t.stop()); return; }
+        video.srcObject = stream; await video.play();
+        const det = 'BarcodeDetector' in window ? new BarcodeDetector({formats:['qr_code']}) : null;
+        if (!det) await loadJsQR();
+        const hit = txt => { if (done || !txt) return; done = true; dd.close(); openCode(txt); };
+        const tick = async () => {
+          if (done) return;
+          if (video.readyState >= 2){
+            try {
+              if (det){ const r = await det.detect(video); if (r[0]) return hit(r[0].rawValue); }
+              else { const w = cv.width = video.videoWidth, h = cv.height = video.videoHeight; cx.drawImage(video, 0, 0, w, h); const r = window.jsQR(cx.getImageData(0, 0, w, h).data, w, h, {inversionAttempts:'dontInvert'}); if (r) return hit(r.data); }
+            } catch(e){}
+          }
+          raf = requestAnimationFrame(tick);
+        };
+        tick();
+      } catch(e){ msg.textContent = (e.name === 'NotAllowedError' ? 'Accès à la caméra refusé. Autorisez-le dans le navigateur, ou tapez le code ci-dessous.' : e.message || 'Caméra indisponible.'); $('.scanbox', dd).hidden = true; }
+    }});
+  return d;
+}
+
 /* =====================================================================
    DIALOGUES
    ===================================================================== */
@@ -3192,7 +3381,7 @@ function dialog({title, body, onSave, saveLabel = 'Enregistrer', wide = false, d
   const d = document.createElement('dialog'); d.className = 'dlg' + (wide ? ' wide' : '');
   d.innerHTML = `<form novalidate><header><h2>${title}</h2><button type="button" class="icon-btn" data-close aria-label="Fermer">×</button></header>
     <div class="dlg-body">${body}</div><p class="dlg-err" hidden></p>
-    <footer>${del ? `<button type="button" class="btn danger-ghost left" data-del>${del.label}</button>` : ''}<button type="button" class="btn" data-close>Annuler</button><button type="submit" class="btn primary">${saveLabel}</button></footer></form>`;
+    <footer>${del ? `<button type="button" class="btn ${del.soft ? 'ghost' : 'danger-ghost'} left" data-del>${del.soft ? icon('archive') : ''}${del.label}</button>` : ''}<button type="button" class="btn" data-close>Annuler</button><button type="submit" class="btn primary">${saveLabel}</button></footer></form>`;
   document.body.append(d);
   const f = $('form', d), err = $('.dlg-err', d);
   const fail = e => { err.textContent = e.message; err.hidden = false; err.scrollIntoView({block:'nearest'}); };
@@ -3202,7 +3391,7 @@ function dialog({title, body, onSave, saveLabel = 'Enregistrer', wide = false, d
   if (del){
     const b = $('[data-del]', d); let armed = false;
     b.onclick = () => {
-      if (!armed){ armed = true; b.textContent = 'Confirmer la suppression'; b.classList.replace('danger-ghost', 'danger'); return; }
+      if (!armed && !del.soft){ armed = true; b.textContent = 'Confirmer la suppression définitive'; b.classList.replace('danger-ghost', 'danger'); return; }
       try { del.run(); d.close(); } catch(x){ fail(x); }
     };
   }
@@ -3254,11 +3443,11 @@ function pieceDialog(p, kksId){
       box.addEventListener('click', e => { const b = e.target.closest('[data-krm]'); if (b){ d._kks = d._kks.filter(id => id !== b.dataset.krm); draw(); } });
       draw();
     },
-    del: isNew ? null : {label:'Supprimer la pièce', run(){
+    del: isNew ? null : archDel('pieces', p, function(){
       if (usedInInterventions(p.id).length) throw new Error('Cette pièce figure dans des rapports d’intervention : elle ne peut pas être supprimée.');
       tx(() => { db.pieces = db.pieces.filter(x => x.id !== p.id); db.mouvements = db.mouvements.filter(m => m.pieceId !== p.id); });
       S.sel.pieces = null; render(); toast('Pièce supprimée');
-    }},
+    }),
     onSave(f, d){
       if (!d._kadd()) throw new Error('Un repère KKS saisi n’existe pas dans la liste.');
       const ref = isNew ? nextRef() : p.ref, designation = val(f, 'designation'), min = val(f, 'stockMin');
@@ -3345,10 +3534,10 @@ function salleDialog(s){
     body:`<label>Code du local<input name="code" value="${esc(isNew ? '' : salleCode(v))}" placeholder="ex. E1.13, S1.12 ou un nom (Atelier électrique)" required></label>
       <label>Nom (facultatif)<input name="nom" value="${esc(v.nom)}" placeholder="ex. Magasin pièces mécaniques"></label>
       <label class="toggle"><input type="checkbox" name="statut" ${v.statut ? 'checked' : ''}> Hors magasin : statut (en prêt, en révision, en attente…) et non un local physique</label>`,
-    del: isNew ? null : {label:'Supprimer le local', run(){
+    del: isNew ? null : archDel('salles', s, function(){
       if (db.lieux.some(l => l.salleId === s.id)) throw new Error('Supprimez d’abord les emplacements de ce local.');
       tx(() => db.salles = db.salles.filter(x => x.id !== s.id)); render(); toast('Local supprimé');
-    }},
+    }),
     onSave(f){
       const raw = val(f, 'code').replace(/\s+/g, ' '); if (!raw) throw new Error('Indiquez le code ou le nom du local.');
       if (/\//.test(raw)) throw new Error('Le code du local ne peut pas contenir « / ».');
@@ -3374,12 +3563,12 @@ function lieuDialog(l, salleId){
       const prev = () => { const s = getSalle(val(f, 'salleId')); const ch = val(f, 'chemin').split('/').map(x => x.trim()).filter(Boolean); $('[data-prev]', d).textContent = (s ? salleCode(s) : '?') + (ch.length ? ' / ' + ch.join(' / ') : ''); };
       f.addEventListener('input', prev); f.addEventListener('change', prev); prev();
     },
-    del: isNew ? null : {label:'Supprimer', run(){
+    del: isNew ? null : archDel('lieux', l, function(){
       if (db.pieces.some(p => p.stock.some(s => s.lieuId === l.id && s.qte > 0))) throw new Error('Cet emplacement contient du stock. Déplacez-le avant de supprimer.');
       if (db.interventions.some(i => i.pieces.some(x => x.lieuId === l.id))) throw new Error('Cet emplacement est cité dans des rapports d’intervention.');
       tx(() => { db.lieux = db.lieux.filter(x => x.id !== l.id); db.pieces.forEach(p => p.stock = p.stock.filter(s => s.lieuId !== l.id)); db.mouvements = db.mouvements.filter(m => m.lieuId !== l.id); });
       S.sel.lieux = null; render(); toast('Emplacement supprimé');
-    }},
+    }),
     onSave(f){
       const data = {salleId:val(f, 'salleId'), chemin:val(f, 'chemin').split('/').map(x => x.trim()).filter(Boolean), note:val(f, 'note')};
       const code = lieuCode(data);
@@ -3647,7 +3836,7 @@ function combo(input, {items, onPick, keep = true, max = 60}){
   input.closest('.dlg-body')?.addEventListener('scroll', close);
   return {close, open: draw};
 }
-const pieceItems = () => [...db.pieces].sort((a, b) => coll.compare(a.ref, b.ref)).map(p => { const mp = mainPlace(p); return {id:p.id, key:p.ref, label:pieceLabel(p), search:[p.ref, p.designation, p.fabricant, p.refFab].join(' '), html:`<span class="ref">${esc(p.ref)}</span> ${esc(p.designation)}`, right:`<span class="qty">${num(total(p))} ${esc(p.unite)}</span>${mp ? ' · ' + esc(lieuCode(mp)) : ''}`}; });
+const pieceItems = () => db.pieces.filter(live).sort((a, b) => coll.compare(a.ref, b.ref)).map(p => { const mp = mainPlace(p); return {id:p.id, key:p.ref, label:pieceLabel(p), search:[p.ref, p.designation, p.fabricant, p.refFab].join(' '), html:`<span class="ref">${esc(p.ref)}</span> ${esc(p.designation)}`, right:`<span class="qty">${num(total(p))} ${esc(p.unite)}</span>${mp ? ' · ' + esc(lieuCode(mp)) : ''}`}; });
 
 /* ---------- Interventions ---------- */
 function interventionDialog(it, kksId, tache){
@@ -3656,7 +3845,7 @@ function interventionDialog(it, kksId, tache){
   const v = it || (tache ? {num:nextNum(), date:todayISO(), type:db.listes.types.find(x => /pr[ée]ventive/i.test(x)) || db.listes.types[0] || '', statut:'terminee', kksId:tache.kksId, titre:tache.titre, constat:tache.description, travaux:'', duree:'', intervenants:tache.assign?.type === 'personne' && getPers(tache.assign.v) ? [tache.assign.v] : [], pieces:[]}
     : {num:nextNum(), date:todayISO(), type:db.listes.types[0] || '', statut:'ouverte', kksId:kksId || '', titre:'', constat:'', travaux:'', duree:'', intervenants:[], pieces:[]});
   const k = getKks(v.kksId);
-  const people = db.personnes.filter(p => p.actif !== false || v.intervenants.includes(p.id)).sort(persSort);
+  const people = db.personnes.filter(p => (p.actif !== false && live(p)) || v.intervenants.includes(p.id)).sort(persSort);
   const snapFor = id => (it?.snap?.[id]) || (getPers(id) ? persSnap(getPers(id)) : {nom:'(supprimé)', prenom:'', groupe:''});
   const recents = [...new Set(db.interventions.slice().sort((a, b) => b.date.localeCompare(a.date)).flatMap(i => i.intervenants))].filter(id => people.some(p => p.id === id)).slice(0, 12);
   const tabsP = [...(recents.length ? [['__r', 'Récents']] : []), ...db.listes.groupes.filter(g => people.some(p => p.groupe === g)).map(g => [g, g]), ...(people.some(p => !p.groupe) ? [['', 'Sans groupe']] : [])];
@@ -3673,10 +3862,10 @@ function interventionDialog(it, kksId, tache){
         <div class="ptabs" role="tablist">${tabsP.map(([k, t], i) => `<button type="button" role="tab" data-ptab="${esc(k)}" aria-selected="${i === 0}">${esc(t)}</button>`).join('')}</div>
         <div class="pgrid" data-pgrid></div>` : '<p class="hint">Aucune personne enregistrée.</p>'}</fieldset>
       <fieldset><legend>Pièces consommées</legend><div class="plines"></div><div class="tools"><button type="button" class="btn ghost small" data-addline>${icon('plus')}Ajouter une pièce</button></div><p class="hint">Les quantités sont retirées du stock à l’enregistrement ; modifier ou supprimer une ligne remet la différence en stock.</p></fieldset>`,
-    del: isNew ? null : {label:'Supprimer le rapport', run(){
+    del: isNew ? null : archDel('interventions', it, function(){
       tx(() => { it.pieces.forEach(x => { const p = getPiece(x.pieceId); if (p && getLieu(x.lieuId)) addStock(p, x.lieuId, x.qte, 'Annulation intervention', it.num); }); db.interventions = db.interventions.filter(i => i !== it); });
       S.sel.interventions = null; render(); toast('Rapport supprimé, pièces remises en stock');
-    }},
+    }),
     onOpen(f, d){
       d._pers = new Set(v.intervenants); d._snap = snapFor;
       const sel = $('[data-psel]', d), grid = $('[data-pgrid]', d);
@@ -3808,11 +3997,11 @@ function kksDialog(k){
       <label>Code AIC <span class="muted">(facultatif)</span><input name="aic" value="${esc(v.aic || '')}" placeholder="ex. 14 DF J1" style="font-family:var(--f-mono)"></label>
       <p class="preview-code">Système : <span data-zone></span></p>`,
     onOpen(f, d){ const u = () => $('[data-zone]', d).textContent = sysLabel(val(f, 'code')) || '—'; f.addEventListener('input', u); u(); },
-    del: isNew ? null : {label:'Supprimer', run(){
+    del: isNew ? null : archDel('kks', k, function(){
       if (db.interventions.some(i => i.kksId === k.id)) throw new Error('Cet équipement est utilisé dans des rapports d’intervention.');
       tx(() => { db.kks = db.kks.filter(x => x !== k); db.pieces.forEach(p => p.kks = p.kks.filter(id => id !== k.id)); });
       S.sel.kks = null; render(); toast('Équipement supprimé');
-    }},
+    }),
     onSave(f){
       const code = normCode(val(f, 'code')), designation = val(f, 'designation'), aic = val(f, 'aic');
       if (!code) throw new Error('Indiquez le code KKS.');
@@ -3850,9 +4039,9 @@ function persDialog(p){
     body:`<div class="grid2"><label>Nom<input name="nom" value="${esc(v.nom)}" required></label><label>Prénom (facultatif)<input name="prenom" value="${esc(v.prenom || '')}"></label></div>
       <label>Groupe<select name="groupe">${optList(db.listes.groupes, v.groupe, '—')}</select></label>
       ${v.src === 'planning' ? '<p class="hint">Personne reprise du Planning Tridel : son groupe est remis à jour automatiquement depuis le planning.</p>' : ''}`,
-    del: isNew ? null : {label:'Supprimer', run(){
+    del: isNew ? null : archDel('personnes', p, function(){
       tx(() => db.personnes = db.personnes.filter(x => x !== p)); render(); toast('Personne supprimée');
-    }},
+    }),
     onSave(f){
       const data = {prenom:val(f, 'prenom'), nom:val(f, 'nom'), groupe:val(f, 'groupe')};
       if (!data.nom) throw new Error('Indiquez le nom.');
@@ -3884,14 +4073,71 @@ function download(name, text, type){
 }
 const csvCell = v => { const s = String(v ?? ''); return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
 const csv = rows => '﻿' + rows.map(r => r.map(csvCell).join(';')).join('\r\n');
+/* Fichier Excel (.xlsx) écrit directement, sans bibliothèque externe */
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++){ let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = b => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC_T[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+function zipStore(files){
+  const enc = new TextEncoder(), parts = [], cen = []; let off = 0;
+  for (const f of files){
+    const nm = enc.encode(f.name), d = enc.encode(f.text), c = crc32(d);
+    const h = new DataView(new ArrayBuffer(30)); h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(12, 0x21, true); h.setUint32(14, c, true); h.setUint32(18, d.length, true); h.setUint32(22, d.length, true); h.setUint16(26, nm.length, true);
+    parts.push(new Uint8Array(h.buffer), nm, d);
+    const ch = new DataView(new ArrayBuffer(46)); ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(14, 0x21, true); ch.setUint32(16, c, true); ch.setUint32(20, d.length, true); ch.setUint32(24, d.length, true); ch.setUint16(28, nm.length, true); ch.setUint32(42, off, true);
+    cen.push(new Uint8Array(ch.buffer), nm);
+    off += 30 + nm.length + d.length;
+  }
+  const size = cen.reduce((a, b) => a + b.length, 0);
+  const e = new DataView(new ArrayBuffer(22)); e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, size, true); e.setUint32(16, off, true);
+  return new Blob([...parts, ...cen, new Uint8Array(e.buffer)], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+function downloadXlsx(name, sheet, rows){
+  const x = v => String(v ?? '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '').replace(/[&<>"]/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;'}[c]));
+  const col = i => { let r = ''; i++; while (i){ const m = (i - 1) % 26; r = String.fromCharCode(65 + m) + r; i = Math.floor((i - 1) / 26); } return r; };
+  const widths = rows[0].map((_, i) => Math.min(60, Math.max(8, ...rows.slice(0, 400).map(r => String(r[i] ?? '').split('\n')[0].length + 2))));
+  const data = rows.map((r, ri) => `<row r="${ri + 1}">${r.map((v, ci) => { const ref = col(ci) + (ri + 1), st = ri === 0 ? ' s="1"' : ''; return typeof v === 'number' && isFinite(v) ? `<c r="${ref}"${st}><v>${v}</v></c>` : v === '' || v == null ? '' : `<c r="${ref}" t="inlineStr"${st}><is><t xml:space="preserve">${x(v)}</t></is></c>`; }).join('')}</row>`).join('');
+  const NS = 'xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"', H = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  const files = [
+    {name:'[Content_Types].xml', text:`${H}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`},
+    {name:'_rels/.rels', text:`${H}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`},
+    {name:'xl/workbook.xml', text:`${H}<workbook ${NS} xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${x(String(sheet).replace(/[\[\]:*?\/\\]/g, ' ').slice(0, 31))}" sheetId="1" r:id="rId1"/></sheets></workbook>`},
+    {name:'xl/_rels/workbook.xml.rels', text:`${H}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`},
+    {name:'xl/styles.xml', text:`${H}<styleSheet ${NS}><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE6EFE8"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`},
+    {name:'xl/worksheets/sheet1.xml', text:`${H}<worksheet ${NS}><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${widths.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('')}</cols><sheetData>${data}</sheetData></worksheet>`}];
+  const a = document.createElement('a'); a.href = URL.createObjectURL(zipStore(files)); a.download = name;
+  document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+const xlName = what => `triflow-${what}-${todayISO()}.xlsx`;
+function xlPieces(){
+  const rows = filteredPieces(), out = [['ID', 'Désignation', 'Marque', 'Réf. marque', 'Fournisseur', 'Emplacement principal', 'Autres emplacements', 'En magasin', 'Unité', 'Stock minimum', 'Équipements (KKS)', 'Notes']];
+  for (const p of rows){ const ls = sortedStock(p).map(x => getLieu(x.lieuId)).filter(Boolean), mp = mainPlace(p); out.push([/^\d+$/.test(p.ref) ? +p.ref : p.ref, p.designation, p.fabricant || '', p.refFab || '', p.fournisseur || '', mp ? lieuCode(mp) : '', ls.filter(l => l !== mp).map(lieuCode).join(', '), dispo(p), p.unite || '', p.stockMin || '', p.kks.map(id => getKks(id)?.code).filter(Boolean).join(', '), p.notes || '']); }
+  downloadXlsx(xlName(S.arch.pieces ? 'pieces-archivees' : 'pieces'), 'Pièces', out); toast(`${rows.length} pièce(s) exportée(s)`);
+}
+function xlInts(){
+  const rows = filteredInts(), out = [['N°', 'Date', 'Type', 'Statut', 'Titre', 'Repère KKS', 'Équipement', 'Intervenants', 'Durée (h)', 'Constat', 'Travaux', 'Pièces consommées']];
+  for (const i of rows){ const k = kInfo(i); out.push([i.num, fmtD(i.date), i.type || '', (STATUTS[i.statut] || [i.statut])[0], i.titre, k ? k.code : '', k ? k.designation : '', intPers(i).map(persName).join(', '), i.duree ? +i.duree : '', i.constat || '', i.travaux || '', i.pieces.map((x, n) => { const s = lineInfo(x, i); return `${x.qte} × ${s.ref} ${s.designation}`; }).join('\n')]); }
+  downloadXlsx(xlName('rapports'), 'Rapports', out); toast(`${rows.length} rapport(s) exporté(s)`);
+}
+function xlTaches(){
+  const rows = filteredTaches(), out = [['Tâche', 'Repère KKS', 'Équipement', 'Pour', 'Fréquence', 'Prochaine fois', 'Dernière fois', 'Ce qu’il faut faire']];
+  for (const t of rows){ const k = getKks(t.kksId); out.push([t.titre, k ? k.code : '', k ? k.designation : '', assignLabel(t.assign), freqLabel(t.freq), t.actif === false ? 'Faite' : fmtD(t.prochaine), t.derniere ? fmtD(t.derniere) : '', t.description || '']); }
+  downloadXlsx(xlName('taches'), 'Tâches', out); toast(`${rows.length} tâche(s) exportée(s)`);
+}
+function xlKks(){
+  const q = norm(S.q.kks), cur = S.sys && S.sys !== '?' ? S.sys : '';
+  const rows = db.kks.filter(k => S.arch.kks ? k.arch : live(k)).filter(k => q ? norm(`${k.code} ${k.designation} ${k.aic || ''}`).includes(q) : !cur || (sysEff(k.code) || '').startsWith(cur)).sort(kksSort);
+  const out = [['Code KKS', 'Désignation', 'AIC', 'Système', 'Pièces liées', 'Rapports']];
+  const np = new Map(), ni = new Map(); for (const p of db.pieces) if (live(p)) for (const id of p.kks) np.set(id, (np.get(id) || 0) + 1); for (const i of db.interventions) if (live(i) && i.kksId) ni.set(i.kksId, (ni.get(i.kksId) || 0) + 1);
+  for (const k of rows) out.push([k.code, k.designation, k.aic || '', sysLabel(k.code) || '', np.get(k.id) || 0, ni.get(k.id) || 0]);
+  downloadXlsx(xlName(cur ? 'installation-' + cur : 'installation'), cur ? 'Installation ' + cur : 'Installation', out); toast(`${rows.length} équipement(s) exporté(s)`);
+}
 function exportStock(){
   const rows = [["ID", 'Désignation', 'Catégorie', 'Marque', 'Réf. marque', 'Fournisseur', 'Emplacement', 'Salle', 'Quantité', 'Unité', 'Stock total', 'Stock minimum', 'Repères KKS']];
-  for (const p of [...db.pieces].sort((a, b) => coll.compare(a.ref, b.ref))){
+  for (const p of db.pieces.filter(live).sort((a, b) => coll.compare(a.ref, b.ref))){
     const kk = p.kks.map(id => getKks(id)?.code).filter(Boolean).join(', ');
     const lines = p.stock.length ? p.stock : [null];
     for (const s of lines){ const l = s && getLieu(s.lieuId); rows.push([p.ref, p.designation, p.categorie, p.fabricant, p.refFab, p.fournisseur || p.fabricant, l ? lieuCode(l) : '', l ? getSalle(l.salleId)?.nom : '', s ? s.qte : '', p.unite, total(p), p.stockMin || '', kk]); }
   }
-  download(`triflow-stock-${todayISO()}.csv`, csv(rows), 'text/csv;charset=utf-8'); toast('Export du stock téléchargé');
+  downloadXlsx(xlName('stock'), 'Stock', rows); toast('Export du stock téléchargé');
 }
 function exportInts(){
   const rows = [['N°', 'Date', 'Type', 'Statut', 'Titre', 'Repère KKS', 'Équipement', 'Zone', 'Intervenants', 'Durée (h)', 'Constat', 'Travaux', 'Pièces consommées']];
@@ -3899,7 +4145,7 @@ function exportInts(){
     const k = kInfo(i);
     rows.push([i.num, fmtD(i.date), i.type || '', STATUTS[i.statut]?.[0] || '', i.titre, k?.code || '', k?.designation || '', k ? sysLabel(k.code) : '', intPers(i).map(snapLabel).join(', '), i.duree, i.constat, i.travaux, i.pieces.map(x => { const s = lineInfo(x, i); return `${num(x.qte)} × ${s.ref || '?'} ${s.designation} (${s.lieu})`; }).join(', ')]);
   }
-  download(`triflow-rapports-${todayISO()}.csv`, csv(rows), 'text/csv;charset=utf-8'); toast('Export des interventions téléchargé');
+  downloadXlsx(xlName('rapports'), 'Rapports', rows); toast('Export des rapports téléchargé');
 }
 function exportKksLinks(){
   const rows = [['Repère KKS', 'Équipement', "Système", "ID pièce", 'Désignation pièce', 'Stock']];
@@ -3908,13 +4154,25 @@ function exportKksLinks(){
     if (!ps.length) rows.push([k.code, k.designation, sysLabel(k.code), '', '', '']);
     ps.forEach(p => rows.push([k.code, k.designation, sysLabel(k.code), p.ref, p.designation, total(p)]));
   }
-  download(`triflow-kks-pieces-${todayISO()}.csv`, csv(rows), 'text/csv;charset=utf-8'); toast('Export des liens téléchargé');
+  downloadXlsx(xlName('kks-pieces'), 'Pièces et KKS', rows); toast('Export des liens téléchargé');
 }
 
 /* =====================================================================
    ÉVÉNEMENTS
    ===================================================================== */
 const ACT = {
+  scan: () => scanDialog(),
+  dups: () => dupDialog(),
+  'xl-pieces': () => xlPieces(),
+  'xl-ints': () => xlInts(),
+  'xl-taches': () => xlTaches(),
+  'xl-kks': () => xlKks(),
+  arch(d){ const x = get(d.col, d.id); if (!x) return; try { archiveItem(d.col, x); } catch(e){ toast(e.message, 'bad'); } },
+  unarch(d){ const x = get(d.col, d.id); if (x) unarchiveItem(d.col, x); },
+  'arch-view'(d){ S.arch[d.v] = !S.arch[d.v]; S.sel[d.v] = null; render(); window.scrollTo(0, 0); },
+  'four-arch'(d){ tx(() => { db.listes.fournisseurs = db.listes.fournisseurs.filter(x => x !== d.name); if (!db.listes.fournArch.includes(d.name)) db.listes.fournArch.push(d.name); }); S.fourOpen = null; render(); toast(`« ${d.name} » archivé (les pièces gardent leur valeur)`); },
+  'four-unarch'(d){ tx(() => { db.listes.fournArch = db.listes.fournArch.filter(x => x !== d.name); if (!db.listes.fournisseurs.includes(d.name)) db.listes.fournisseurs.push(d.name); db.listes.fournisseurs.sort(coll.compare); }); render(); toast(`« ${d.name} » restauré`); },
+  'four-del'(d){ confirmDialog('Supprimer le fournisseur', `« ${esc(d.name)} » sera retiré définitivement de la liste. Les pièces gardent le nom écrit dans leur fiche.`, 'Supprimer', () => { tx(() => { db.listes.fournArch = db.listes.fournArch.filter(x => x !== d.name); }); render(); }); },
   menu(d, t){
     const l = t.nextElementSibling, open = l.hidden; closeMenus(l); l.hidden = !open; t.setAttribute('aria-expanded', String(open));
     if (!open) return;
@@ -3940,6 +4198,7 @@ const ACT = {
     S.sys = c; S.sysAuto = null; if (S.view !== 'kks') go('kks'); else { fillList(); fillDetail(); scrollDetail(); } },
   kgrp(d){ S.grpOpen.has(d.g) ? S.grpOpen.delete(d.g) : S.grpOpen.add(d.g); fillDetail(); },
   'sys-tog'(d){ const c = d.sys; if (S.sysExp.has(c)){ S.sysExp.delete(c); for (const x of [...S.sysExp]) if (x.startsWith(c)) S.sysExp.delete(x); } else S.sysExp.add(c); fillList(); },
+  'k-all'(d){ S.kAll = S.kAll === d.id ? null : d.id; fillDetail(); },
   'kks-back'(){ S.sel.kks = null; fillList(); fillDetail(); },
   'zone-clear'(){ S.zone = ''; render(); },
   opt(d){ S.opt = d.sec; go('options'); },
@@ -4062,7 +4321,7 @@ document.addEventListener('submit', e => {
 document.addEventListener('input', e => {
   const k = e.target.dataset?.search; if (!k) return; S.q[k] = e.target.value;
   if (e.target.dataset.opt4){ render(); const i = document.querySelector('[data-opt4]'); if (i){ i.focus(); i.setSelectionRange(i.value.length, i.value.length); } return; }
-  if (e.target.dataset.opt){ const q = norm(S.q.optkks); $('#opt-list').innerHTML = optKksTable(db.kks.filter(x => !q || norm(`${x.code} ${x.designation} ${x.aic || ''}`).includes(q)).sort(kksSort)); }
+  if (e.target.dataset.opt){ const q = norm(S.q.optkks); $('#opt-list').innerHTML = optKksTable(db.kks.filter(x => live(x) && (!q || norm(`${x.code} ${x.designation} ${x.aic || ''}`).includes(q))).sort(kksSort)); }
   else fillList();
 });
 document.addEventListener('change', e => {
