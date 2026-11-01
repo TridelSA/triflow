@@ -2642,7 +2642,7 @@ let db = CLOUD.cfg().url ? migrate(blank()) : load();
 if (!db){ db = seed(); save(); }
 
 /* ---------------- État d'affichage ---------------- */
-const S = {pour:'', tvue:'afaire', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:'', optfour:''}, lowOnly:false, zeroOnly:false, psort:'iddesc', plimit:300, back:[], statut:'toutes', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux', arch:{}};
+const S = {pour:'', tvue:'afaire', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:'', optfour:''}, lowOnly:false, zeroOnly:false, psort:'iddesc', plimit:300, rlimit:300, back:[], statut:'toutes', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux', arch:{}};
 
 function toast(msg, kind = ''){
   const t = $('#toast'); t.textContent = msg; t.className = 'show ' + kind;
@@ -3024,7 +3024,7 @@ VIEWS.interventions = {
     if (!db.interventions.length) return empty('Aucun rapport', '<p>Créez le premier avec « Nouveau rapport ».</p>');
     if (!rows.length && S.arch.interventions) return empty('Aucun rapport archivé', '');
     if (!rows.length) return empty(S.statut === 'actives' ? 'Aucun rapport en cours' : 'Aucun rapport ne correspond', S.statut !== 'toutes' ? `<p><button class="btn small" data-act="int-all">Afficher les ${db.interventions.length} rapports</button></p>` : '');
-    return `<div class="list-bar"><span class="muted">${rows.length} rapport(s)</span></div><div class="plist">${rows.slice(0, 400).map(i => { const k = kInfo(i); return `<button class="prow ${S.sel.interventions === i.id ? 'sel' : ''}" data-act="select" data-id="${i.id}">
+    return `<div class="list-bar"><span class="muted">${rows.length} rapport(s)${rows.length > S.rlimit ? ` · ${S.rlimit} affichés` : ''}</span><span class="lb-r"><label>Afficher<select class="mini" data-change="rlimit" aria-label="Nombre de rapports affichés">${[[300, '300'], [500, '500'], [1000, '1000'], [1e9, 'Tous']].map(([v, t]) => `<option value="${v}" ${S.rlimit === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label></span></div><div class="plist">${rows.slice(0, S.rlimit).map(i => { const k = kInfo(i); return `<button class="prow ${S.sel.interventions === i.id ? 'sel' : ''}" data-act="select" data-id="${i.id}">
         <span class="pm"><span class="pdes">${esc(i.titre)}</span><span class="ploc"><span class="pid">${fmtD(i.date)}</span>${k ? `<span class="kks">${esc(k.code)}</span>` : ''}${i.type ? `<span class="muted">${esc(i.type)}</span>` : ''}</span></span>
         ${i.statut !== 'terminee' ? statutChip(i.statut) : ''}</button>`; }).join('')}${rows.length > 400 ? `<p class="list-note">${rows.length - 400} autre(s) : utilisez la recherche.</p>` : ''}</div>`;
   },
@@ -3646,13 +3646,14 @@ function ensureLieu(codeTxt){
 /* Import des travaux CareOffice : travaux faits -> rapports terminés (figés), travaux à faire / récurrents -> tâches */
 function importTravauxDialog(){
   dialog({title:'Importer les travaux depuis CareOffice', saveLabel:'Importer', wide:true,
-    body:`<p>Choisissez le fichier <span class="mono">travaux-triflow.json</span>. Les travaux réalisés deviennent des <strong>rapports terminés</strong> (figés tels quels) ; les travaux récurrents ou encore à faire deviennent des <strong>tâches</strong>. Un rapport ou une tâche déjà importé n’est pas créé deux fois.</p>
+    body:`<p>Choisissez le fichier <span class="mono">travaux-triflow.json</span>. Les travaux réalisés deviennent des <strong>rapports terminés</strong> (figés tels quels) ; les travaux récurrents ou encore à faire deviennent des <strong>tâches</strong> (celles qui ne sont plus planifiées dans CareOffice vont directement dans les archives). Un rapport ou une tâche déjà importé n’est pas créé deux fois.</p>
       <label>Fichier<input type="file" name="file" accept=".json,application/json"></label><p class="hint" data-prev></p>`,
     onOpen(f, d){ f.elements.file.addEventListener('change', async () => { try { const j = JSON.parse(await f.elements.file.files[0].text()); d._data = j; $('[data-prev]', d).textContent = `${(j.rapports || []).length} rapport(s) et ${(j.taches || []).length} tâche(s), dont ${(j.taches || []).filter(t => t.freq.unite !== 'once').length} récurrente(s).`; } catch(e){ d._data = null; $('[data-prev]', d).textContent = 'Fichier illisible.'; } }); },
     onSave(f, d){
       const j = d._data; if (!j || !Array.isArray(j.rapports)) throw new Error('Choisissez le fichier travaux-triflow.json.');
       const n0 = s => norm(s).replace(/[^a-z ]/g, '').trim();
-      const pers = name => { const nn = n0(name); return db.personnes.filter(p => p.nom).sort((a, b) => b.nom.length - a.nom.length).find(p => { const pn = n0(p.nom); return nn === pn || nn.startsWith(pn + ' ') || nn.endsWith(' ' + pn); }); };
+      const PS = db.personnes.filter(p => p.nom).sort((a, b) => b.nom.length - a.nom.length).map(p => [p, n0(p.nom)]), pm = new Map();
+      const pers = name => { const nn = n0(name); if (!pm.has(nn)) pm.set(nn, (PS.find(([, pn]) => nn === pn || nn.startsWith(pn + ' ') || nn.endsWith(' ' + pn)) || [])[0]); return pm.get(nn); };
       const kByCode = new Map(db.kks.map(k => [k.code.replace(/\s+/g, '').toUpperCase(), k]));
       const kOf = code => kByCode.get(String(code || '').replace(/\s+/g, '').toUpperCase());
       let nr = 0, nt = 0;
@@ -3662,11 +3663,12 @@ function importTravauxDialog(){
           let ex = db.taches.find(x => x.coKey === t.key);
           const k = kOf(t.kks), p = t.inter && t.inter.length ? pers(t.inter[0]) : null;
           const desc = [t.description, !k && t.kks ? `Équipement CareOffice : ${t.kks} ${t.obj || ''}`.trim() : '', t.inter && t.inter.length && !p ? `Intervenant CareOffice : ${t.inter.join(', ')}` : ''].filter(Boolean).join('\n\n');
-          if (!ex){ ex = {id:uid(), coKey:t.key, titre:t.titre || '(sans titre)', description:desc, kksId:k ? k.id : '', assign:p ? {type:'personne', v:p.id} : {type:'groupe', v:''}, freq:t.freq, prochaine:t.prochaine, actif:true, ...(t.derniere ? {derniere:t.derniere} : {})}; db.taches.push(ex); nt++; }
+          if (!ex){ ex = {id:uid(), coKey:t.key, titre:t.titre || '(sans titre)', description:desc, kksId:k ? k.id : '', assign:p ? {type:'personne', v:p.id} : {type:'groupe', v:''}, freq:t.freq, prochaine:t.prochaine, actif:true, ...(t.derniere ? {derniere:t.derniere} : {}), ...(t.arch ? {arch:todayISO()} : {})}; db.taches.push(ex); nt++; }
           tKey.set(t.key, ex);
         }
+        const have = new Set(db.interventions.map(i => i.num));
         for (const r of j.rapports){
-          if (db.interventions.some(i => i.num === r.num)) continue;
+          if (have.has(r.num)) continue; have.add(r.num);
           const k = kOf(r.kks), ids = [], snap = {};
           for (const name of r.inter || []){ const p = pers(name); const id = p ? p.id : 'ext:' + n0(name).replace(/ /g, '-'); if (ids.includes(id)) continue; ids.push(id); snap[id] = p ? persSnap(p) : {nom:name, prenom:'', groupe:'Externe'}; }
           if (r.type && !db.listes.types.includes(r.type)) db.listes.types.push(r.type);
@@ -3676,7 +3678,7 @@ function importTravauxDialog(){
           nr++;
         }
       });
-      S.statut = 'toutes'; render(); toast(`${nr} rapport(s) et ${nt} tâche(s) importés`);
+      S.statut = 'toutes'; render(); toast(`${nr} rapport(s) et ${nt} tâche(s) importés${(j.taches || []).some(t => t.arch) ? ' · les tâches arrêtées dans CareOffice sont dans les archives' : ''}`);
     }});
 }
 function importPiecesDialog(){
@@ -4330,6 +4332,7 @@ document.addEventListener('change', e => {
   if (c === 'statut') S.statut = e.target.value;
   if (c === 'psort'){ S.psort = e.target.value; fillList(); return; }
   if (c === 'plimit'){ S.plimit = +e.target.value; fillList(); return; }
+  if (c === 'rlimit'){ S.rlimit = +e.target.value; fillList(); return; }
   if (c === 'zone') S.zone = e.target.value;
   if (c === 'pour'){ S.pour = e.target.value; }
   if (c === 'optGrp'){ S.optGrp = e.target.value; render(); return; }
