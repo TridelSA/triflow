@@ -1036,15 +1036,15 @@ tr.grp.old th{color:var(--muted)}
 .xtbl .xd{color:#0000FF;font-size:13pt;font-weight:700;text-align:center;border:1.5pt solid #000;border-bottom:.5pt solid #000}
 .xtbl .xd2{font-size:9pt;font-weight:400;text-align:center;border:1.5pt solid #000;border-top:0}
 .xtbl .xn{text-align:left;font-weight:700;font-size:12pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:1.5pt solid #000;border-right:1.5pt solid #000}
-.xtbl td.xc{border-left:1.5pt solid #000;border-right:1.5pt solid #000;height:6.2mm}
+.xtbl td.xc{border-left:1.5pt solid #000;border-right:1.5pt solid #000;height:40px}
 .xtbl td.xcode{text-align:center;font-weight:700}
-.xtbl td.xw{background:#fff;vertical-align:top;font-size:10.5pt;line-height:1.25}
+.xtbl td.xw{background:#fff;vertical-align:middle;text-align:center;font-size:10.5pt;line-height:1.25}
 .xtbl .xtag{float:right;margin:0 0 .5mm 1.5mm;padding:0 1.4mm;font-size:8.5pt;font-weight:700;border:.5pt solid #000}
 .xtbl .xi + .xi{margin-top:.6mm}
 .xtbl .xk{font-family:var(--f-mono);font-size:8.5pt}
 .xtbl tr.xg > *{border-top:1.5pt solid #000}
 .xtbl tr.xsep td{height:2.2mm;padding:0;background:#fff;border-left:0;border-right:0}
-.xtbl tr.xo th,.xtbl tr.xo td{height:9mm}
+.xtbl tr.xo th,.xtbl tr.xo td{height:40px}
 .xtbl tbody tr:last-child > *{border-bottom:1.5pt solid #000}
 .xls .xf{margin-top:2mm;font-size:8pt;color:#555}
 .nav-sep{width:1px;align-self:stretch;margin:6px 4px;background:rgba(255,255,255,.2)}
@@ -3923,7 +3923,7 @@ function planSheetHTML(){
   const cell = (w, d, p) => { const pr = p ? presOf(p, d) : null, code = pr ? pr.code || '' : '', its = items(w, d);
     if (!p) return `<td class="xc xw">${its}</td>`;
     const [bg, fg] = xlsCode(code);
-    return its ? `<td class="xc xw">${code ? `<span class="xtag" style="background:${bg};color:${fg}">${esc(code)}</span>` : ''}${its}</td>` : `<td class="xc xcode" style="background:${bg};color:${fg}">${esc(code)}</td>`; };
+    return its ? `<td class="xc xw">${its}</td>` : `<td class="xc xcode" style="background:${bg};color:${fg}">${esc(code)}</td>`; };
   let body = '', lg, lastEq = null;
   for (const p of ppl){
     const g = p.groupe || '', eq = g === 'Équipe' ? EQUIPE_NO[String(p.nom).toUpperCase()] || '' : '';
