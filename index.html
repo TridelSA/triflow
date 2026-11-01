@@ -638,6 +638,9 @@ dialog.dlg::backdrop{background:rgba(12,18,21,.55)}
   h1{font-size:1.6rem}
   .search{max-width:none;flex-basis:100%}
   .page-head .tools{flex-basis:100%;justify-content:flex-start}
+  .page-head{position:relative}
+  .page-head .tools > .menu:last-child{position:absolute;top:0;right:0}
+  .page-head .tools > .menu:last-child > .btn{min-height:38px}
   .quick{grid-template-columns:minmax(0,1fr)}
   .syn-flow{grid-template-columns:minmax(0,1fr)}
   .syn-flow > :nth-child(6){display:grid}
