@@ -894,9 +894,20 @@ dialog.dlg::backdrop{background:rgba(12,18,21,.55)}
 @page sheet{size:A4;margin:0}
 @page roll{size:62mm 29mm;margin:0}
 @page land{size:A4 landscape;margin:10mm}
+@page landa3{size:A3 landscape;margin:12mm}
 body.land .plan-sheet{page:land}
+body.a3 .plan-sheet{page:landa3}
+body.a3 .plan-tbl{font-size:9.5pt}
+body.a3 .plan-tbl th,body.a3 .plan-tbl td{padding:1mm 2mm}
+body.a3 .plan-tbl th:first-child{width:42mm}
+body.a3 .plan-tbl th.g{font-size:9pt}
+body.a3 .plan-tbl td{height:6.5mm}
+body.a3 .plan-tbl th.g{padding:.6mm 2mm}
+body.a3 .plan-sheet .rpt-head{margin-bottom:3mm}
+body.a3 .pc-code{font-size:9pt}
+body.a3 .plan-sheet .rpt-head h1{font-size:20pt}
 @media print{
-  body.printing .app, body.printing #toast, body.printing dialog{display:none!important}
+  body.printing .app, body.printing #toast, body.printing dialog, body.printing .fab, body.printing #navsheet{display:none!important}
   body.printing{background:#fff;color:#000}
   body.printing #print{display:block}
 }
@@ -1010,6 +1021,38 @@ tr.grp.old th{color:var(--muted)}
   .help-btn{background:rgba(8,28,16,.55)}
 }
 @media (max-width:980px){ .ptip-row .plegend{display:none} }
+.nav-sep{width:1px;align-self:stretch;margin:6px 4px;background:rgba(255,255,255,.2)}
+.nav .nav-sec{color:#B9D3C2;font-weight:500}
+.nav .nav-sec .ico{width:16px;height:16px}
+@media (max-width:760px){ .nav .nav-sep{display:none !important} }
+.badge{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-size:.72rem;font-weight:700}
+.ps-top{display:flex;align-items:center;justify-content:space-between}
+.ps-seg{display:flex;background:var(--sunk);border-radius:9px;padding:3px;gap:3px}
+.ps-seg button{all:unset;cursor:pointer;flex:1;text-align:center;padding:5px 6px;border-radius:7px;font-size:.8rem;font-weight:600;color:var(--muted)}
+.ps-seg button[aria-selected=true]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.ps-l{gap:8px}
+.ps-g{display:flex;flex-direction:column;gap:5px}
+.ps-g > summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:4px 2px}
+.ps-g > summary::-webkit-details-marker{display:none}
+.ps-g > summary b{font-size:.72rem;background:var(--sunk);border-radius:999px;padding:0 7px}
+.ps-g.late > summary span{color:var(--bad)}
+.ps-g[open] > summary{margin-bottom:2px}
+.ps-t,.ps-t.late,.ps-t.old{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent-line);padding:6px 8px 6px 9px;gap:2px;font-size:.82rem;cursor:grab;user-select:none}
+.ps-t.late{border-left-color:var(--bad)}
+.ps-t.week{border-left-color:var(--warn)}
+.ps-t.old{border-left-color:var(--line);color:var(--muted)}
+.ps-t:hover{border-color:var(--accent-line);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.ps-t.picked{outline:2px solid var(--accent);background:var(--accent-soft)}
+.ps-t .t{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3}
+.ps-t small .who{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px}
+.ps-t small .when{margin-left:auto;font-weight:600}
+.ps-t.late small .when{color:var(--bad)}
+.ps-pick{display:flex;align-items:center;gap:8px;margin:8px 10px 0;padding:8px 10px;border-radius:9px;background:var(--accent-soft);border:1px solid var(--accent-line);font-size:.8rem}
+.ps-pick .ico{width:16px;height:16px;color:var(--accent);flex:none}
+.ps-pick span{flex:1;min-width:0}
+body.placing .wkgrid .pc{cursor:copy}
+.wkgrid .pc.sug{background:color-mix(in srgb, var(--accent-soft) 85%, transparent);box-shadow:inset 0 0 0 1.5px var(--accent-line)}
+.wkgrid .pc.drop{box-shadow:inset 0 0 0 2px var(--accent) !important;background:var(--accent-soft)}
 .pwrap.noside{grid-template-columns:minmax(0,1fr)}
 .side-tg.on{background:var(--accent-soft);border-color:var(--accent-line)}
 @media (max-width:1100px){ .side-tg{display:none} }
@@ -1036,12 +1079,13 @@ tr.grp.old th{color:var(--muted)}
       <button class="help-btn" data-act="help" title="Aide" aria-label="Aide">?</button>
       <nav class="nav" id="nav" aria-label="Sections">
         <button data-act="nav" data-view="accueil" title="Accueil"><span data-icon="home"></span><span class="nl">Accueil</span></button>
-        <button data-act="nav" data-view="pieces" title="Pièces"><span data-icon="box"></span><span class="nl">Pièces</span></button>
-        <button class="nav-more" data-act="nav" data-view="kks" title="Installation"><span data-icon="plant"></span><span class="nl">Installation</span></button>
-        <button class="nav-more" data-act="nav" data-view="taches" title="Tâches"><span data-icon="check"></span><span class="nl">Tâches</span></button>
+        <button data-act="nav" data-view="taches" title="Tâches"><span data-icon="check"></span><span class="nl">Tâches</span></button>
         <button data-act="nav" data-view="interventions" title="Rapports"><span data-icon="wrench"></span><span class="nl">Rapports</span></button>
-        <button data-act="nav" data-view="planning" title="Planning"><span data-icon="calendar"></span><span class="nl">Planning</span></button>
-        <button class="nav-more" data-act="nav" data-view="options" title="Options"><span data-icon="cog"></span><span class="nl">Options</span></button>
+        <button data-act="nav" data-view="pieces" title="Pièces"><span data-icon="box"></span><span class="nl">Pièces</span></button>
+        <button class="nav-more" data-act="nav" data-view="planning" title="Planning"><span data-icon="calendar"></span><span class="nl">Planning</span></button>
+        <span class="nav-sep nav-more" aria-hidden="true"></span>
+        <button class="nav-more nav-sec" data-act="nav" data-view="kks" title="Installation : fiche de chaque équipement (KKS)"><span data-icon="plant"></span><span class="nl">Installation</span></button>
+        <button class="nav-more nav-sec" data-act="nav" data-view="options" title="Options"><span data-icon="cog"></span><span class="nl">Options</span></button>
         <button class="nav-plus" data-act="navplus" title="Plus" aria-expanded="false"><span data-icon="more"></span><span class="nl">Plus</span></button>
       </nav>
     </div>
@@ -1061,7 +1105,7 @@ tr.grp.old th{color:var(--muted)}
 </div>
 <div id="print"></div>
 <div id="toast" role="status" aria-live="polite"></div>
-<div class="navsheet" id="navsheet" hidden><button data-act="nav" data-view="taches"><span data-icon="check"></span>Tâches</button><button data-act="nav" data-view="kks"><span data-icon="plant"></span>Installation</button><button data-act="nav" data-view="options"><span data-icon="cog"></span>Options</button></div>
+<div class="navsheet" id="navsheet" hidden><button data-act="nav" data-view="planning"><span data-icon="calendar"></span>Planning</button><button data-act="nav" data-view="kks"><span data-icon="plant"></span>Installation</button><button data-act="nav" data-view="options"><span data-icon="cog"></span>Options</button></div>
 <div class="fab" id="fab"><div class="fab-menu" hidden><button data-act="new-int"><span data-icon="report"></span>Nouveau rapport</button><button data-act="quick-move" data-type="sortie"><span data-icon="move"></span>Mouvement de stock</button><button data-act="scan"><span data-icon="scan"></span>Scanner un QR</button></div><button class="fab-btn" data-act="fab" aria-label="Ajouter" aria-expanded="false">+</button></div>
 <input type="file" id="file-json" accept=".json,application/json" hidden>
 <datalist id="dl-lieux"></datalist>
@@ -3059,7 +3103,7 @@ let db = CLOUD.cfg().url ? migrate(blank()) : load();
 if (!db){ db = seed(); save(); }
 
 /* ---------------- État d'affichage ---------------- */
-const S = {pside:(() => { try { return localStorage.getItem('tf-pside') === '1'; } catch(e){ return false; } })(), pour:'', tf:'', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:'', optfour:''}, lowOnly:false, zeroOnly:false, psort:'iddesc', plimit:200, rlimit:300, back:[], statut:'toutes', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux', arch:{}};
+const S = {psf:'semaine', ppick:null, pside:(() => { try { return localStorage.getItem('tf-pside') === '1'; } catch(e){ return false; } })(), pour:'', tf:'', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:'', optfour:''}, lowOnly:false, zeroOnly:false, psort:'iddesc', plimit:200, rlimit:300, back:[], statut:'toutes', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux', arch:{}};
 
 function toast(msg, kind = '', undo = false){
   const t = $('#toast'); t.textContent = msg; t.className = 'show ' + kind + (undo ? ' undo' : '');
@@ -3090,13 +3134,14 @@ function fabMenu(){
 function render(){
   contIdx = null; initPour(); fabMenu();
   refreshDatalists(); refreshCounts();
-  $$('#nav button').forEach(b => b.setAttribute('aria-current', b.dataset.view === S.view || (b.classList.contains('nav-plus') && ['taches', 'kks', 'options'].includes(S.view)) ? 'page' : 'false')); { const ns = $('#navsheet'); if (ns) ns.hidden = true; }
+  $$('#nav button').forEach(b => b.setAttribute('aria-current', b.dataset.view === S.view || (b.classList.contains('nav-plus') && ['planning', 'kks', 'options'].includes(S.view)) ? 'page' : 'false')); { const ns = $('#navsheet'); if (ns) ns.hidden = true; }
   const bk = S.back[S.back.length - 1], VN = {planning:'le planning', accueil:'l’accueil', pieces:'la pièce', kks:'l’installation', lieux:'les emplacements', interventions:'le rapport', taches:'la tâche', options:'les options'};
   const bl = bk ? (bk.view === 'pieces' && getPiece(bk.sel.pieces) ? `la pièce ${getPiece(bk.sel.pieces).ref}` : bk.view === 'pieces' && bk.q.pieces ? `la recherche « ${bk.q.pieces} »` : bk.view === 'kks' && getKks(bk.sel.kks) ? getKks(bk.sel.kks).code : VN[bk.view] || 'la page précédente') : '';
   const am = S.arch[S.view] ? `<div class="arch-mode">${icon('archive')}<span><strong>Archives</strong> · éléments retirés des listes, restaurables à tout moment.</span><button class="btn small" data-act="arch-view" data-v="${S.view}">Revenir à la liste</button></div>` : '';
   const gw = $('.wkgrid-wrap'), gs = gw && S.view === 'planning' ? [gw.scrollTop, gw.scrollLeft] : null;
   $('#main').innerHTML = (bk ? `<button class="btn small back-nav" data-act="nav-back">${icon('chev')}Retour à ${esc(bl)}</button>` : '') + VIEWS[S.view].shell().replace('</header>', '</header>' + am);
   fillList(); fillDetail();
+  document.body.classList.toggle('placing', S.view === 'planning' && !!S.ppick); if (S.view === 'planning') planSuggest(S.ppick);
   if (gs){ const g2 = $('.wkgrid-wrap'); if (g2){ g2.scrollTop = gs[0]; g2.scrollLeft = gs[1]; } }
 }
 const AUTOIO = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting){ AUTOIO.unobserve(e.target); e.target.click(); } }), {rootMargin:'600px'}) : null;
@@ -3700,9 +3745,10 @@ VIEWS.planning = {
         h += '<div class="pmg">Général</div>' + PLAN_ROWS.map(([w, t]) => `<div class="pmr"><span class="pn">${t}</span>${planCell(w, d, null)}</div>`).join(''); return h; })()}</div>`;
     return `<header class="page-head"><h1>Planning</h1><div class="tools">
         <div class="pweek"><button class="btn icon-only" data-act="pweek" data-n="-7" aria-label="Semaine précédente">${icon('chev')}</button><div class="pw-l"><b>Semaine ${isoWeek(mon)}</b><span>${range}</span></div><button class="btn icon-only" data-act="pweek" data-n="7" aria-label="Semaine suivante">${icon('chev')}</button></div>
-        <button class="btn small side-tg ${S.pside ? 'on' : ''}" data-act="plan-side" title="Liste des tâches à glisser dans le planning">${icon('repeat')}${S.pside ? 'Masquer les tâches' : 'Tâches à planifier'}</button>
+        <button class="btn side-tg ${S.pside ? 'on' : ''}" data-act="plan-side" title="Liste des tâches à glisser dans le planning">${icon('repeat')}Tâches à planifier${(() => { const n = planSideTasks(days, ppl, 'semaine').length; return n ? ` <span class="badge">${n}</span>` : ''; })()}</button>
         ${mon !== thisWeek() ? `<button class="btn small" data-act="pweek" data-n="0">Cette semaine</button>` : ''}
-        ${menu([['plan-print', 'Imprimer la semaine (A4 paysage)', 'printer', {}], ['plan-copy', 'Reprendre le texte libre de la semaine précédente', 'repeat', {}], ['plan-we', S.pwe ? 'Masquer le week-end' : 'Afficher le week-end', 'calendar', {}], '-', ['plan-hide', 'Personnes affichées…', 'person', {}]])}</div></header>
+        <button class="btn primary" data-act="plan-print" data-f="a3" title="Imprimer la semaine sur une feuille A3 paysage">${icon('printer')}Imprimer A3</button>
+        ${menu([['plan-print', 'Imprimer en A4 paysage', 'printer', {f:'a4'}], ['plan-copy', 'Reprendre le texte libre de la semaine précédente', 'repeat', {}], ['plan-we', S.pwe ? 'Masquer le week-end' : 'Afficher le week-end', 'calendar', {}], '-', ['plan-hide', 'Personnes affichées…', 'person', {}]])}</div></header>
       <div class="ptip-row"><p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez dans une case et tapez le travail à faire : <b>Entrée</b> valide, <b>Tab</b> passe au jour suivant. « Plus… » pour lier une tâche ou remplir plusieurs jours.</p>${planLegend()}</div>
       <div class="pwrap ${S.pside ? '' : 'noside'}"><div class="wkgrid-wrap"><table class="wkgrid"><thead><tr><th></th>${days.map((d, i) => `<th class="${d === today ? 'today' : ''}">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>${S.pside ? planSideHTML(days, ppl) : ''}</div>
       <div class="pmobile">${mobile}</div>`;
@@ -3715,26 +3761,47 @@ function planLegend(){
   return `<details class="plegend"><summary>${icon('list')}Que veulent dire les codes ?</summary><div class="lg">${g('on', 'Présent')}${g('rot', 'Rotation')}${g('piq', 'Piquet')}${g('off', 'Congé')}${g('abs', 'Absent')}</div></details>`;
 }
 /* Tâches à planifier cette semaine (ou en retard) pour les personnes affichées, à glisser dans une case */
-function planSideHTML(days, ppl){
+function planSideTasks(days, ppl, mode = S.psf){
   const end = days[days.length - 1], start = days[0], q = norm(S.q.planside || '');
-  const whoKeys = new Set(ppl.map(p => 'p:' + p.id)), planned = new Set(db.plan.filter(x => x.tacheId && x.date >= start && x.date <= end).map(x => x.tacheId));
-  let ts = db.taches.filter(t => live(t) && t.actif !== false && t.prochaine <= end && !planned.has(t.id) && [...whoKeys].some(k => forWho(t, k)));
+  const whoKeys = ppl.map(p => 'p:' + p.id), planned = new Set(db.plan.filter(x => x.tacheId && x.date >= start && x.date <= end).map(x => x.tacheId));
+  let ts = db.taches.filter(t => live(t) && t.actif !== false && (mode === 'tout' || t.prochaine <= end) && !planned.has(t.id) && whoKeys.some(k => forWho(t, k)));
   if (q) ts = ts.filter(t => norm(`${t.titre} ${getKks(t.kksId)?.code || ''} ${assignLabel(t.assign)}`).includes(q));
-  ts.sort(urgSort);
-  const late = ts.filter(t => t.prochaine < start).length, oldN = ts.filter(isOld).length;
-  return `<aside class="pside"><div class="ps-h"><b>À planifier</b><small>${ts.length} tâche(s) dues d’ici ${fmtD(end)}${late ? ` · dont ${late} en retard${oldN ? ` (${oldN} depuis plus d’un an, en bas)` : ''}` : ''}</small><input type="search" data-search="planside" data-pside="1" placeholder="Filtrer…" value="${esc(S.q.planside || '')}" aria-label="Filtrer les tâches à planifier"></div>
-    <div class="ps-l">${ts.slice(0, 150).map((t, i, a) => { const k = getKks(t.kksId), o = isOld(t); return `${o && (i === 0 || !isOld(a[i - 1])) ? '<p class="ps-sep">En retard depuis plus d’un an</p>' : ''}<div class="ps-t ${o ? 'old' : t.prochaine < start ? 'late' : ''}" draggable="true" data-tid="${t.id}" title="Glissez dans la case d’une personne"><span class="t">${esc(t.titre)}</span><small>${k ? `<span class="kks">${esc(k.code)}</span> ` : ''}${esc(assignLabel(t.assign))} · ${fmtD(t.prochaine)}</small></div>`; }).join('') || '<p class="empty-line" style="padding:12px">Rien à planifier : tout est déjà placé.</p>'}${ts.length > 150 ? `<p class="list-note">${ts.length - 150} autre(s) : filtrez.</p>` : ''}</div>
-    <p class="hint ps-f">Glissez une tâche dans la case d’une personne.</p></aside>`;
+  return ts.sort(urgSort);
 }
-document.addEventListener('dragstart', e => { const t = e.target.closest?.('[data-tid]'); if (!t) return; e.dataTransfer.setData('text/plain', 'tid:' + t.dataset.tid); e.dataTransfer.effectAllowed = 'copy'; t.classList.add('drag'); });
-document.addEventListener('dragend', e => { e.target.closest?.('[data-tid]')?.classList.remove('drag'); $$('.pc.drop').forEach(x => x.classList.remove('drop')); });
+/* Panneau « À planifier » : glisser une tâche dans une case, ou cliquer la tâche puis la case */
+function planSideHTML(days, ppl){
+  const start = days[0], end = days[days.length - 1], ts = planSideTasks(days, ppl);
+  const sec = {late:[], week:[], later:[], old:[]};
+  for (const t of ts) sec[isOld(t) ? 'old' : t.prochaine < start ? 'late' : t.prochaine <= end ? 'week' : 'later'].push(t);
+  const when = t => { const n = daysTo(t.prochaine); return t.prochaine < start ? (isOld(t) ? t.prochaine.slice(0, 4) : lateLbl(-n)) : t.prochaine <= end ? DAYS[(new Date(t.prochaine + 'T12:00:00').getDay() + 6) % 7] + ' ' + +t.prochaine.slice(8) : fmtD(t.prochaine); };
+  const card = (t, cls) => { const k = getKks(t.kksId); return `<div class="ps-t ${cls} ${S.ppick === t.id ? 'picked' : ''}" draggable="true" data-tid="${t.id}" data-act="plan-pick" data-id="${t.id}" tabindex="0" title="Glissez dans une case, ou cliquez puis cliquez la case"><span class="t">${esc(t.titre)}</span><small>${k ? `<span class="kks">${esc(k.code)}</span>` : ''}<span class="who">${esc(assignLabel(t.assign))}</span><span class="when">${when(t)}</span></small></div>`; };
+  const block = (key, title, cls, open = true) => { const l = sec[key]; if (!l.length) return ''; const shown = l.slice(0, 120);
+    return `<details class="ps-g ${cls}" ${open ? 'open' : ''}><summary><span>${title}</span><b>${l.length}</b></summary>${shown.map(t => card(t, cls)).join('')}${l.length > shown.length ? `<p class="list-note">${l.length - shown.length} autre(s) : filtrez.</p>` : ''}</details>`; };
+  const pk = S.ppick && get('taches', S.ppick);
+  return `<aside class="pside"><div class="ps-h"><div class="ps-top"><b>À planifier</b><button class="icon-btn" data-act="plan-side" aria-label="Fermer la liste" title="Fermer">×</button></div>
+      <div class="ps-seg" role="tablist"><button role="tab" data-act="plan-psf" data-f="semaine" aria-selected="${S.psf !== 'tout'}">Cette semaine</button><button role="tab" data-act="plan-psf" data-f="tout" aria-selected="${S.psf === 'tout'}">Toutes</button></div>
+      <input type="search" data-search="planside" data-pside="1" placeholder="Filtrer : mot, KKS, nom…" value="${esc(S.q.planside || '')}" aria-label="Filtrer les tâches à planifier"></div>
+    ${pk ? `<div class="ps-pick">${icon('calendar')}<span>Cliquez la case où placer <b>${esc(pk.titre)}</b></span><button class="link" data-act="plan-pick" data-id="${pk.id}">Annuler</button></div>` : ''}
+    <div class="ps-l">${ts.length ? block('late', 'En retard', 'late') + block('week', 'Cette semaine', 'week') + block('later', 'Plus tard', 'later', false) + block('old', 'Retard de plus d’un an', 'old', false) : '<p class="empty-line" style="padding:12px">Rien à planifier : tout est déjà placé.</p>'}</div>
+    <p class="hint ps-f">Glissez une tâche dans une case, ou cliquez-la puis cliquez la case. Les cases des personnes concernées s’éclairent.</p></aside>`;
+}
+function planSuggest(tid){
+  $$('.wkgrid .pc.sug').forEach(x => x.classList.remove('sug'));
+  const t = tid && get('taches', tid); if (!t) return;
+  $$('.wkgrid .pc[data-who]').forEach(c => { if (getPers(c.dataset.who) && forWho(t, 'p:' + c.dataset.who)) c.classList.add('sug'); });
+}
+function placeTask(tid, who, date){
+  const t = get('taches', tid); if (!t) return; const p = getPers(who), pr = p ? presOf(p, date) : null, abs = pr && PCODE[pr.code]?.[1] === 'abs';
+  S.ppick = null; tx(() => { db.plan.push({id:uid(), date, who, tacheId:t.id, text:''}); }); render();
+  toast(`${t.titre} → ${p ? persName(p) : PLAN_ROWS.find(r => r[0] === who)?.[1] || ''}, ${dayLbl(date)}${abs ? ` · attention : absent (${pr.code})` : ''}`, abs ? 'bad' : '', true);
+}
+document.addEventListener('dragstart', e => { const t = e.target.closest?.('[data-tid]'); if (!t) return; e.dataTransfer.setData('text/plain', 'tid:' + t.dataset.tid); e.dataTransfer.effectAllowed = 'copy'; t.classList.add('drag'); document.body.classList.add('placing'); planSuggest(t.dataset.tid); });
+document.addEventListener('dragend', e => { e.target.closest?.('[data-tid]')?.classList.remove('drag'); $$('.pc.drop').forEach(x => x.classList.remove('drop')); if (!S.ppick){ document.body.classList.remove('placing'); planSuggest(null); } });
 document.addEventListener('dragover', e => { const c = e.target.closest?.('.pc[data-who]'); if (!c) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; if (!c.classList.contains('drop')){ $$('.pc.drop').forEach(x => x.classList.remove('drop')); c.classList.add('drop'); } });
 document.addEventListener('dragleave', e => { const c = e.target.closest?.('.pc[data-who]'); if (c && !c.contains(e.relatedTarget)) c.classList.remove('drop'); });
 document.addEventListener('drop', e => { const c = e.target.closest?.('.pc[data-who]'); if (!c) return; e.preventDefault(); c.classList.remove('drop');
-  const v = e.dataTransfer.getData('text/plain') || ''; if (!v.startsWith('tid:')) return; const t = get('taches', v.slice(4)); if (!t) return;
-  const who = c.dataset.who, date = c.dataset.date, p = getPers(who), pr = p ? presOf(p, date) : null, abs = pr && PCODE[pr.code]?.[1] === 'abs';
-  tx(() => { db.plan.push({id:uid(), date, who, tacheId:t.id, text:''}); }); render();
-  toast(`${t.titre} → ${p ? persName(p) : PLAN_ROWS.find(r => r[0] === who)?.[1] || ''}, ${dayLbl(date)}${abs ? ` · attention : absent (${pr.code})` : ''}`, abs ? 'bad' : '', true); });
+  const v = e.dataTransfer.getData('text/plain') || ''; if (!v.startsWith('tid:')) return; document.body.classList.remove('placing'); placeTask(v.slice(4), c.dataset.who, c.dataset.date); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.ppick && S.view === 'planning'){ S.ppick = null; document.body.classList.remove('placing'); render(); } });
 /* Pièces sous le minimum (stock minimum renseigné), regroupées par fournisseur */
 function orderRows(){ return db.pieces.filter(p => live(p) && p.stockMin > 0 && dispo(p) < p.stockMin).map(p => ({p, four:p.fournisseur || p.fabricant || 'Sans fournisseur', qty:round(p.stockMin - dispo(p))})).sort((a, b) => coll.compare(a.four, b.four) || coll.compare(a.p.designation, b.p.designation)); }
 function orderHTML(rows, print){
@@ -4499,7 +4566,14 @@ function labelsHTML(cells, o){
   return html;
 }
 function printLabels(cells, o){ doPrint(labelsHTML(cells, o)); }
-function endPrintLand(){ document.body.classList.remove('land'); }
+/* Réduit la feuille pour qu'une semaine tienne sur une seule page */
+function fitSheet(html, wmm, hmm){
+  const m = document.createElement('div'); m.style.cssText = `position:absolute;left:-99999px;top:0;width:${wmm}mm;background:#fff;color:#000`; m.innerHTML = html; document.body.append(m);
+  const h = m.firstElementChild.getBoundingClientRect().height, avail = hmm * 96 / 25.4; m.remove();
+  if (h <= avail) return html; const z = Math.max(.5, avail / h * .97);
+  return html.replace('class="rpt plan-sheet"', `class="rpt plan-sheet" style="zoom:${z.toFixed(3)}"`);
+}
+function endPrintLand(){ document.body.classList.remove('land', 'a3'); }
 function doPrint(html){ setTimeout(endPrintLand, 3000); $('#print').innerHTML = html; document.body.classList.add('printing'); setTimeout(() => { window.print(); setTimeout(endPrint, 500); }, 60); }
 function endPrint(){ document.body.classList.remove('printing'); $('#print').innerHTML = ''; }
 window.addEventListener('afterprint', endPrint);
@@ -4884,14 +4958,16 @@ const ACT = {
   scan: () => scanDialog(),
   pweek(d){ const n = +d.n; S.pweek = n ? isoAdd(S.pweek || thisWeek(), n) : thisWeek(); S.pday = null; render(); },
   pday(d){ S.pday = +d.i; render(); },
-  'plan-add'(d, t){ if (PLAN_TYPE()) planInline(t, d.who, d.date, null); else planDialog(d.who, d.date, null); },
-  'plan-edit'(d, t){ const x = db.plan.find(y => y.id === d.id); if (!x) return; if (PLAN_TYPE() && !x.tacheId) planInline(t.closest('.pc'), x.who, x.date, x, t); else planDialog(x.who, x.date, x); },
+  'plan-pick'(d){ S.ppick = S.ppick === d.id ? null : d.id; render(); },
+  'plan-psf'(d){ S.psf = d.f; render(); },
+  'plan-add'(d, t){ if (S.ppick){ placeTask(S.ppick, d.who, d.date); return; } if (PLAN_TYPE()) planInline(t, d.who, d.date, null); else planDialog(d.who, d.date, null); },
+  'plan-edit'(d, t){ const x = db.plan.find(y => y.id === d.id); if (!x) return; if (S.ppick){ placeTask(S.ppick, x.who, x.date); return; } if (PLAN_TYPE() && !x.tacheId) planInline(t.closest('.pc'), x.who, x.date, x, t); else planDialog(x.who, x.date, x); },
   'plan-side'(){ S.pside = !S.pside; try { localStorage.setItem('tf-pside', S.pside ? '1' : '0'); } catch(e){} render(); },
   'plan-we'(){ S.pwe = !S.pwe; render(); },
   'plan-hide': () => planHideDialog(),
   navplus(d, t){ const s2 = $('#navsheet'); s2.hidden = !s2.hidden; t.setAttribute('aria-expanded', String(!s2.hidden)); },
   'to-order': () => orderDialog(),
-  'plan-print'(){ document.body.classList.add('land'); doPrint(planSheetHTML()); },
+  'plan-print'(d){ const a3 = d.f === 'a3'; document.body.classList.add('land'); document.body.classList.toggle('a3', a3); doPrint(fitSheet(planSheetHTML(), a3 ? 396 : 277, a3 ? 271 : 188)); },
   'plan-copy'(){ const mon = S.pweek, prev = isoAdd(mon, -7); const src = db.plan.filter(x => x.date >= prev && x.date < mon && !x.tacheId && x.text); if (!src.length){ toast('Aucun texte libre la semaine précédente.'); return; }
     tx(() => { for (const x of src){ const dd = isoAdd(x.date, 7); if (!db.plan.some(y => y.who === x.who && y.date === dd && y.text === x.text)) db.plan.push({id:uid(), date:dd, who:x.who, text:x.text}); } }); render(); toast(`${src.length} ligne(s) reprise(s)`, '', true); },
   me: () => meDialog(),
