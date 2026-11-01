@@ -541,6 +541,7 @@ legend .chk input{width:auto;min-height:0}
 .pdchk .chk{display:flex !important;flex-direction:row !important;align-items:center;gap:6px;margin:0;font-weight:500}
 .pdchk .chk input{width:auto;min-height:0}
 .pdchk .chk.abs{color:var(--muted)}
+.pdchk .chk small{font-size:.75rem;font-weight:400}
 .ptoday{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 16px 10px;padding:8px 10px;border-radius:10px;background:var(--sunk)}
 .ptoday > b{display:flex;align-items:center;gap:6px;font-size:.8rem;width:100%}
 .ptoday .ico{width:15px;height:15px}
@@ -3128,7 +3129,7 @@ let db = CLOUD.cfg().url ? migrate(blank()) : load();
 if (!db){ db = seed(); save(); }
 
 /* ---------------- État d'affichage ---------------- */
-const S = {psf:'semaine', ppick:null, pside:(() => { try { return localStorage.getItem('tf-pside') !== '0'; } catch(e){ return true; } })(), pour:'', tf:'', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:'', optfour:''}, lowOnly:false, zeroOnly:false, psort:'iddesc', plimit:200, rlimit:300, back:[], statut:'toutes', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux', arch:{}};
+const S = {pwe:false, psf:'semaine', ppick:null, pside:(() => { try { return localStorage.getItem('tf-pside') !== '0'; } catch(e){ return true; } })(), pour:'', tf:'', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:'', optfour:''}, lowOnly:false, zeroOnly:false, psort:'iddesc', plimit:200, rlimit:300, back:[], statut:'toutes', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux', arch:{}};
 
 function toast(msg, kind = '', undo = false){
   const t = $('#toast'); t.textContent = msg; t.className = 'show ' + kind + (undo ? ' undo' : '');
@@ -3728,16 +3729,22 @@ function planHide(){
 }
 function planHideDialog(){
   const h = planHide(), ppl = db.personnes.filter(p => live(p) && p.actif !== false).sort(persSort), grps = db.listes.groupes.filter(g => ppl.some(p => p.groupe === g));
+  planPeople(); const auto = new Set((planPeople.conge || []).map(p => p.id)), mon = S.pweek || thisWeek();
+  const why = p => { const c = [...new Set(Array.from({length:5}, (_, i) => presOf(p, isoAdd(mon, i))?.code).filter(Boolean))]; return c.join(', '); };
   dialog({title:'Qui apparaît dans le planning ?', saveLabel:'Enregistrer', wide:true,
-    body:`<p class="hint">Réglage commun à tous les postes. Décochez un groupe entier, ou seulement certaines personnes.</p>${grps.map(g => `<fieldset><legend><label class="chk"><input type="checkbox" name="g" value="${esc(g)}" ${h.g.has(g) ? '' : 'checked'}> ${esc(g)}</label></legend><div class="pdchk">${ppl.filter(p => p.groupe === g).map(p => `<label class="chk"><input type="checkbox" name="p" value="${p.id}" ${h.p.has(p.id) ? '' : 'checked'}> ${esc(persName(p))}</label>`).join('')}</div></fieldset>`).join('')}`,
-    onSave(f){ const g = [...f.querySelectorAll('input[name=g]')].filter(x => !x.checked).map(x => x.value), pp = [...f.querySelectorAll('input[name=p]')].filter(x => !x.checked).map(x => x.value);
+    body:`<p class="hint">Réglage commun à tous les postes. Décochez un groupe entier, ou seulement certaines personnes.<br>Les personnes cochées mais <b>sans R, PIQ, EN, PI ou CA</b> dans la semaine sont masquées automatiquement (indiqué en gris).</p>${grps.map(g => `<fieldset data-g="${esc(g)}"><legend><label class="chk"><input type="checkbox" name="g" value="${esc(g)}"> ${esc(g === 'Équipe' ? 'Équipes de rotation' : g)}</label></legend><div class="pdchk">${ppl.filter(p => p.groupe === g).map(p => `<label class="chk ${auto.has(p.id) ? 'abs' : ''}"><input type="checkbox" name="p" value="${p.id}" ${h.g.has(g) || h.p.has(p.id) ? '' : 'checked'}> ${esc(persName(p))}${auto.has(p.id) ? ` <small>masqué cette semaine${why(p) ? ' (' + esc(why(p)) + ')' : ''}</small>` : ''}</label>`).join('')}</div></fieldset>`).join('')}`,
+    onOpen(f){
+      const sync = fs => { const ps = [...fs.querySelectorAll('input[name=p]')], n = ps.filter(x => x.checked).length, gi = fs.querySelector('input[name=g]'); gi.checked = n > 0; gi.indeterminate = n > 0 && n < ps.length; };
+      f.querySelectorAll('fieldset[data-g]').forEach(fs => { sync(fs);
+        fs.querySelector('input[name=g]').addEventListener('change', e => { fs.querySelectorAll('input[name=p]').forEach(x => { x.checked = e.target.checked; }); sync(fs); });
+        fs.querySelectorAll('input[name=p]').forEach(x => x.addEventListener('change', () => sync(fs))); });
+    },
+    onSave(f){ const g = [], pp = [];
+      f.querySelectorAll('fieldset[data-g]').forEach(fs => { const ps = [...fs.querySelectorAll('input[name=p]')]; if (ps.every(x => !x.checked)) g.push(fs.dataset.g); else ps.filter(x => !x.checked).forEach(x => pp.push(x.value)); });
       tx(() => { db.reglages.planHide = {g, p:pp}; }); render(); toast('Planning mis à jour', '', true); }});
 }
-/* Congé = vacances et récupérations (même règle que le Planning Tridel : VA, VJ, HOR, HSR, PI). Maladie, accident, formation… ne sont pas des congés. */
 const CONGE = new Set(['VA', 'VJ', 'HOR', 'HSR', 'PI']);
-/* N'apparaît au planning que la personne qui a au moins un de ces codes dans la semaine (lundi–vendredi) */
 const DISPO = new Set(['R', 'PIQ', 'EN', 'PI', 'CA']);
-/* En congé toute la semaine (lundi–vendredi) : au moins un jour de congé, les autres jours vides ou en reprise férié, et rien de planifié */
 function enConge(p, mon){
   const days = Array.from({length:5}, (_, i) => isoAdd(mon, i)), codes = days.map(d => presOf(p, d)?.code || '');
   return !codes.some(c => DISPO.has(c)) && codes.some(Boolean) && !db.plan.some(x => x.who === p.id && x.date >= days[0] && x.date <= isoAdd(mon, 6));
@@ -3784,7 +3791,7 @@ VIEWS.planning = {
         <button class="btn side-tg ${S.pside ? 'on' : ''}" data-act="plan-side" title="Liste des tâches à glisser dans le planning">${icon('repeat')}Tâches à planifier${(() => { const n = planSideTasks(days, ppl, 'semaine').length; return n ? ` <span class="badge">${n}</span>` : ''; })()}</button>
         ${mon !== thisWeek() ? `<button class="btn small" data-act="pweek" data-n="0">Cette semaine</button>` : ''}
         <button class="btn primary" data-act="plan-print" data-f="a3" title="Imprimer la semaine sur une feuille A3 paysage">${icon('printer')}Imprimer A3</button>
-        ${menu([['plan-print', 'Imprimer en A4 paysage', 'printer', {f:'a4'}], ['plan-copy', 'Reprendre le texte libre de la semaine précédente', 'repeat', {}], ['plan-we', S.pwe ? 'Masquer le week-end' : 'Afficher le week-end', 'calendar', {}], '-', ['plan-hide', 'Personnes affichées…', 'person', {}]])}</div></header>
+        ${menu([['plan-hide', 'Personnes affichées…', 'person', {}]])}</div></header>
       <div class="ptip-row"><p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez dans une case et tapez le travail à faire : <b>Entrée</b> valide, <b>Tab</b> passe au jour suivant. « Plus… » pour lier une tâche ou remplir plusieurs jours.</p>${planLegend()}</div>
       <div class="pwrap ${S.pside ? '' : 'noside'}"><div class="wkgrid-wrap"><table class="wkgrid"><thead><tr><th></th>${days.map((d, i) => `<th class="${d === today ? 'today' : ''}">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>${S.pside ? planSideHTML(days, ppl) : ''}</div>
       ${conge.length ? `<p class="hint pconge">${icon('calendar')}Pas disponibles cette semaine (ni R, PIQ, EN, PI ou CA), masqués : ${conge.sort(persSort).map(p => esc(persName(p))).join(', ')}.</p>` : ''}
