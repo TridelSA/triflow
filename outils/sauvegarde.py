@@ -15,7 +15,13 @@ def call(path, data=None, token=None):
     with urllib.request.urlopen(req, timeout=60) as r:
         return json.loads(r.read().decode())
 
-tok = call('/auth/v1/token?grant_type=password', {'email': os.environ['TRIFLOW_EMAIL'], 'password': os.environ['TRIFLOW_PASSWORD']})['access_token']
+miss = [k for k in ('TRIFLOW_EMAIL', 'TRIFLOW_PASSWORD') if not os.environ.get(k)]
+if miss:
+    sys.exit('Secrets GitHub manquants : ' + ', '.join(miss) + ' (Settings › Secrets and variables › Actions).')
+try:
+    tok = call('/auth/v1/token?grant_type=password', {'email': os.environ['TRIFLOW_EMAIL'], 'password': os.environ['TRIFLOW_PASSWORD']})['access_token']
+except urllib.error.HTTPError as e:
+    sys.exit(f'Connexion refusée par Supabase ({e.code}) : vérifier TRIFLOW_EMAIL et TRIFLOW_PASSWORD.')
 rows, start = [], 0
 while True:
     part = call(f'/rest/v1/docs?select=collection,id,data&order=collection,id&offset={start}&limit=1000', token=tok)
