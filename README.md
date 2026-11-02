@@ -56,6 +56,10 @@ Chaque fiche enregistrée garde aussi `_by` (adresse de la personne) et `_at` (d
 1. Supabase › **Authentication › Users › Add user** : adresse e-mail et mot de passe (cocher « Auto confirm »).
 2. Le collègue se connecte sur le site, puis choisit son nom (« Qui êtes-vous ? »). Son accueil, ses tâches et ses rapports sont alors filtrés sur lui et son groupe.
 
+### Qui est qui, et qui peut supprimer
+- TriFlow reconnaît la personne d'après son adresse e-mail : le nom de famille du Planning Tridel doit s'y trouver (`thomas.bonnant@…` → BONNANT). Sinon, elle choisit son nom à la première connexion.
+- Seuls les **cadres** (groupe « Cadres » du planning) peuvent supprimer définitivement. Les autres archivent. La base applique la même règle et tient un journal des modifications : script `outils/droits.sql`, à lancer une fois dans *SQL Editor*.
+
 ### Retirer un accès
 Supabase › Authentication › Users › supprimer l'utilisateur. Ses rapports restent (les noms y sont figés).
 

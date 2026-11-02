@@ -2886,7 +2886,21 @@ const persName = p => p ? `${p.prenom || ''} ${p.nom}`.trim() : '(supprimé)';
 const persSnap = p => ({nom:p.nom, prenom:p.prenom || '', groupe:p.groupe || ''});
 /* Entreprises externes (liste des fournisseurs) comme intervenants : id « four:Nom » */
 /* « Moi » : la personne de la liste qui utilise ce poste (liée à l'adresse de connexion, sinon mémorisée dans ce navigateur) */
-function meId(){ const e = (CLOUD.user?.email || '').toLowerCase(); let id = e && db.reglages.moi ? db.reglages.moi[e] : null; if (!id){ try { id = localStorage.getItem('tf-moi'); } catch(x){} } return id && getPers(id) ? id : null; }
+/* Personne reconnue d'après l'adresse e-mail : le nom de famille du planning se trouve dans la partie avant @ (thomas.bonnant@… → BONNANT).
+   Correspondance exacte d'un morceau (thomas / bonnant) d'abord, sinon nom contenu dans l'adresse. Rien si plusieurs personnes correspondent. */
+const letters = x => norm(String(x || '')).replace(/[^a-z]/g, '');
+function personFromEmail(email){
+  const local = String(email || '').toLowerCase().split('@')[0]; if (!local) return null;
+  const L = letters(local), toks = new Set(local.split(/[^a-zà-ÿ]+/i).map(letters).filter(Boolean));
+  let best = 0, hits = [];
+  for (const p of db.personnes){ if (!live(p) || p.actif === false) continue; const n = letters(p.nom); if (n.length < 3) continue;
+    const sc = toks.has(n) || [...toks].join('') === n ? 2 : n.length >= 4 && L.includes(n) ? 1 : 0;
+    if (sc > best){ best = sc; hits = [p]; } else if (sc && sc === best) hits.push(p); }
+  return hits.length === 1 ? hits[0] : null;
+}
+/* Seuls les cadres peuvent supprimer définitivement (la base applique la même règle, voir outils/droits.sql) */
+function canDel(){ if (!CLOUD.user) return true; return personFromEmail(CLOUD.user.email)?.groupe === 'Cadres'; }
+function meId(){ const e = (CLOUD.user?.email || '').toLowerCase(); let id = e && db.reglages.moi ? db.reglages.moi[e] : null; if (!id && e) id = personFromEmail(e)?.id || null; if (!id){ try { id = localStorage.getItem('tf-moi'); } catch(x){} } return id && getPers(id) ? id : null; }
 function setMe(id){ const e = (CLOUD.user?.email || '').toLowerCase(); if (e) tx(() => { db.reglages.moi = {...(db.reglages.moi || {}), [e]:id || undefined}; }); try { id ? localStorage.setItem('tf-moi', id) : localStorage.removeItem('tf-moi'); } catch(x){} }
 /* Filtre « mes affaires » : actif par défaut à chaque chargement, sauf pour les cadres et l'administration */
 const NOFILTER_GRP = ['Cadres', 'Administration'];
@@ -2996,7 +3010,7 @@ function archiveItem(col, x){
 }
 function unarchiveItem(col, x){ tx(() => { delete x.arch; delete x.mergedInto; }); render(); toast(`${ARCH_LBL[col][0].replace(/archivée?$/, '')}restauré${/archivée$/.test(ARCH_LBL[col][0]) ? 'e' : ''}`); }
 /* Bouton du bas des fenêtres « Modifier » : Archiver (réversible), ou Supprimer définitivement si déjà archivé */
-const archDel = (col, x, hard) => x.arch ? {label:'Supprimer définitivement', run:hard} : {label:'Archiver', soft:true, run(){ archiveItem(col, x); }};
+const archDel = (col, x, hard) => x.arch ? (canDel() ? {label:'Supprimer définitivement', run:hard} : null) : {label:'Archiver', soft:true, run(){ archiveItem(col, x); }};
 const archBanner = (col, x) => x && x.arch ? `<div class="arch-banner">${icon('archive')}<span><strong>${ARCH_LBL[col][0]}</strong> le ${fmtD(x.arch)}${x.mergedInto ? ` · fusionnée dans l’ID ${esc(x.mergedInto)}` : ''}. Elle n’apparaît plus dans les listes.</span><button class="btn small" data-act="unarch" data-col="${col}" data-id="${x.id}">Restaurer</button></div>`.replace('Elle n’apparaît', /archivé$/.test(ARCH_LBL[col][0]) ? 'Il n’apparaît' : 'Elle n’apparaît') : '';
 const archCount = col => db[col].filter(x => x.arch).length;
 const archItem = v => ['arch-view', S.arch[v] ? 'Quitter les archives' : `Archives${archCount(v) ? ` (${archCount(v)})` : ''}`, 'archive', {v}];
@@ -4035,7 +4049,7 @@ OPT.fournisseurs = () => {
       return `<tr class="four-row ${open ? 'open' : ''}" data-act="four-open" data-name="${esc(n)}" tabindex="0"><td><span class="fr-n"><span class="chev ${open ? 'open' : ''}">${icon('chev')}</span>${esc(n)}</span></td><td class="num qty">${c || ''}</td></tr>
       ${open ? `<tr class="four-sub"><td colspan="2"><div class="four-tools"><button class="btn small" data-act="four-pieces" data-name="${esc(n)}">${icon('box')}Ouvrir dans Pièces</button>${(rc.get(n) || 0) ? `<button class="btn small" data-act="four-ints" data-name="${esc(n)}">${icon('report')}${rc.get(n)} rapport(s)</button>` : ''}<button class="btn small" data-act="edit-four" data-name="${esc(n)}">${icon('edit')}Renommer</button><button class="btn small ghost" data-act="four-arch" data-name="${esc(n)}">${icon('archive')}Archiver</button></div>
         ${ps.length ? `<div class="four-list">${ps.slice(0, 200).map(p => { const mp = mainPlace(p); return `<button class="four-p" data-act="goto" data-view="pieces" data-id="${p.id}"><span class="pid">${esc(p.ref)}</span><span class="t">${esc(p.designation)}</span>${mp ? plate(mp, false) : ''}<span class="q">${num(dispo(p))} <small>${esc(p.unite)}</small></span></button>`; }).join('')}${ps.length > 200 ? `<p class="list-note">${ps.length - 200} autre(s) : « Ouvrir dans Pièces » pour tout voir.</p>` : ''}</div>` : '<p class="empty-line" style="padding:8px 0">Aucune pièce reliée.</p>'}</td></tr>` : ''}`; }).join('')}</tbody></table></div>` : `<div class="pad">${empty('Aucun fournisseur', '')}</div>`}</div>
-    ${db.listes.fournArch.length ? `<details class="arch-sec"><summary>${icon('archive')}Fournisseurs archivés <span class="muted">${db.listes.fournArch.length}</span></summary>${[...db.listes.fournArch].sort(coll.compare).map(n => `<div class="arch-line"><span class="t">${esc(n)}</span><button class="btn small" data-act="four-unarch" data-name="${esc(n)}">Restaurer</button><button class="link danger" data-act="four-del" data-name="${esc(n)}">Supprimer</button></div>`).join('')}</details>` : ''}</section>`;
+    ${db.listes.fournArch.length ? `<details class="arch-sec"><summary>${icon('archive')}Fournisseurs archivés <span class="muted">${db.listes.fournArch.length}</span></summary>${[...db.listes.fournArch].sort(coll.compare).map(n => `<div class="arch-line"><span class="t">${esc(n)}</span><button class="btn small" data-act="four-unarch" data-name="${esc(n)}">Restaurer</button>${canDel() ? `<button class="link danger" data-act="four-del" data-name="${esc(n)}">Supprimer</button>` : ''}</div>`).join('')}</details>` : ''}</section>`;
 };
 /* Relie chaque pièce aux fournisseurs dont le nom apparaît dans sa désignation ou ses notes (à appeler dans tx) */
 function linkFournisseurs(){
@@ -5101,7 +5115,7 @@ const ACT = {
   'arch-view'(d){ S.arch[d.v] = !S.arch[d.v]; S.sel[d.v] = null; render(); window.scrollTo(0, 0); },
   'four-arch'(d){ tx(() => { db.listes.fournisseurs = db.listes.fournisseurs.filter(x => x !== d.name); if (!db.listes.fournArch.includes(d.name)) db.listes.fournArch.push(d.name); }); S.fourOpen = null; render(); toast(`« ${d.name} » archivé (les pièces gardent leur valeur)`, '', true); },
   'four-unarch'(d){ tx(() => { db.listes.fournArch = db.listes.fournArch.filter(x => x !== d.name); if (!db.listes.fournisseurs.includes(d.name)) db.listes.fournisseurs.push(d.name); db.listes.fournisseurs.sort(coll.compare); }); render(); toast(`« ${d.name} » restauré`); },
-  'four-del'(d){ confirmDialog('Supprimer le fournisseur', `« ${esc(d.name)} » sera retiré définitivement de la liste. Les pièces gardent le nom écrit dans leur fiche.`, 'Supprimer', () => { tx(() => { db.listes.fournArch = db.listes.fournArch.filter(x => x !== d.name); }); render(); }); },
+  'four-del'(d){ if (!canDel()){ toast('Seuls les cadres peuvent supprimer définitivement.', 'bad'); return; } confirmDialog('Supprimer le fournisseur', `« ${esc(d.name)} » sera retiré définitivement de la liste. Les pièces gardent le nom écrit dans leur fiche.`, 'Supprimer', () => { tx(() => { db.listes.fournArch = db.listes.fournArch.filter(x => x !== d.name); }); render(); }); },
   menu(d, t){
     const l = t.nextElementSibling, open = l.hidden; closeMenus(l); l.hidden = !open; t.setAttribute('aria-expanded', String(open));
     if (!open) return;
