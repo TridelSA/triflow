@@ -2933,9 +2933,14 @@ function maybeWelcome(){
   let seen = null; try { seen = localStorage.getItem('tf-welcome'); } catch(e){ return; }
   if (seen || document.querySelector('dialog[open]') || (CLOUD.cfg().url && !CLOUD.on)) return;
   try { localStorage.setItem('tf-welcome', '1'); } catch(e){}
-  const d = dialog({title:'Bienvenue dans TriFlow', saveLabel:'C’est parti', body:`<ol class="welcome">
-    <li><b>Dites-nous qui vous êtes.</b> Vous verrez vos tâches et celles de votre groupe.${meId() ? '' : ` <button type="button" class="btn small primary" data-w-me>${icon('person')}Choisir mon nom</button>`}</li>
-    <li><b>Un rapport, une sortie de stock, un scan :</b> le bouton <b>+</b> en bas à droite sur téléphone, ou les raccourcis de l’accueil.</li>
+  const me = meId() && getPers(meId()), all = me && NOFILTER_GRP.includes(me.groupe || '');
+  const first = me
+    ? `<li><b>Vous êtes reconnu : ${esc(persName(me))}${me.groupe ? ` · ${esc(me.groupe)}` : ''}.</b> ${all ? 'Vous voyez les tâches et rapports de tout le monde.' : `L’accueil, les tâches et les rapports sont filtrés sur vous${me.groupe ? ` et votre groupe (${esc(me.groupe)})` : ''} ; « Voir tout le monde » enlève le filtre.`} <button type="button" class="link" data-w-me>Ce n’est pas vous ?</button></li>`
+    : `<li><b>Dites-nous qui vous êtes.</b> Vous verrez vos tâches et celles de votre groupe. <button type="button" class="btn small primary" data-w-me>${icon('person')}Choisir mon nom</button></li>`;
+  const d = dialog({title: me ? `Bonjour ${esc(persName(me))}` : 'Bienvenue dans TriFlow', saveLabel:'C’est parti', body:`<ol class="welcome">
+    ${first}
+    <li><b>Votre semaine</b> est sur l’accueil : ce que le planning vous a attribué, jour par jour.</li>
+    <li><b>C’est fait ?</b> Cochez la tâche ✓ : le rapport s’ouvre déjà rempli. Pour un rapport, une sortie de stock ou un scan : le bouton <b>+</b> en bas à droite sur téléphone, ou les raccourcis de l’accueil.</li>
     <li><b>Perdu ?</b> Le bouton <b>?</b> en haut ouvre l’aide, en quelques lignes.</li></ol>`, onSave(){},
     onOpen(f, dd){ const b = $('[data-w-me]', dd); if (b) b.onclick = () => { dd.close(); meDialog(); }; }});
   return d;
