@@ -581,6 +581,8 @@ details.more > *:not(summary){margin-top:12px}
 .ychip{all:unset;cursor:pointer;flex:none;padding:5px 11px;border-radius:999px;font-size:.85rem;font-weight:600;color:var(--muted);background:var(--sunk)}
 .ychip small{font-weight:500;opacity:.75;margin-left:2px}
 .ychip[aria-selected=true]{background:var(--accent);color:var(--accent-ink)}
+.ysep{flex:none;width:1px;align-self:stretch;margin:3px 2px;background:var(--line)}
+.ychip.warn[aria-selected=false] small{color:var(--warn);opacity:1;font-weight:700}
 .ychip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .rlist{display:flex;flex-direction:column}
 .rmonth{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;align-items:baseline;padding:7px 16px;background:var(--sunk);border-bottom:1px solid var(--line);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
@@ -2668,6 +2670,12 @@ function migrate(d){
   }
   if (!d.meta.kksPartV && d.pieces.length){ linkPartialKks(d); d.meta.kksPartV = 1; }
   if (!d.meta.numV && d.interventions.length){ renumberInts(d); d.meta.numV = 1; }
+  /* « Modifié par » posé en masse par un import ou une mise à jour automatique : ce n'est pas une vraie modification, on l'efface */
+  if (!d.meta.byFixV){
+    for (const c of COLS){ const g = new Map(); for (const x of d[c] || []) if (x._by && x._at){ const k = x._by + '|' + String(x._at).slice(0, 16); g.set(k, (g.get(k) || 0) + 1); }
+      for (const x of d[c] || []) if (x._by && x._at && g.get(x._by + '|' + String(x._at).slice(0, 16)) > 40){ delete x._by; delete x._at; } }
+    d.meta.byFixV = 1;
+  }
   if (d.meta.demo && !d.meta.tachesV){ seedTaches(d); }
   d.meta.tachesV = 1;
   d.version = 2; return d;
@@ -2754,7 +2762,10 @@ const CLOUD = {
       do {
         this.again = false;
         const cur = this.docsOf(db), changes = [];
-        for (const [k, v] of cur){ const j = JSON.stringify(v); if (this.synced.get(k) !== j){ if (!k.startsWith('config|') && this.user?.email && !this.auto){ v._by = this.user.email; v._at = new Date().toISOString(); } changes.push({k, j:JSON.stringify(v), v}); } }
+        for (const [k, v] of cur){ const j = JSON.stringify(v); if (this.synced.get(k) !== j) changes.push({k, j, v}); }
+        /* « Modifié par » : seulement pour les vraies modifications (pas les imports ni les mises à jour en masse) */
+        { const per = new Map(); for (const x of changes){ const c = x.k.slice(0, x.k.indexOf('|')); per.set(c, (per.get(c) || 0) + 1); }
+          for (const x of changes){ const c = x.k.slice(0, x.k.indexOf('|')); if (c !== 'config' && this.user?.email && !this.auto && per.get(c) <= 40){ x.v._by = this.user.email; x.v._at = new Date().toISOString(); x.j = JSON.stringify(x.v); } } }
         for (const k of this.synced.keys()) if (!cur.has(k)) changes.push({k, del:true});
         if (!changes.length) break;
         let jr = []; try { jr = JRN.entries(changes, this.synced, this.auto); } catch(e){}
@@ -3776,30 +3787,34 @@ function filteredInts(){
 }
 VIEWS.interventions = {
   shell: () => `<header class="page-head"><h1>Rapports</h1><div class="tools">${searchBox('interventions', 'Rechercher un rapport…')}${S.arch.interventions ? '' : pourSelect()}
-    <select class="mini" data-change="statut" aria-label="Filtrer par statut">${[['actives', 'En cours'], ['terminee', 'Terminées'], ['toutes', 'Toutes']].map(([v, t]) => `<option value="${v}" ${S.statut === v ? 'selected' : ''}>${t}</option>`).join('')}</select>
+
     <button class="btn primary" data-act="new-int">${icon('plus')}Nouveau rapport</button>${menu([['xl-ints', 'Exporter la liste (Excel)', 'excel', {}], archItem('interventions'), '-', ['import-travaux', 'Importer depuis CareOffice (fichier)', 'save', {}]])}</div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list(){
     const all = filteredInts();
     if (!db.interventions.length) return empty('Aucun rapport', '<p>Créez le premier avec « Nouveau rapport ».</p>');
     if (!all.length && S.arch.interventions) return empty('Aucun rapport archivé', '');
+    if (!all.length && S.statut === 'actives') return `<div class="ychips"><button role="tab" class="ychip warn" data-act="rstat" aria-selected="true">En cours <small>0</small></button><span class="ysep"></span><button class="ychip" data-act="rstat">Voir tous les rapports</button></div>` + empty('Aucun rapport en cours', '<p>Tout est terminé.</p>');
     if (!all.length && S.pour) return empty('Aucun rapport pour ' + esc(pourLabel(S.pour)), '<p><button class="btn small" data-act="pour-all">Voir les rapports de tout le monde</button></p>');
-    if (!all.length) return empty(S.statut === 'actives' ? 'Aucun rapport en cours' : 'Aucun rapport ne correspond', S.statut !== 'toutes' ? `<p><button class="btn small" data-act="int-all">Afficher les ${db.interventions.length} rapports</button></p>` : '');
+    if (!all.length) return empty('Aucun rapport ne correspond', S.statut !== 'toutes' ? `<p><button class="btn small" data-act="int-all">Afficher les ${db.interventions.length} rapports</button></p>` : '');
+    const st0 = S.statut; S.statut = 'toutes'; const nOpen = S.arch.interventions ? 0 : filteredInts().filter(i => i.statut !== 'terminee').length; S.statut = st0;
     const yc = new Map(); for (const i of all){ const y = (i.date || '').slice(0, 4) || '—'; yc.set(y, (yc.get(y) || 0) + 1); }
     const years = [...yc.keys()].sort().reverse();
     const searching = !!norm(S.q.interventions);
-    let y = S.ryear && (S.ryear === 'all' || yc.has(S.ryear)) ? S.ryear : (searching || all.length <= 150 ? 'all' : years[0]);
+    const openOnly = S.statut === 'actives';
+    let y = openOnly ? 'all' : S.ryear && (S.ryear === 'all' || yc.has(S.ryear)) ? S.ryear : (searching || all.length <= 150 ? 'all' : years[0]);
     const rows = y === 'all' ? all : all.filter(i => (i.date || '').startsWith(y));
     const MO = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'], MS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
     const lim = S.rmore === y + norm(S.q.interventions) ? 1e9 : 400, shown = rows.slice(0, lim);
     const groups = []; for (const i of shown){ const k = (i.date || '').slice(0, 7); if (!groups.length || groups[groups.length - 1].k !== k) groups.push({k, list:[]}); groups[groups.length - 1].list.push(i); }
     const mcount = new Map(); for (const i of rows){ const k = (i.date || '').slice(0, 7); mcount.set(k, (mcount.get(k) || 0) + 1); }
-    const chips = years.length > 1 ? `<div class="ychips" role="tablist" aria-label="Année">${years.length > 1 ? `<button role="tab" class="ychip" data-act="ryear" data-y="all" aria-selected="${y === 'all'}">Toutes <small>${all.length}</small></button>` : ''}${years.map(x => `<button role="tab" class="ychip" data-act="ryear" data-y="${x}" aria-selected="${y === x}">${x} <small>${yc.get(x)}</small></button>`).join('')}</div>` : '';
+    const stChip = S.arch.interventions ? '' : `<button role="tab" class="ychip warn" data-act="rstat" aria-selected="${openOnly}">En cours <small>${nOpen}</small></button><span class="ysep" aria-hidden="true"></span>`;
+    const chips = years.length > 1 || stChip ? `<div class="ychips" role="tablist" aria-label="Filtrer les rapports">${stChip}${openOnly ? '' : `${years.length > 1 ? `<button role="tab" class="ychip" data-act="ryear" data-y="all" aria-selected="${y === 'all'}">Toutes <small>${all.length}</small></button>` : ''}${years.length > 1 ? years.map(x => `<button role="tab" class="ychip" data-act="ryear" data-y="${x}" aria-selected="${y === x}">${x} <small>${yc.get(x)}</small></button>`).join('') : ''}`}${openOnly ? `<button class="ychip" data-act="rstat">Voir tous les rapports</button>` : ''}</div>` : '';
     const row = i => { const k = kInfo(i), d = i.date || '', who = intPers(i).slice(0, 3).map(x => x.nom).join(', ') + (i.intervenants.length > 3 ? ` +${i.intervenants.length - 3}` : '');
       return `<button class="rrow ${S.sel.interventions === i.id ? 'sel' : ''}" data-act="select" data-id="${i.id}"><span class="rday"><b>${+d.slice(8, 10) || ''}</b><small>${MS[+d.slice(5, 7) - 1] || ''}</small></span>
         <span class="pm"><span class="pdes">${esc(i.titre || '(sans titre)')}</span><span class="ploc">${k?.code ? `<span class="kks">${esc(k.code)}</span>` : ''}${i.type ? `<span>${esc(i.type)}</span>` : ''}${who ? `<span class="muted rwho">${esc(who)}</span>` : ''}</span></span>
         ${i.statut !== 'terminee' ? statutChip(i.statut) : ''}</button>`; };
-    return `${chips}${years.length > 1 ? '' : `<div class="list-bar"><span class="muted">${rows.length} rapport(s)</span></div>`}
+    return `${chips}${years.length > 1 && !openOnly ? '' : `<div class="list-bar"><span class="muted">${rows.length} rapport(s)${openOnly ? ' en cours' : ''}</span></div>`}
       <div class="rlist">${groups.map(g => `<div class="rmonth"><span>${g.k ? MO[+g.k.slice(5, 7) - 1] + ' ' + g.k.slice(0, 4) : 'Sans date'}</span><small>${mcount.get(g.k) || g.list.length}</small></div>${g.list.map(row).join('')}`).join('')}
       ${rows.length > shown.length ? `<p class="list-note"><button class="link" data-act="rmore" data-k="${esc(y + norm(S.q.interventions))}">Afficher les ${rows.length - shown.length} autres</button></p>` : ''}</div>`;
   },
@@ -5278,7 +5293,8 @@ const ACT = {
   pf(d){ S.lowOnly = d.f === 'low'; S.zeroOnly = d.f === 'zero'; S.plimit = 200; S.sel.pieces = null; fillList(); fillDetail(); },
   pmore(){ S.plimit += 300; fillList(); },
   fab(d, t){ const m = $('#fab .fab-menu'); m.hidden = !m.hidden; t.setAttribute('aria-expanded', String(!m.hidden)); },
-  ryear(d){ S.ryear = d.y; S.sel.interventions = null; fillList(); fillDetail(); },
+  rstat(){ S.statut = S.statut === 'actives' ? 'toutes' : 'actives'; S.ryear = null; S.sel.interventions = null; fillList(); fillDetail(); },
+  ryear(d){ S.statut = 'toutes'; S.ryear = d.y; S.sel.interventions = null; fillList(); fillDetail(); },
   rmore(d){ S.rmore = d.k; fillList(); },
   'four-ints'(d){ S.q.interventions = d.name; S.statut = 'toutes'; S.arch.interventions = false; S.ryear = 'all'; go('interventions'); },
   dups: () => dupDialog(),
