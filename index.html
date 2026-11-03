@@ -1032,6 +1032,7 @@ tr.grp.old th{color:var(--muted)}
 }
 @media (max-width:980px){ .ptip-row .plegend{display:none} }
 /* Feuille de planning imprimée, façon Excel */
+@media (max-width:760px){ .page-head [data-act=plan-print]{display:none} }
 .pconge{display:flex;align-items:center;gap:6px;margin:10px 2px 0}
 .pconge .ico{width:15px;height:15px;flex:none}
 .jlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
@@ -2753,10 +2754,11 @@ const CLOUD = {
       do {
         this.again = false;
         const cur = this.docsOf(db), changes = [];
-        for (const [k, v] of cur){ const j = JSON.stringify(v); if (this.synced.get(k) !== j){ if (!k.startsWith('config|') && this.user?.email){ v._by = this.user.email; v._at = new Date().toISOString(); } changes.push({k, j:JSON.stringify(v), v}); } }
+        for (const [k, v] of cur){ const j = JSON.stringify(v); if (this.synced.get(k) !== j){ if (!k.startsWith('config|') && this.user?.email && !this.auto){ v._by = this.user.email; v._at = new Date().toISOString(); } changes.push({k, j:JSON.stringify(v), v}); } }
         for (const k of this.synced.keys()) if (!cur.has(k)) changes.push({k, del:true});
         if (!changes.length) break;
-        let jr = []; try { jr = JRN.entries(changes, this.synced); } catch(e){}
+        let jr = []; try { jr = JRN.entries(changes, this.synced, this.auto); } catch(e){}
+        this.auto = false;
         for (let i = 0; i < changes.length; i += 400){
           const part = changes.slice(i, i + 400);
           const payload = part.map(x => { const p = x.k.indexOf('|'); return {c:x.k.slice(0, p), id:x.k.slice(p + 1), rev:this.revs.get(x.k) || 0, del:!!x.del, data:x.del ? null : x.v}; });
@@ -2881,8 +2883,8 @@ function jDescribe(col, id, o, n){
 }
 const JRN = {
   last:new Map(),
-  entries(changes, synced){
-    const email = CLOUD.user?.email || '', nom = jWho(email), at = new Date().toISOString(), out = [];
+  entries(changes, synced, auto = false){
+    const email = auto ? '' : CLOUD.user?.email || '', nom = auto ? 'TriFlow (mise à jour automatique)' : jWho(email), at = new Date().toISOString(), out = [];
     const real = changes.filter(c => !c.k.startsWith('journal|'));
     const byCol = new Map(); for (const c of real){ const col = c.k.slice(0, c.k.indexOf('|')); byCol.set(col, (byCol.get(col) || 0) + 1); }
     for (const c of real){
@@ -2982,7 +2984,7 @@ async function startCloud(){
     if (!CLOUD.user){ CLOUD.warming = false; return loginForm(); }
     const {d, empty} = await CLOUD.loadAll();
     CLOUD.on = true; CLOUD.warming = false;
-    db = migrate(d); if (empty) db.meta.demo = false;
+    db = migrate(d); if (empty) db.meta.demo = false; CLOUD.auto = true;
     hideGate(); if (!cached) applyHash(); if (!document.querySelector('dialog[open]')) render(); CLOUD.status('ok');
     const ft = $('#foot-txt'); if (ft) ft.textContent = `Base partagée · ${CLOUD.user.email || ''} ·`;
     CLOUD.schedule();
@@ -3077,11 +3079,12 @@ const HELP = [
   ['move', 'Sortir ou rentrer une pièce', ['Scannez l’étiquette QR de la pièce, ou cherchez-la dans <b>Pièces</b>.', 'Sur sa fiche : <b>− Sortir</b> ou <b>+ Entrer</b>, la quantité, l’emplacement.', 'Une erreur ? Le message en bas propose <b>Annuler</b> pendant quelques secondes.']],
   ['scan', 'Trouver une pièce', ['<b>Scanner un QR</b> (accueil ou bouton à côté de la recherche) ouvre directement la fiche.', 'Sinon, tapez un mot, un ID, une référence ou un KKS dans la recherche des Pièces.', 'La fiche indique où elle est rangée, sur quels équipements elle va et dans quels rapports elle a servi.']],
   ['calendar', 'Planifier la semaine', ['Onglet <b>Planning</b> : une ligne par personne, avec ses présences (R, RM, VA…).', 'Glissez une tâche de la colonne « À planifier » dans une case, ou cliquez dans la case pour écrire le travail.', 'Imprimer la semaine : ⋯ Plus › Imprimer.']],
-  ['person', 'Ce que je vois', ['Choisissez votre nom une fois (accueil ou Options › Connexion).', 'Tâches, rapports et accueil sont alors filtrés sur vous et votre groupe. Pour tout voir : « Tout le monde ».', 'Les archives ne sont jamais filtrées.']],
+  ['person', 'Ce que je vois', ['TriFlow vous reconnaît d’après votre adresse e-mail ; sinon, choisissez votre nom une fois (accueil ou Options › Connexion).', 'Tâches, rapports et accueil sont alors filtrés sur vous et votre groupe. Pour tout voir : « Tout le monde ».', 'Les archives ne sont jamais filtrées.']],
+  ['list', 'Qui a fait quoi', ['Chaque action est notée : sorties de stock, rapports, tâches, planning, modifications.', 'Tout l’historique : <b>Options › Historique</b>. Celui d’une fiche : en bas de la fiche, « Qui a fait quoi ».']],
   ['archive', 'Archiver et retrouver', ['Rien ne se supprime par erreur : « Archiver » retire un élément des listes.', 'Pour le retrouver : ⋯ Plus › Archives, puis <b>Restaurer</b>.']]
 ];
 function helpDialog(open = 0){
-  dialog({title:'Aide', saveLabel:'Fermer', wide:true, body:`<div class="help">${HELP.map(([ic, t, steps], i) => `<details ${i === open ? 'open' : ''}><summary>${icon(ic)}${t}</summary><ol>${steps.map(x => `<li>${x}</li>`).join('')}</ol></details>`).join('')}</div><p class="hint">Une question, une idée ? Parlez-en à Thomas Bonnant (informatique).</p>`, onSave(){}});
+  dialog({title:'Aide', saveLabel:'Fermer', wide:true, info:true, body:`<div class="help">${HELP.map(([ic, t, steps], i) => `<details ${i === open ? 'open' : ''}><summary>${icon(ic)}${t}</summary><ol>${steps.map(x => `<li>${x}</li>`).join('')}</ol></details>`).join('')}</div><p class="hint">Une question, une idée ? Parlez-en à Thomas Bonnant (informatique).</p>`, onSave(){}});
 }
 function maybeWelcome(){
   let seen = null; try { seen = localStorage.getItem('tf-welcome'); } catch(e){ return; }
@@ -3091,7 +3094,7 @@ function maybeWelcome(){
   const first = me
     ? `<li><b>Vous êtes reconnu : ${esc(persName(me))}${me.groupe ? ` · ${esc(me.groupe)}` : ''}.</b> ${all ? 'Vous voyez les tâches et rapports de tout le monde.' : `L’accueil, les tâches et les rapports sont filtrés sur vous${me.groupe ? ` et votre groupe (${esc(me.groupe)})` : ''} ; « Voir tout le monde » enlève le filtre.`} <button type="button" class="link" data-w-me>Ce n’est pas vous ?</button></li>`
     : `<li><b>Dites-nous qui vous êtes.</b> Vous verrez vos tâches et celles de votre groupe. <button type="button" class="btn small primary" data-w-me>${icon('person')}Choisir mon nom</button></li>`;
-  const d = dialog({title: me ? `Bonjour ${esc(persName(me))}` : 'Bienvenue dans TriFlow', saveLabel:'C’est parti', body:`<ol class="welcome">
+  const d = dialog({title: me ? `Bonjour ${esc(persName(me))}` : 'Bienvenue dans TriFlow', saveLabel:'C’est parti', info:true, body:`<ol class="welcome">
     ${first}
     <li><b>Votre semaine</b> est sur l’accueil : ce que le planning vous a attribué, jour par jour.</li>
     <li><b>C’est fait ?</b> Cochez la tâche ✓ : le rapport s’ouvre déjà rempli. Pour un rapport, une sortie de stock ou un scan : le bouton <b>+</b> en bas à droite sur téléphone, ou les raccourcis de l’accueil.</li>
@@ -3383,7 +3386,8 @@ function autoSel(){
   const cur = S.sel[S.view]; if (cur && (S.view === 'pieces' ? getPiece(cur) : get(S.view, cur))) return;
   const f = $('#list [data-act=select][data-id]'); if (!f) return; S.sel[S.view] = f.dataset.id; f.classList.add('sel');
 }
-function fillDetail(){ contIdx = null; autoSel(); const el = $('#detail'); if (el){ el.innerHTML = VIEWS[S.view].detail(); const sid = S.sel[S.view]; if (['pieces', 'taches', 'interventions', 'kks'].includes(S.view) && sid && !el.querySelector('.placeholder')) el.insertAdjacentHTML('beforeend', jrnBlock(sid)); } if ($('[data-jrn]')) jrnRefresh(); $('#main .split')?.classList.toggle('has-sel', S.view === 'pieces' && !!getPiece(S.sel.pieces)); }
+function fillDetail(){ contIdx = null; autoSel(); const el = $('#detail'); if (el){ el.innerHTML = VIEWS[S.view].detail(); const sid = S.sel[S.view]; if (['pieces', 'taches', 'interventions', 'kks'].includes(S.view) && sid && !el.querySelector('.placeholder')) el.insertAdjacentHTML('beforeend', jrnBlock(sid)); } if ($('[data-jrn]')) jrnRefresh(); $('#main .split')?.classList.toggle('has-sel', (S.view === 'pieces' && !!getPiece(S.sel.pieces)) || (S.view === 'interventions' && !!getInt(S.sel.interventions)) || (S.view === 'taches' && !!get('taches', S.sel.taches)));
+  if (el && (S.view === 'interventions' || S.view === 'taches') && S.sel[S.view] && !el.querySelector('.placeholder')) el.insertAdjacentHTML('afterbegin', `<button class="btn small m-only back-list" data-act="desel">${icon('chev')}${S.view === 'taches' ? 'Liste des tâches' : 'Liste des rapports'}</button>`); }
 function go(view, id){
   S.view = view; if (id !== undefined) S.sel[view] = id;
   closeSearch(); render();
@@ -3446,7 +3450,7 @@ VIEWS.accueil = {
         const td = me ? db.plan.filter(x => x.who === me && x.date === todayISO()) : [];
         const tdH = td.length ? `<div class="ptoday"><b>${icon('calendar')}Aujourd’hui au planning</b>${td.map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null, done = t && db.interventions.some(i => i.tacheId === t.id && i.date === x.date); return `<div class="ptd ${done ? 'done' : ''}"><button class="pit ${t ? 'task' : ''}" data-act="${t ? 'goto' : 'nav'}" data-view="${t ? 'taches' : 'planning'}" ${t ? `data-id="${t.id}"` : ''}>${t ? icon('repeat') : ''}<span>${esc(t ? t.titre : x.text)}</span>${t && x.text ? `<small>${esc(x.text)}</small>` : ''}</button>${done ? `<span class="ok-tag">${icon('check')}Fait</span>` : `<button class="btn small primary" data-act="plan-done" data-id="${x.id}">${icon('check')}C’est fait</button>`}</div>`; }).join('')}</div>` : '';
         return `<section class="panel"><div class="panel-head"><h2>${mine ? 'Mes tâches' : 'Tâches à faire'}${dueAll.length ? ` <span class="muted" style="font-size:.9rem">${dueAll.length}</span>` : ''}</h2><button class="link" data-act="nav" data-view="taches">${dueAll.length > 5 ? `Voir les ${dueAll.length}` : 'Toutes'}</button></div>${who}${tdH}${due.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${due.map(t => tacheRow(t, false)).join('')}</tbody></table></div>` : '<div style="padding:0 16px 16px"><p class="empty-line">Rien en retard ni dans les 7 prochains jours.</p></div>'}</section>`; })()}
-      <section class="panel"><div class="panel-head"><h2>Rapports en cours</h2><button class="link" data-act="nav" data-view="interventions">Toutes</button></div>${open.length ? intTable(open) : '<div style="padding:0 16px 16px"><p class="empty-line">Aucun rapport en cours.</p></div>'}</section>
+      <section class="panel"><div class="panel-head"><h2>Rapports en cours</h2><button class="link" data-act="nav" data-view="interventions">Tous</button></div>${open.length ? intTable(open) : '<div style="padding:0 16px 16px"><p class="empty-line">Aucun rapport en cours.</p></div>'}</section>
       </div>
       <div style="display:flex;flex-direction:column;gap:18px;min-width:0">${weekHTML()}${(() => { const done = db.interventions.filter(i => live(i) && i.statut === 'terminee' && intFor(i, S.pour)).sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 5);
         return `<section class="panel"><div class="panel-head"><h2>${S.pour ? 'Derniers rapports' : 'Derniers rapports'}</h2><button class="link" data-act="nav" data-view="interventions">Tous</button></div>${done.length ? intTable(done) : '<div style="padding:0 16px 16px"><p class="empty-line">Aucun rapport terminé.</p></div>'}</section>`; })()}</div>
@@ -3880,6 +3884,7 @@ VIEWS.kks = {
         return `${crumb}<div class="sys-head"><h3><b class="code">${S.sys === '?' ? '' : cur}</b>${S.sys === '?' ? 'Sans système' : esc(sysName(cur))}</h3><span class="cnt">${rows.length} équip.</span></div>
           ${rows.length ? (rows.length > 12 && S.sys !== '?' ? kksGroups(rows) : kksRows(rows)) : '<p class="empty-line" style="padding:16px 0">Aucun équipement.</p>'}`;
       }
+      if (!cur) return placeholder('plant', 'Choisissez un système à gauche, ou tapez un code KKS, un AIC ou un nom d’équipement dans la recherche.');
       const kids = [...new Set([...cnt.keys()].filter(c => c !== '?' && c.startsWith(cur)).map(c => c.slice(0, cur.length + 1)))].sort();
       return `${crumb}${cur ? `<div class="sys-head"><h3><b class="code">${cur}</b>${esc(sysName(cur))}</h3><span class="cnt">${n(cur)} équip.</span></div>` : '<p class="hint" style="margin:0 0 10px">Choisissez un système : il se déplie dans le menu de gauche.</p>'}
         <div class="sys-kids">${kids.map(c => `<button class="sys-kid" data-act="sys-sel" data-sys="${c}"><b class="code">${c}</b><span class="t">${esc(sysName(c)) || '<span class="muted">Sans nom</span>'}</span><span class="cnt">${n(c)}</span>${icon('chev')}</button>`).join('')}</div>`;
@@ -4172,8 +4177,9 @@ function planSheetHTML(){
     <p class="xf">Imprimé le ${fmtDT(new Date().toISOString())} · TriFlow</p></article>`;
 }
 
-const OPT_SECS = [['historique', 'Historique', 'list'], ['lieux', 'Emplacements', 'shelf'], ['kks', 'Équipements (KKS)', 'plant'], ['personnes', 'Personnes', 'person'], ['fournisseurs', 'Fournisseurs', 'truck'], ['listes', 'Listes', 'list'], ['etiquettes', 'Étiquettes & QR', 'qr'], ['donnees', 'Sauvegarde', 'save'], ['connexion', 'Connexion', 'person']];
+const OPT_SECS = [['historique', 'Historique', 'list'], ['lieux', 'Emplacements', 'shelf'], ['personnes', 'Personnes', 'person'], ['fournisseurs', 'Fournisseurs', 'truck'], ['listes', 'Listes', 'list'], ['etiquettes', 'Étiquettes & QR', 'qr'], ['donnees', 'Sauvegarde', 'save'], ['connexion', 'Connexion', 'person']];
 const OPT = {};
+if (typeof S !== 'undefined' && S.opt === 'kks') S.opt = 'historique';
 OPT.lieux = () => {
   const salles = db.salles.filter(live).sort((a, b) => (!!a.statut - !!b.statut) || coll.compare(salleCode(a), salleCode(b))), sArch = db.salles.filter(x => x.arch);
   const add = menu([['new-lieu', 'Un emplacement', 'shelf'], ['new-salle', 'Un local', 'plus'], ['gen-series', 'Une série (ex. A / 1 à 20)', 'list'], '-', ['import-lieux', 'Coller une liste', 'save']], 'Ajouter', 'plus', 'primary');
@@ -4314,11 +4320,11 @@ OPT.etiquettes = () => `<section class="opt-sec"><div class="head"><h2>Étiquett
     <label>Format d’étiquette par défaut<select name="labelFmt">${opt('sheet', 'Planche A4 · 21 étiquettes 63,5 × 38,1 mm', db.reglages.labelFmt)}${opt('roll', 'Étiqueteuse · 62 × 29 mm', db.reglages.labelFmt)}</select></label></div>
     <div><button class="btn primary">Enregistrer</button></div></form></section>`;
 OPT.donnees = () => `<section class="opt-sec"><div class="head"><h2>Sauvegarde</h2></div><div class="pad"><p>${CLOUD.on ? 'Les données sont dans la base partagée. Une copie de sauvegarde téléchargée de temps en temps reste une bonne précaution.' : 'Les données restent dans ce navigateur, sur ce poste. Exportez régulièrement une sauvegarde : elle permet de restaurer les données ou de les passer sur un autre ordinateur.'}</p>
-    <div class="tools"><button class="btn primary" data-act="export-json">${icon('save')}Exporter la sauvegarde</button><button class="btn" data-act="import-json">Restaurer une sauvegarde…</button></div></div></section>
+    <div class="tools"><button class="btn primary" data-act="export-json">${icon('save')}Exporter la sauvegarde</button>${canDel() ? '<button class="btn" data-act="import-json">Restaurer une sauvegarde…</button>' : ''}</div>${canDel() ? '' : '<p class="hint">Restaurer une sauvegarde est réservé aux cadres.</p>'}</div></section>
   <section class="opt-sec"><div class="head"><h2>Exports pour Excel</h2></div><div class="pad"><p>Fichiers Excel (.xlsx). Chaque liste (pièces, rapports, tâches, installation) s’exporte aussi depuis son menu « Plus », avec les filtres en cours.</p>
     <div class="tools"><button class="btn" data-act="export-csv-stock">Stock par emplacement</button><button class="btn" data-act="export-csv-int">Rapports</button><button class="btn" data-act="export-csv-kks">Liens pièces ↔ KKS</button></div></div></section>
-  <section class="opt-sec"><div class="head"><h2>Réinitialiser</h2></div><div class="pad"><p>${db.meta.demo ? 'Les données actuelles sont des exemples. Effacez-les pour commencer avec vos vraies données.' : (CLOUD.on ? 'Efface toutes les données de la base partagée, pour tout le monde.' : 'Efface toutes les pièces, emplacements, personnes, repères et rapports de ce navigateur.')}</p>
-    <div class="tools">${db.meta.demo ? '<button class="btn" data-act="clear-demo">Effacer les exemples</button>' : '<button class="btn danger-ghost" data-act="clear-all">Tout effacer…</button>'}<button class="btn" data-act="load-demo">Recharger les exemples</button></div></div></section>`;
+  ${!canDel() ? '' : `<section class="opt-sec"><div class="head"><h2>Réinitialiser</h2></div><div class="pad"><p>${db.meta.demo ? 'Les données actuelles sont des exemples. Effacez-les pour commencer avec vos vraies données.' : (CLOUD.on ? 'Efface toutes les données de la base partagée, pour tout le monde.' : 'Efface toutes les pièces, emplacements, personnes, repères et rapports de ce navigateur.')}</p>
+    <div class="tools">${db.meta.demo ? '<button class="btn" data-act="clear-demo">Effacer les exemples</button>' : '<button class="btn danger-ghost" data-act="clear-all">Tout effacer…</button>'}${CLOUD.on ? '' : '<button class="btn" data-act="load-demo">Recharger les exemples</button>'}</div></div></section>`}`;
 VIEWS.options = {
   shell: () => `<header class="page-head"><h1>Options</h1></header>
     <div class="opt"><nav class="opt-nav" aria-label="Sections des options"><button data-act="nav" data-view="kks" title="Fiche de chaque équipement : rapports, tâches et pièces">${icon('plant')}Installation</button>${OPT_SECS.map(([k, t, ic]) => `<button data-act="opt" data-sec="${k}" aria-current="${S.opt === k}">${icon(ic)}${t}</button>`).join('')}</nav>
@@ -4430,12 +4436,12 @@ function scanDialog(){
 /* =====================================================================
    DIALOGUES
    ===================================================================== */
-function dialog({title, body, onSave, saveLabel = 'Enregistrer', wide = false, del = null, onOpen = null}){
+function dialog({title, body, onSave, saveLabel = 'Enregistrer', wide = false, del = null, onOpen = null, info = false}){
   closeSearch();
   const d = document.createElement('dialog'); d.className = 'dlg' + (wide ? ' wide' : '');
   d.innerHTML = `<form novalidate><header><h2>${title}</h2><button type="button" class="icon-btn" data-close aria-label="Fermer">×</button></header>
     <div class="dlg-body">${body}</div><p class="dlg-err" hidden></p>
-    <footer>${del ? `<button type="button" class="btn ${del.soft ? 'ghost' : 'danger-ghost'} left" data-del>${del.soft ? icon('archive') : ''}${del.label}</button>` : ''}<button type="button" class="btn" data-close>Annuler</button><button type="submit" class="btn primary">${saveLabel}</button></footer></form>`;
+    <footer>${del ? `<button type="button" class="btn ${del.soft ? 'ghost' : 'danger-ghost'} left" data-del>${del.soft ? icon('archive') : ''}${del.label}</button>` : ''}${info ? '' : '<button type="button" class="btn" data-close>Annuler</button>'}<button type="submit" class="btn primary">${saveLabel}</button></footer></form>`;
   document.body.append(d);
   const f = $('form', d), err = $('.dlg-err', d);
   const fail = e => { err.textContent = e.message; err.hidden = false; err.scrollIntoView({block:'nearest'}); };
@@ -5142,7 +5148,7 @@ async function syncPlanning(){
     const j = await r.json(), fb = Object.fromEntries(PLANNING_STAFF);
     const list = (j.employes || []).map(e => { const nom = String(e.nom || '').trim(); const cat = String(e.categorie || '').trim(); return [nom, PLANNING_CAT[cat] || cat || fb[nom.toUpperCase()] || '']; }).filter(x => x[0]);
     if (list.length < 5) return;
-    tx(() => { mergeStaff(db, list, true); db.meta.staffSync = today; });
+    CLOUD.auto = true; tx(() => { mergeStaff(db, list, true); db.meta.staffSync = today; });
     if (S.view === 'options') render();
   } catch(e){ /* hors ligne ou bloqué : on garde la liste actuelle */ }
 }
@@ -5256,13 +5262,10 @@ const ACT = {
     tx(() => { db.plan = db.plan.filter(y => y.id !== d.id); }); render(); toast(`${t ? t.titre : 'Texte'} retiré du planning`, '', true); },
   'plan-edit'(d, t){ const x = db.plan.find(y => y.id === d.id); if (!x) return; if (S.ppick){ placeTask(S.ppick, x.who, x.date); return; } if (PLAN_TYPE() && !x.tacheId) planInline(t.closest('.pc'), x.who, x.date, x, t); else planDialog(x.who, x.date, x); },
   'plan-side'(){ S.pside = !S.pside; try { localStorage.setItem('tf-pside', S.pside ? '1' : '0'); } catch(e){} render(); },
-  'plan-we'(){ S.pwe = !S.pwe; render(); },
   'plan-hide': () => planHideDialog(),
   navplus(d, t){ const s2 = $('#navsheet'); s2.hidden = !s2.hidden; t.setAttribute('aria-expanded', String(!s2.hidden)); },
   'to-order': () => orderDialog(),
   'plan-print'(d){ const a3 = d.f === 'a3'; document.body.classList.add('land'); document.body.classList.toggle('a3', a3); doPrint(fitSheet(planSheetHTML(), a3 ? 396 : 277, a3 ? 271 : 188)); },
-  'plan-copy'(){ const mon = S.pweek, prev = isoAdd(mon, -7); const src = db.plan.filter(x => x.date >= prev && x.date < mon && !x.tacheId && x.text); if (!src.length){ toast('Aucun texte libre la semaine précédente.'); return; }
-    tx(() => { for (const x of src){ const dd = isoAdd(x.date, 7); if (!db.plan.some(y => y.who === x.who && y.date === dd && y.text === x.text)) db.plan.push({id:uid(), date:dd, who:x.who, text:x.text}); } }); render(); toast(`${src.length} ligne(s) reprise(s)`, '', true); },
   me: () => meDialog(),
   help: () => helpDialog(),
   'relink-kks'(){ const r = tx(() => linkPartialKks(db)); render(); toast(r.nl ? `${r.nl} lien(s) pièce ↔ KKS ajouté(s)${r.nc ? ` · ${r.nc} repère(s) KKS créé(s)` : ''}` : 'Aucun nouveau repère KKS trouvé dans les pièces', '', !!r.nl); },
@@ -5271,7 +5274,6 @@ const ACT = {
   'pour-me'(){ const me = meId(); S.pour = me ? 'p:' + me : ''; render(); },
   'name-ints'(d){ S.q.interventions = d.name; S.statut = 'toutes'; S.arch.interventions = false; S.ryear = null; go('interventions'); },
   recaler(d){ const t = get('taches', d.id); if (!t) return; const today = todayISO(); tx(() => { if (t.freq.unite === 'once') t.prochaine = today; else { let n = t.prochaine; while (n < today) n = addFreq(n, t.freq.n, t.freq.unite); t.prochaine = n; } }); render(); toast(`Prochaine fois : ${fmtD(t.prochaine)}`, '', true); },
-  'toggle-tlate'(){ S.tf = S.tf === 'vieux' ? '' : 'vieux'; render(); },
   tf(d){ if (S.view !== 'taches'){ S.tf = d.f || ''; S.back = []; go('taches'); return; } S.tf = d.f || ''; S.sel.taches = null; fillList(); fillDetail(); },
   pf(d){ S.lowOnly = d.f === 'low'; S.zeroOnly = d.f === 'zero'; S.plimit = 200; S.sel.pieces = null; fillList(); fillDetail(); },
   pmore(){ S.plimit += 300; fillList(); },
@@ -5311,7 +5313,6 @@ const ACT = {
   select(d){ S.sel[S.view] = d.id; fillList(); fillDetail(); scrollDetail(); },
   goto(d){ if (d.view !== S.view || S.sel[d.view] !== d.id){ S.back.push({view:S.view, sel:{...S.sel}, q:{...S.q}, sys:S.sys, sysExp:new Set(S.sysExp), psort:S.psort, plimit:S.plimit, y:window.scrollY, ls:$('#list')?.scrollTop || 0}); if (S.back.length > 20) S.back.shift(); } $('#gq').value = ''; go(d.view, d.id); },
   tab(d){ S.tab[S.view] = d.tab; fillDetail(); },
-  zone(d){ S.zone = d.zone; S.q.kks = ''; go('kks'); },
   sys(d){ const c = d.sys || ''; S.q.kks = ''; S.sel.kks = null; S.sysAuto = null;
     if (c.length === 3 || c === '?'){ S.sys = c; if (c !== '?'){ S.sysExp.add(c[0]); S.sysExp.add(c.slice(0, 2)); } } else { S.sys = ''; S.sysExp.add(c); }
     if (S.view !== 'kks') go('kks'); else { fillList(); fillDetail(); scrollDetail(); } },
@@ -5320,14 +5321,11 @@ const ACT = {
     if (c.length === 3){ S.sysExp.add(c[0]); S.sysExp.add(c.slice(0, 2)); }
     S.sys = c; S.sysAuto = null; if (S.view !== 'kks') go('kks'); else { fillList(); fillDetail(); scrollDetail(); } },
   kgrp(d){ S.grpOpen.has(d.g) ? S.grpOpen.delete(d.g) : S.grpOpen.add(d.g); fillDetail(); },
-  'sys-tog'(d){ const c = d.sys; if (S.sysExp.has(c)){ S.sysExp.delete(c); for (const x of [...S.sysExp]) if (x.startsWith(c)) S.sysExp.delete(x); } else S.sysExp.add(c); fillList(); },
   'k-all'(d){ S.kAll = S.kAll === d.id ? null : d.id; fillDetail(); },
   'kks-back'(){ S.sel.kks = null; fillList(); fillDetail(); },
-  'zone-clear'(){ S.zone = ''; render(); },
   opt(d){ S.opt = d.sec; go('options'); },
   'show-low'(){ S.lowOnly = true; S.zeroOnly = false; S.sel.pieces = null; S.back = []; go('pieces'); },
   'show-zero'(){ S.zeroOnly = true; S.lowOnly = false; S.sel.pieces = null; S.back = []; go('pieces'); },
-  'toggle-zero'(){ S.zeroOnly = !S.zeroOnly; render(); },
   'toggle-low'(){ S.lowOnly = !S.lowOnly; render(); },
   'quick-move': d => moveDialog(null, d.type),
   'new-piece': () => pieceDialog(),
@@ -5349,7 +5347,6 @@ const ACT = {
   'edit-lieu': d => lieuDialog(getLieu(d.id)),
   'gen-series': d => seriesDialog(d.salle),
   'import-lieux': () => importLieuxDialog(),
-  'labels-pick': () => pieceLabelsDialog(null),
   'labels-list': () => pieceLabelsDialog(filteredPieces().map(p => p.id)),
   'labels-one': d => pieceLabelsDialog([d.id]),
   'labels-here': d => pieceLabelsDialog(contentsOf(d.id).filter(x => x.qte > 0).map(x => x.p.id)),
@@ -5361,7 +5358,6 @@ const ACT = {
   'plan-done'(d){ const x = db.plan.find(y => y.id === d.id); if (!x) return; const t = x.tacheId ? get('taches', x.tacheId) : null; const who = db.plan.filter(y => y.date === x.date && (t ? y.tacheId === t.id : y.text === x.text) && getPers(y.who)).map(y => y.who);
     if (t) interventionDialog(null, null, t, {who, date:x.date, text:x.text}); else { interventionDialog(null, null, null, {who, date:x.date}); setTimeout(() => { const f = document.querySelector('dialog[open] form'); if (f && f.elements.titre && !f.elements.titre.value) f.elements.titre.value = x.text.split('\n')[0].slice(0, 120); }, 50); } },
   'print-taches': () => doPrint(tachesSheetHTML()),
-  'toggle-tvue'(){ S.tf = S.tf === 'fait' ? '' : 'fait'; render(); },
   'edit-int': d => interventionDialog(getInt(d.id)),
   'print-int': d => doPrint(reportHTML(getInt(d.id))),
   'print-piece': d => doPrint(pieceSheetHTML(getPiece(d.id))),
@@ -5389,12 +5385,12 @@ const ACT = {
   'edit-pers': d => persDialog(getPers(d.id)),
   'list-del'(d){ const v = db.listes[d.list][+d.i]; tx(() => db.listes[d.list].splice(+d.i, 1)); render(); toast(`« ${v} » retiré de la liste`); },
   'export-json'(){ download(`triflow-sauvegarde-${todayISO()}.json`, JSON.stringify(db, null, 1), 'application/json'); toast('Sauvegarde téléchargée'); },
-  'import-json'(){ $('#file-json').value = ''; $('#file-json').click(); },
+  'import-json'(){ if (!canDel()){ toast('Réservé aux cadres.', 'bad'); return; } $('#file-json').value = ''; $('#file-json').click(); },
   'export-csv-stock': exportStock,
   'export-csv-int': exportInts,
   'export-csv-kks': exportKksLinks,
   'clear-demo'(){ confirmDialog('Effacer les exemples', 'Les pièces, emplacements, repères et rapports d’exemple seront supprimés. Le personnel du planning, les réglages et les listes sont conservés.', 'Effacer', () => { const r = db.reglages, li = db.listes, staff = db.personnes.filter(p => p.src === 'planning'); db = blank(); db.reglages = r; db.listes = li; db.personnes = staff; db.meta.staffV = 1; save(); S.sel = {}; go('accueil'); toast('Exemples effacés, personnel conservé'); }); },
-  'clear-all'(){ confirmDialog('Tout effacer', 'Toutes les données de ce navigateur seront supprimées. Exportez d’abord une sauvegarde si vous voulez pouvoir les récupérer.', 'Tout effacer', () => { const r = db.reglages, li = db.listes; db = blank(); db.reglages = r; db.listes = li; save(); S.sel = {}; go('accueil'); toast('Données effacées'); }); },
+  'clear-all'(){ if (!canDel()){ toast('Réservé aux cadres.', 'bad'); return; } confirmDialog('Tout effacer', 'Toutes les données de ce navigateur seront supprimées. Exportez d’abord une sauvegarde si vous voulez pouvoir les récupérer.', 'Tout effacer', () => { const r = db.reglages, li = db.listes; db = blank(); db.reglages = r; db.listes = li; save(); S.sel = {}; go('accueil'); toast('Données effacées'); }); },
   'load-demo'(){ confirmDialog('Recharger les exemples', 'Les données actuelles seront remplacées par les données d’exemple.', 'Remplacer', () => { const r = db.reglages; db = seed(); db.reglages = r; save(); S.sel = {}; go('accueil'); toast('Exemples rechargés'); }); }
 };
 const FORMS = {
