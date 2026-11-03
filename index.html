@@ -782,6 +782,9 @@ dialog.dlg::backdrop{background:rgba(12,18,21,.55)}
 .ptabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
 .ptabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+/* Toutes les cases de même taille, même quand un nom passe sur deux lignes */
+.pgrid{grid-auto-rows:1fr}
+.pgrid .pbtn{font-size:.86rem;line-height:1.2;padding:8px 6px;min-height:40px;height:100%;overflow-wrap:anywhere}
 .pbtn{all:unset;box-sizing:border-box;cursor:pointer;text-align:center;padding:10px 8px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:500;font-size:.92rem;min-height:44px;display:flex;align-items:center;justify-content:center}
 .pbtn:hover{border-color:var(--accent-line)}
 .pbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
