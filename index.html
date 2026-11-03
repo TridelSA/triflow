@@ -3013,6 +3013,15 @@ function archiveItem(col, x){
 }
 function unarchiveItem(col, x){ tx(() => { delete x.arch; delete x.mergedInto; }); render(); toast(`${ARCH_LBL[col][0].replace(/archivée?$/, '')}restauré${/archivée$/.test(ARCH_LBL[col][0]) ? 'e' : ''}`); }
 /* Bouton du bas des fenêtres « Modifier » : Archiver (réversible), ou Supprimer définitivement si déjà archivé */
+/* Suppressions définitives (cadres uniquement) */
+const HARD = {
+  taches(t){ tx(() => { db.taches = db.taches.filter(x => x.id !== t.id); db.plan = db.plan.filter(x => x.tacheId !== t.id); db.interventions.forEach(i => { if (i.tacheId === t.id) delete i.tacheId; }); }); S.sel.taches = null; render(); toast('Tâche supprimée (les rapports sont conservés)', '', true); },
+  pieces(p){ if (usedInInterventions(p.id).length) throw new Error('Cette pièce figure dans des rapports d’intervention : archivez-la plutôt.');
+    tx(() => { db.pieces = db.pieces.filter(x => x.id !== p.id); db.mouvements = db.mouvements.filter(m => m.pieceId !== p.id); db.histo = db.histo.filter(h => h.id !== p.id); }); S.sel.pieces = null; render(); toast('Pièce supprimée', '', true); },
+  interventions(it){ tx(() => { (it.pieces || []).forEach(x => { const p = getPiece(x.pieceId); if (p && getLieu(x.lieuId)) addStock(p, x.lieuId, x.qte, 'Annulation intervention', it.num); }); db.interventions = db.interventions.filter(i => i.id !== it.id); }); S.sel.interventions = null; render(); toast('Rapport supprimé' + ((it.pieces || []).length ? ', pièces remises en stock' : ''), '', true); }
+};
+const HARD_LBL = {taches:['la tâche', 'Les rapports déjà faits sont conservés.'], pieces:['la pièce', 'Son historique de stock est aussi effacé.'], interventions:['le rapport', 'Les pièces qu’il a consommées sont remises en stock.']};
+const hardItem = (col, id) => canDel() ? ['hard-del', 'Supprimer définitivement', 'out', {col, id}] : null;
 const archDel = (col, x, hard) => x.arch ? (canDel() ? {label:'Supprimer définitivement', run:hard} : null) : {label:'Archiver', soft:true, run(){ archiveItem(col, x); }};
 const archBanner = (col, x) => x && x.arch ? `<div class="arch-banner">${icon('archive')}<span><strong>${ARCH_LBL[col][0]}</strong> le ${fmtD(x.arch)}${x.mergedInto ? ` · fusionnée dans l’ID ${esc(x.mergedInto)}` : ''}. Elle n’apparaît plus dans les listes.</span><button class="btn small" data-act="unarch" data-col="${col}" data-id="${x.id}">Restaurer</button></div>`.replace('Elle n’apparaît', /archivé$/.test(ARCH_LBL[col][0]) ? 'Il n’apparaît' : 'Elle n’apparaît') : '';
 const archCount = col => db[col].filter(x => x.arch).length;
@@ -3331,7 +3340,7 @@ VIEWS.pieces = {
     const salleOf = l => { const sa = l && getSalle(l.salleId); return sa && sa.nom ? sa.nom : ''; };
     const noteRows = String(p.notes || '').split('\n').reduce((acc, ln) => { const m = ln.match(/^([^:]{2,30}?)\s:\s(.*)$/); if (m) acc.push([m[1], m[2]]); else if (ln.trim()) { if (acc.length && acc[acc.length - 1][0] !== '') acc[acc.length - 1][1] += '\n' + ln; else acc.push(['', ln]); } return acc; }, []);
     const low = p.stockMin > 0 && dispo(p) < p.stockMin;
-    return `<button class="btn small m-only back-list" data-act="desel">${icon('chev')}Liste des pièces</button>${archBanner('pieces', p)}<div class="pd-head"><span class="pd-id">ID ${esc(p.ref)}</span><div class="pd-tools"><button class="btn small" data-act="edit-piece" data-id="${p.id}">${icon('edit')}Modifier</button>${menu([['labels-one', 'Étiquette QR', 'qr', {id:p.id}], ['print-piece', 'Fiche A4', 'printer', {id:p.id}], ['add-place', 'Ranger à un autre emplacement', 'shelf', {id:p.id}], '-', p.arch ? ['unarch', 'Restaurer la pièce', 'archive', {col:'pieces', id:p.id}] : ['arch', 'Archiver la pièce', 'archive', {col:'pieces', id:p.id}]], 'Plus', 'more', 'small')}</div></div>
+    return `<button class="btn small m-only back-list" data-act="desel">${icon('chev')}Liste des pièces</button>${archBanner('pieces', p)}<div class="pd-head"><span class="pd-id">ID ${esc(p.ref)}</span><div class="pd-tools"><button class="btn small" data-act="edit-piece" data-id="${p.id}">${icon('edit')}Modifier</button>${menu([['labels-one', 'Étiquette QR', 'qr', {id:p.id}], ['print-piece', 'Fiche A4', 'printer', {id:p.id}], ['add-place', 'Ranger à un autre emplacement', 'shelf', {id:p.id}], '-', p.arch ? ['unarch', 'Restaurer la pièce', 'archive', {col:'pieces', id:p.id}] : ['arch', 'Archiver la pièce', 'archive', {col:'pieces', id:p.id}], hardItem('pieces', p.id)].filter(Boolean), 'Plus', 'more', 'small')}</div></div>
       <h2 class="pd-title">${esc(p.designation)}</h2>
       ${p.fabricant || p.refFab ? `<p class="pd-sub">${esc(p.fabricant || '')}${p.refFab ? ` <span class="muted">· réf.</span> <span class="mono">${esc(p.refFab)}</span>` : ''}</p>` : ''}
       <div class="pd-stock ${low ? 'low' : ''}">
@@ -3535,7 +3544,7 @@ VIEWS.taches = {
     if (!t) return placeholder('check', 'Choisissez une tâche pour la faire, voir son historique ou la modifier.');
     const k = getKks(t.kksId), run = openRun(t), done = db.interventions.filter(i => i.tacheId === t.id && live(i)).sort((a, b) => b.date.localeCompare(a.date));
     const off = t.actif === false, di = dueInfo(t);
-    return `${archBanner('taches', t)}<div class="pd-head"><span class="pd-id">${esc(freqLabel(t.freq))}</span><div class="pd-tools"><button class="btn small" data-act="edit-tache" data-id="${t.id}">${icon('edit')}Modifier</button>${menu([t.arch ? ['unarch', 'Restaurer la tâche', 'archive', {col:'taches', id:t.id}] : ['arch', 'Archiver la tâche', 'archive', {col:'taches', id:t.id}]], 'Plus', 'more', 'small')}</div></div>
+    return `${archBanner('taches', t)}<div class="pd-head"><span class="pd-id">${esc(freqLabel(t.freq))}</span><div class="pd-tools"><button class="btn small" data-act="edit-tache" data-id="${t.id}">${icon('edit')}Modifier</button>${menu([t.arch ? ['unarch', 'Restaurer la tâche', 'archive', {col:'taches', id:t.id}] : ['arch', 'Archiver la tâche', 'archive', {col:'taches', id:t.id}], hardItem('taches', t.id)].filter(Boolean), 'Plus', 'more', 'small')}</div></div>
       <h2 class="pd-title">${esc(t.titre)}</h2>
       <p class="pd-sub">${t.assign?.v ? `Pour <strong style="font-weight:600">${esc(assignLabel(t.assign))}</strong>` : '<span class="muted">Non attribuée</span>'}${done[0] ? ` · faite la dernière fois le ${fmtD(done[0].date)}` : ''}</p>
       <div class="pd-stock ${!off && di.k === 'retard' ? 'late' : ''}">
@@ -3574,7 +3583,7 @@ function tacheDialog(t, kksId){
         $('[data-fprev]', d).textContent = un === 'once' || !p ? '' : `${freqLabel({n, unite:un})} : ${fmtD(p)}, puis ${fmtD(addFreq(p, n, un))}, ${fmtD(addFreq(addFreq(p, n, un), n, un))}…`; };
       f.addEventListener('input', u); f.addEventListener('change', u); u();
     },
-    del: isNew ? null : archDel('taches', t, function(){ tx(() => { db.taches = db.taches.filter(x => x !== t); db.interventions.forEach(i => { if (i.tacheId === t.id) delete i.tacheId; }); }); S.sel.taches = null; render(); toast('Tâche supprimée (les rapports sont conservés)'); }),
+    del: isNew ? null : archDel('taches', t, () => HARD.taches(t)),
     onSave(f){
       const titre = val(f, 'titre'), prochaine = val(f, 'prochaine'), unite = val(f, 'unite'), n = Math.max(1, Math.round(+val(f, 'n') || 1));
       if (!titre) throw new Error('Indiquez la tâche.');
@@ -3636,7 +3645,7 @@ VIEWS.interventions = {
     const k = kInfo(i), T = tInfo(i);
     const names = intPers(i).map(x => `${getPers(x.id) ? `<button class="link" data-act="pers-ints" data-id="${x.id}">${esc(persName(x))}</button>` : esc(persName(x))}${x.groupe ? ` <span class="muted">(${esc(x.groupe)})</span>` : ''}`).join(', ');
     const pills = intPers(i).map(x => `<span class="pp ${isFourId(x.id) ? 'four' : ''}">${isFourId(x.id) ? icon('truck') : ''}${getPers(x.id) ? `<button class="link" data-act="pers-ints" data-id="${x.id}" title="Tous ses rapports">${esc(persName(x))}</button>` : isFourId(x.id) ? `<button class="link" data-act="four-ints" data-name="${esc(x.id.slice(5))}" title="Tous ses rapports">${esc(persName(x))}</button>` : `<button class="link" data-act="name-ints" data-name="${esc(x.nom)}" title="Tous ses rapports">${esc(persName(x))}</button>`}${x.groupe ? `<small>${esc(x.groupe)}</small>` : ''}</span>`).join('');
-    return `${archBanner('interventions', i)}<div class="pd-head"><span class="pd-id">${esc(i.num)}</span><div class="pd-tools">${i.statut !== 'terminee' ? statutChip(i.statut) : ''}<button class="btn small" data-act="edit-int" data-id="${i.id}">${icon('edit')}${i.statut === 'terminee' ? 'Modifier' : 'Compléter'}</button><button class="btn small" data-act="print-int" data-id="${i.id}">${icon('printer')}Imprimer</button></div></div>
+    return `${archBanner('interventions', i)}<div class="pd-head"><span class="pd-id">${esc(i.num)}</span><div class="pd-tools">${i.statut !== 'terminee' ? statutChip(i.statut) : ''}<button class="btn small" data-act="edit-int" data-id="${i.id}">${icon('edit')}${i.statut === 'terminee' ? 'Modifier' : 'Compléter'}</button><button class="btn small" data-act="print-int" data-id="${i.id}">${icon('printer')}Imprimer</button>${menu([i.arch ? ['unarch', 'Restaurer le rapport', 'archive', {col:'interventions', id:i.id}] : ['arch', 'Archiver le rapport', 'archive', {col:'interventions', id:i.id}], hardItem('interventions', i.id)].filter(Boolean), 'Plus', 'more', 'small')}</div></div>
       <h2 class="pd-title">${esc(i.titre)}</h2>
       <p class="pd-sub">${fmtD(i.date)}${i.type ? ` · ${esc(i.type)}` : ''}${i.duree ? ` · ${num(i.duree)} h` : ''}${i.statut === 'terminee' ? ' · <span style="color:var(--ok)">terminé</span>' : ''}</p>
       <dl class="pd-info rep">
@@ -4319,11 +4328,7 @@ function pieceDialog(p, kksId){
       box.addEventListener('click', e => { const b = e.target.closest('[data-krm]'); if (b){ d._kks = d._kks.filter(id => id !== b.dataset.krm); draw(); } });
       draw();
     },
-    del: isNew ? null : archDel('pieces', p, function(){
-      if (usedInInterventions(p.id).length) throw new Error('Cette pièce figure dans des rapports d’intervention : elle ne peut pas être supprimée.');
-      tx(() => { db.pieces = db.pieces.filter(x => x.id !== p.id); db.mouvements = db.mouvements.filter(m => m.pieceId !== p.id); });
-      S.sel.pieces = null; render(); toast('Pièce supprimée');
-    }),
+    del: isNew ? null : archDel('pieces', p, () => HARD.pieces(p)),
     onSave(f, d){
       if (!d._kadd()) throw new Error('Un repère KKS saisi n’existe pas dans la liste.');
       const ref = isNew ? nextRef() : p.ref, designation = val(f, 'designation'), min = val(f, 'stockMin');
@@ -4770,10 +4775,7 @@ function interventionDialog(it, kksId, tache, opts = {}){
       <div class="grid2"><label>Type<select name="type">${optList(db.listes.types, v.type)}</select></label><label>Durée (heures)<input name="duree" type="number" min="0" step="0.25" value="${esc(v.duree)}"></label></div>
       <label>Constat / demande<span class="dict-wrap"><textarea name="constat" rows="3">${esc(v.constat)}</textarea>${HAS_DICT ? `<button type="button" class="dict" data-dict="constat" title="Dicter" aria-label="Dicter le texte">${icon('mic')}</button>` : ''}</span></label>
       <fieldset><legend>Pièces consommées</legend><div class="plines"></div><div class="tools"><button type="button" class="btn ghost small" data-addline>${icon('plus')}Ajouter une pièce</button></div><p class="hint">Les quantités sont retirées du stock à l’enregistrement ; modifier ou supprimer une ligne remet la différence en stock.</p></fieldset></details>`,
-    del: isNew ? null : archDel('interventions', it, function(){
-      tx(() => { it.pieces.forEach(x => { const p = getPiece(x.pieceId); if (p && getLieu(x.lieuId)) addStock(p, x.lieuId, x.qte, 'Annulation intervention', it.num); }); db.interventions = db.interventions.filter(i => i !== it); });
-      S.sel.interventions = null; render(); toast('Rapport supprimé, pièces remises en stock');
-    }),
+    del: isNew ? null : archDel('interventions', it, () => HARD.interventions(it)),
     onOpen(f, d){
       d._pers = new Set(v.intervenants); d._snap = snapFor;
       const sel = $('[data-psel]', d), grid = $('[data-pgrid]', d);
@@ -5118,6 +5120,10 @@ const ACT = {
   'arch-view'(d){ S.arch[d.v] = !S.arch[d.v]; S.sel[d.v] = null; render(); window.scrollTo(0, 0); },
   'four-arch'(d){ tx(() => { db.listes.fournisseurs = db.listes.fournisseurs.filter(x => x !== d.name); if (!db.listes.fournArch.includes(d.name)) db.listes.fournArch.push(d.name); }); S.fourOpen = null; render(); toast(`« ${d.name} » archivé (les pièces gardent leur valeur)`, '', true); },
   'four-unarch'(d){ tx(() => { db.listes.fournArch = db.listes.fournArch.filter(x => x !== d.name); if (!db.listes.fournisseurs.includes(d.name)) db.listes.fournisseurs.push(d.name); db.listes.fournisseurs.sort(coll.compare); }); render(); toast(`« ${d.name} » restauré`); },
+  'hard-del'(d){ if (!canDel()){ toast('Seuls les cadres peuvent supprimer définitivement.', 'bad'); return; }
+    const x = get(d.col, d.id); if (!x || !HARD[d.col]) return; const [lbl, more] = HARD_LBL[d.col];
+    const name = d.col === 'interventions' ? `${x.num} · ${x.titre || ''}` : d.col === 'pieces' ? `${x.ref} · ${x.designation}` : x.titre;
+    confirmDialog(`Supprimer ${lbl} définitivement ?`, `« ${esc(name)} » sera effacé et ne pourra pas être restauré depuis les archives. ${more}`, 'Supprimer', () => HARD[d.col](x)); },
   'four-del'(d){ if (!canDel()){ toast('Seuls les cadres peuvent supprimer définitivement.', 'bad'); return; } confirmDialog('Supprimer le fournisseur', `« ${esc(d.name)} » sera retiré définitivement de la liste. Les pièces gardent le nom écrit dans leur fiche.`, 'Supprimer', () => { tx(() => { db.listes.fournArch = db.listes.fournArch.filter(x => x !== d.name); }); render(); }); },
   menu(d, t){
     const l = t.nextElementSibling, open = l.hidden; closeMenus(l); l.hidden = !open; t.setAttribute('aria-expanded', String(open));
