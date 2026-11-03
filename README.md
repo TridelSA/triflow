@@ -54,8 +54,15 @@ Chaque fiche enregistrée garde aussi `_by` (adresse de la personne) et `_at` (d
 ## 2. Administrer
 
 ### Donner accès à un collègue
-1. Supabase › **Authentication › Users › Add user** : adresse e-mail et mot de passe (cocher « Auto confirm »).
-2. Le collègue se connecte sur le site, puis choisit son nom (« Qui êtes-vous ? »). Son accueil, ses tâches et ses rapports sont alors filtrés sur lui et son groupe.
+**Depuis TriFlow (cadres)** : *Options › Personnes › Créer un accès*. Choisir la personne (l'adresse est proposée), garder le mot de passe proposé, *Créer le compte*, puis copier le message à transmettre.
+
+Installation unique de ce bouton :
+1. Lancer `outils/droits.sql` (SQL Editor › Run), qui définit qui est cadre.
+2. Supabase › **Edge Functions** › *Deploy a new function* › *Via Editor* ; nom **`creer-utilisateur`** ; coller `outils/supabase-fonction/creer-utilisateur.ts` ; *Deploy*.
+
+La clé d'administration reste dans Supabase : elle n'est jamais dans le site.
+
+**À la main** (si besoin) : Supabase › Authentication › Users › Add user › Create new user, cocher « Auto confirm ».
 
 ### Qui est qui, et qui peut supprimer
 - TriFlow reconnaît la personne d'après son adresse e-mail : le nom de famille du Planning Tridel doit s'y trouver (`thomas.bonnant@…` → BONNANT). Sinon, elle choisit son nom à la première connexion.
