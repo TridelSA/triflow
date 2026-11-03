@@ -1034,6 +1034,15 @@ tr.grp.old th{color:var(--muted)}
 /* Feuille de planning imprimée, façon Excel */
 .pconge{display:flex;align-items:center;gap:6px;margin:10px 2px 0}
 .pconge .ico{width:15px;height:15px;flex:none}
+.jlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.jl{display:grid;grid-template-columns:22px minmax(0,1fr) auto auto;gap:4px 10px;align-items:baseline;padding:8px 2px;border-bottom:1px solid var(--line);font-size:.88rem}
+.jl:last-child{border-bottom:0}
+.jl .ji{align-self:center;color:var(--muted)}
+.jl .ji .ico{width:16px;height:16px}
+.jl.j-stock .ji{color:var(--accent)} .jl.j-delete .ji{color:var(--bad)} .jl.j-create .ji{color:var(--ok)}
+.jl .jt{min-width:0;overflow-wrap:anywhere}
+.jl time{font-family:var(--f-mono);font-size:.75rem;color:var(--muted);white-space:nowrap}
+@media (max-width:760px){ .jl{grid-template-columns:22px minmax(0,1fr)} .jl time,.jl .link{grid-column:2} }
 .plan-sheet.xls{font-family:Calibri,Carlito,'Segoe UI',Arial,sans-serif;color:#000;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .xls .xt{font-size:22pt;font-weight:700;text-align:center;margin:0 0 5mm;font-family:inherit;letter-spacing:0}
 .xtbl{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11pt}
@@ -2703,7 +2712,7 @@ const CLOUD = {
   async fetchAll(cols){
     const rows = []; let from = 0;
     for (;;){
-      const {data, error} = await this.sb.from('docs').select(cols).order('collection').order('id').range(from, from + 999);
+      const {data, error} = await this.sb.from('docs').select(cols).neq('collection', 'journal').order('collection').order('id').range(from, from + 999);
       if (error) throw error;
       rows.push(...data); if (data.length < 1000) break; from += 1000;
     }
@@ -2747,6 +2756,7 @@ const CLOUD = {
         for (const [k, v] of cur){ const j = JSON.stringify(v); if (this.synced.get(k) !== j){ if (!k.startsWith('config|') && this.user?.email){ v._by = this.user.email; v._at = new Date().toISOString(); } changes.push({k, j:JSON.stringify(v), v}); } }
         for (const k of this.synced.keys()) if (!cur.has(k)) changes.push({k, del:true});
         if (!changes.length) break;
+        let jr = []; try { jr = JRN.entries(changes, this.synced); } catch(e){}
         for (let i = 0; i < changes.length; i += 400){
           const part = changes.slice(i, i + 400);
           const payload = part.map(x => { const p = x.k.indexOf('|'); return {c:x.k.slice(0, p), id:x.k.slice(p + 1), rev:this.revs.get(x.k) || 0, del:!!x.del, data:x.del ? null : x.v}; });
@@ -2761,6 +2771,7 @@ const CLOUD = {
           }
           for (const x of part){ if (x.del){ this.synced.delete(x.k); this.revs.delete(x.k); } else { this.synced.set(x.k, x.j); this.revs.set(x.k, (this.revs.get(x.k) || 0) + 1); } }
         }
+          JRN.write(jr); jr = [];
       } while (this.again);
       this.status('ok');
     } catch(e){
@@ -2771,6 +2782,7 @@ const CLOUD = {
   },
   applyRemote(ev){
     const row = ev.new && ev.new.collection ? ev.new : ev.old; if (!row || !row.collection) return;
+    if (row.collection === 'journal'){ clearTimeout(this.jt); this.jt = setTimeout(() => { if ($('[data-jrn]')) jrnRefresh(); }, 400); return; }
     const k = row.collection + '|' + row.id;
     if (ev.eventType === 'DELETE'){
       if (!this.synced.has(k)) return;
@@ -2785,6 +2797,148 @@ const CLOUD = {
     clearTimeout(this.rt); this.rt = setTimeout(() => { if (!document.querySelector('dialog[open]')) render(); else this.dirty = true; }, 250);
   }
 };
+/* =====================================================================
+   HISTORIQUE (journal « qui a fait quoi »)
+   Chaque enregistrement vers la base est comparé à la version d'avant ;
+   une phrase claire est écrite dans la collection « journal » (non chargée au démarrage,
+   lue à la demande : Options › Historique et en bas de chaque fiche).
+   ===================================================================== */
+const J_FIELDS = {
+  pieces:{designation:'désignation', fabricant:'marque', refFab:'réf. fabricant', fournisseur:'fournisseur', categorie:'catégorie', unite:'unité', stockMin:'stock minimum', notes:'notes', kks:'équipements (KKS)'},
+  interventions:{titre:'titre', date:'date', type:'type', kksId:'équipement', constat:'constat', travaux:'ce qui a été fait', duree:'durée', intervenants:'intervenants', pieces:'pièces consommées'},
+  taches:{titre:'titre', description:'description', kksId:'équipement', assign:'attribution', freq:'fréquence', prochaine:'prochaine échéance', derniere:'dernière fois'},
+  kks:{code:'code', designation:'désignation', aic:'AIC'}, personnes:{nom:'nom', prenom:'prénom', groupe:'groupe', fonction:'fonction', actif:'actif'},
+  lieux:{note:'note'}, salles:{nom:'nom'}
+};
+const J_NOUN = {pieces:['la pièce', 'Pièce'], interventions:['le rapport', 'Rapport'], taches:['la tâche', 'Tâche'], kks:['l’équipement', 'Équipement'], lieux:['l’emplacement', 'Emplacement'], salles:['le local', 'Local'], personnes:['la personne', 'Personne'], plan:['le planning', 'Planning'], mouvements:['le stock', 'Stock'], config:['les réglages', 'Réglages']};
+const J_TYPES = [['', 'Tout'], ['mouvements', 'Stock'], ['interventions', 'Rapports'], ['taches', 'Tâches'], ['pieces', 'Pièces'], ['plan', 'Planning'], ['autre', 'Autres']];
+const jWho = email => { const p = personFromEmail(email) || (meId() && getPers(meId())); return p ? persName(p) : (email || '?'); };
+const jDay = iso => iso ? dayLbl(iso) : '';
+function jLabel(col, x){
+  if (!x) return '';
+  switch (col){
+    case 'pieces': return `${x.ref} · ${x.designation || ''}`;
+    case 'interventions': return `${x.num} · ${x.titre || '(sans titre)'}`;
+    case 'taches': return x.titre || '';
+    case 'kks': return `${x.code}${x.designation ? ' · ' + x.designation : ''}`;
+    case 'lieux': return lieuCode(x);
+    case 'salles': return salleCode(x);
+    case 'personnes': return persName(x);
+    case 'plan': { const p = getPers(x.who), t = x.tacheId ? get('taches', x.tacheId) : null; return `${p ? persName(p) : PLAN_ROWS.find(r => r[0] === x.who)?.[1] || ''} · ${jDay(x.date)}${t ? ' · ' + t.titre : ''}`; }
+    default: return '';
+  }
+}
+const jShort = v => { const t = String(v ?? '').replace(/\s+/g, ' ').trim(); return t.length > 60 ? t.slice(0, 57) + '…' : t; };
+function jDiff(col, o, n){
+  const F = J_FIELDS[col] || {}, out = [];
+  for (const [k, lbl] of Object.entries(F)){
+    const a = JSON.stringify(o[k] ?? ''), b = JSON.stringify(n[k] ?? ''); if (a === b) continue;
+    if (k === 'kks'){ const A = new Set(o.kks || []), B = new Set(n.kks || []); const add = [...B].filter(x => !A.has(x)).map(id => getKks(id)?.code || '?'), rm = [...A].filter(x => !B.has(x)).map(id => getKks(id)?.code || '?'); out.push([add.length ? 'KKS lié : ' + add.join(', ') : '', rm.length ? 'KKS retiré : ' + rm.join(', ') : ''].filter(Boolean).join(' · ')); continue; }
+    if (k === 'kksId'){ out.push(`${lbl} : ${getKks(n.kksId)?.code || '—'}`); continue; }
+    if (k === 'prochaine' || k === 'derniere' || k === 'date'){ out.push(`${lbl} : ${fmtD(o[k]) || '—'} → ${fmtD(n[k]) || '—'}`); continue; }
+    if (k === 'assign'){ out.push(`${lbl} : ${assignLabel(n.assign)}`); continue; }
+    if (k === 'freq'){ out.push(`${lbl} : ${n.freq ? freqLabel(n.freq) : '—'}`); continue; }
+    if (k === 'intervenants'){ out.push(lbl); continue; }
+    if (k === 'pieces'){ out.push(lbl); continue; }
+    if (typeof n[k] === 'string' && String(n[k]).length > 40 || typeof o[k] === 'string' && String(o[k]).length > 40) out.push(lbl);
+    else out.push(`${lbl} : ${jShort(o[k]) || '—'} → ${jShort(n[k]) || '—'}`);
+  }
+  if (col === 'pieces'){ const A = new Map((o.stock || []).map(x => [x.lieuId, x.qte])), B = new Map((n.stock || []).map(x => [x.lieuId, x.qte]));
+    const add = [...B.keys()].filter(x => !A.has(x)).map(id => lieuCode(getLieu(id))), rm = [...A.keys()].filter(x => !B.has(x)).map(id => lieuCode(getLieu(id)));
+    if (add.length) out.push('rangée aussi en ' + add.join(', ')); if (rm.length) out.push('retirée de ' + rm.join(', ')); }
+  return out.filter(Boolean);
+}
+/* Une phrase par changement. o = version d'avant (ou null), n = nouvelle version (ou null si supprimée) */
+function jDescribe(col, id, o, n){
+  if (col === 'histo' || col === 'journal') return null;
+  if (col === 'config'){
+    const parts = []; for (const k of ['listes', 'reglages']){ const A = o?.[k] || {}, B = n?.[k] || {}; for (const kk of new Set([...Object.keys(A), ...Object.keys(B)])) if (JSON.stringify(A[kk]) !== JSON.stringify(B[kk]) && kk !== 'moi') parts.push({fournisseurs:'fournisseurs', fournArch:'fournisseurs archivés', categories:'catégories', unites:'unités', types:'types de rapport', groupes:'groupes', planHide:'personnes affichées au planning', systemes:'noms des systèmes KKS', qrBase:'adresse des QR codes', labelFmt:'format des étiquettes'}[kk] || kk); }
+    return parts.length ? {col, ref:'main', lbl:'Réglages', act:'update', txt:`a modifié les réglages : ${[...new Set(parts)].join(', ')}`} : null;
+  }
+  const x = n || o, N = J_NOUN[col] || ['la fiche', 'Fiche'];
+  if (col === 'mouvements'){
+    if (!n) return null; const p = getPiece(n.pieceId), l = getLieu(n.lieuId), q = Math.abs(n.qte);
+    return {col:'pieces', ref:n.pieceId, lbl:p ? jLabel('pieces', p) : '', act:'stock', txt:`${n.qte < 0 ? 'a sorti' : 'a entré'} ${num(q)} ${esc(p?.unite || '')} de ${p ? p.ref + ' · ' + (p.designation || '') : 'une pièce'}${l ? ` (${lieuCode(l)})` : ''}${n.motif ? ' · ' + n.motif : ''}${n.ref ? ' · ' + n.ref : ''}`};
+  }
+  if (col === 'plan'){
+    const t = x.tacheId ? get('taches', x.tacheId) : null, p = getPers(x.who), who = p ? persName(p) : PLAN_ROWS.find(r => r[0] === x.who)?.[1] || '', what = t ? t.titre : jShort(x.text);
+    if (!o) return {col, ref:x.id, lbl:jLabel(col, x), act:'plan', txt:`a planifié « ${what} » pour ${who}, ${jDay(x.date)}`};
+    if (!n) return {col, ref:x.id, lbl:jLabel(col, x), act:'plan', txt:`a retiré « ${what} » du planning de ${who}, ${jDay(x.date)}`};
+    if ((o.text || '') !== (n.text || '')) return {col, ref:x.id, lbl:jLabel(col, x), act:'plan', txt:`a écrit « ${jShort(n.text)} » au planning de ${who}, ${jDay(x.date)}`, merge:true};
+    return null;
+  }
+  const lbl = jLabel(col, x);
+  if (!o) return {col, ref:id, lbl, act:'create', txt:`a créé ${N[0]} ${lbl}`};
+  if (!n) return {col, ref:id, lbl, act:'delete', txt:`a supprimé définitivement ${N[0]} ${lbl}`};
+  if (!o.arch && n.arch) return {col, ref:id, lbl, act:'archive', txt:`a archivé ${N[0]} ${lbl}`};
+  if (o.arch && !n.arch) return {col, ref:id, lbl, act:'restore', txt:`a restauré ${N[0]} ${lbl}`};
+  if (col === 'interventions' && o.statut !== n.statut){ const st = {terminee:'a terminé', encours:'a passé en cours', ouverte:'a rouvert'}[n.statut] || 'a changé le statut de'; return {col, ref:id, lbl, act:'update', txt:`${st} le rapport ${lbl}`}; }
+  if (col === 'taches' && o.derniere !== n.derniere && n.derniere) return {col, ref:id, lbl, act:'update', txt:`a fait la tâche ${lbl} (prochaine fois : ${fmtD(n.prochaine)})`};
+  if (col === 'taches' && o.actif !== false && n.actif === false) return {col, ref:id, lbl, act:'update', txt:`a fait la tâche ${lbl} (terminée)`};
+  if (col === 'pieces' && o.mergedInto !== n.mergedInto && n.mergedInto) return {col, ref:id, lbl, act:'archive', txt:`a fusionné le doublon ${lbl}`};
+  const d = jDiff(col, o, n); if (!d.length) return null;
+  return {col, ref:id, lbl, act:'update', txt:`a modifié ${N[0]} ${lbl} : ${d.join(' · ')}`, merge:true};
+}
+const JRN = {
+  last:new Map(),
+  entries(changes, synced){
+    const email = CLOUD.user?.email || '', nom = jWho(email), at = new Date().toISOString(), out = [];
+    const real = changes.filter(c => !c.k.startsWith('journal|'));
+    const byCol = new Map(); for (const c of real){ const col = c.k.slice(0, c.k.indexOf('|')); byCol.set(col, (byCol.get(col) || 0) + 1); }
+    for (const c of real){
+      const p = c.k.indexOf('|'), col = c.k.slice(0, p), id = c.k.slice(p + 1);
+      if (byCol.get(col) > 40) continue;
+      let o = null; try { o = synced.has(c.k) ? JSON.parse(synced.get(c.k)) : null; } catch(e){}
+      let e = null; try { e = jDescribe(col, id, o, c.del ? null : c.v); } catch(err){}
+      if (e) out.push(e);
+    }
+    for (const [col, n] of byCol) if (n > 40 && col !== 'histo') out.push({col, ref:'', lbl:'', act:'bulk', txt:`a enregistré ${num(n)} fiches d’un coup (${(J_NOUN[col] || ['', col])[1].toLowerCase()} : import ou mise à jour)`});
+    /* Mouvement + modification de stock de la même pièce : on ne garde que le mouvement */
+    const stockRefs = new Set(out.filter(e => e.act === 'stock').map(e => e.ref));
+    return out.filter(e => !(e.col === 'pieces' && e.act === 'update' && stockRefs.has(e.ref) && !/:.*[a-z]/.test(e.txt.split(' : ').slice(1).join('').replace(/rangée aussi en.*|retirée de.*/g, ''))))
+      .map(e => { const key = `${email}|${e.col}|${e.ref}|${e.act}`, prev = this.last.get(key), now = Date.now();
+        if (e.merge && prev && now - prev.t < 10 * 60e3){ prev.t = now; return {id:prev.id, rev:prev.rev, data:{...prev.data, at, txt:e.txt, lbl:e.lbl}, key}; }
+        const id = 'j' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+        return {id, rev:0, data:{id, at, by:email, nom, col:e.col, ref:e.ref, lbl:e.lbl, act:e.act, txt:e.txt}, key, merge:e.merge}; });
+  },
+  async write(list){
+    if (!list.length || !CLOUD.sb) return;
+    const {error} = await CLOUD.sb.rpc('save_docs', {changes:list.map(x => ({c:'journal', id:x.id, rev:x.rev, del:false, data:x.data}))});
+    if (error) return;
+    const now = Date.now(); for (const x of list){ if (x.merge || this.last.has(x.key)) this.last.set(x.key, {id:x.id, rev:x.rev + 1, data:x.data, t:now}); }
+    if ($('[data-jrn]')) jrnRefresh();
+  },
+  async query({ref = '', col = '', who = '', q = '', limit = 100, offset = 0} = {}){
+    if (!CLOUD.sb) return [];
+    let r = CLOUD.sb.from('docs').select('id,data').eq('collection', 'journal');
+    if (ref) r = r.eq('data->>ref', ref);
+    if (col === 'mouvements') r = r.eq('data->>act', 'stock');
+    else if (col && col !== 'autre') r = r.eq('data->>col', col);
+    if (who) r = r.eq('data->>by', who);
+    const {data, error} = await r.order('id', {ascending:false}).range(offset, offset + limit - 1);
+    if (error) throw error;
+    let rows = (data || []).map(x => x.data).sort((a, b) => (b.at || '').localeCompare(a.at || ''));
+    if (col === 'autre') rows = rows.filter(x => !['interventions', 'taches', 'pieces', 'plan'].includes(x.col));
+    if (col === 'pieces') rows = rows.filter(x => x.act !== 'stock');
+    if (q){ const n = norm(q); rows = rows.filter(x => norm(`${x.nom} ${x.txt} ${x.lbl}`).includes(n)); }
+    return rows;
+  }
+};
+const jIcon = a => ({stock:'move', create:'plus', delete:'out', archive:'archive', restore:'archive', plan:'calendar', bulk:'save'}[a] || 'edit');
+const jLine = (e, withObj = true) => `<li class="jl j-${e.act}"><span class="ji">${icon(jIcon(e.act))}</span><span class="jt"><b>${esc(e.nom || e.by || '?')}</b> ${esc(e.txt)}</span><time>${fmtDT(e.at)}</time>${withObj && e.ref && e.col !== 'config' && (e.col !== 'plan') && get(e.col, e.ref) ? `<button class="link" data-act="goto" data-view="${e.col === 'mouvements' ? 'pieces' : e.col === 'salles' || e.col === 'lieux' ? 'lieux' : e.col}" data-id="${e.ref}">Ouvrir</button>` : ''}</li>`;
+/* Bloc « Historique » en bas d'une fiche : chargé à la demande */
+const jrnBlock = ref => CLOUD.on ? `<section class="pd-sec"><h3>${icon('list')}Qui a fait quoi</h3><div data-jrn="${esc(ref)}"><p class="empty-line">Chargement…</p></div></section>` : '';
+async function jrnRefresh(){
+  for (const el of $$('[data-jrn]')){
+    const ref = el.dataset.jrn, full = el.dataset.full === '1';
+    try {
+      const f = full ? S.jf || {} : {ref};
+      const rows = await JRN.query({...f, limit:full ? (S.jlim || 100) : 30});
+      if (!el.isConnected) continue;
+      el.innerHTML = rows.length ? `<ul class="jlist">${rows.map(e => jLine(e, full)).join('')}</ul>${full && rows.length >= (S.jlim || 100) ? `<p class="list-note"><button class="link" data-act="jmore">Voir plus</button></p>` : ''}` : `<p class="empty-line">${full ? 'Aucune action enregistrée pour ce filtre.' : 'Aucune modification enregistrée depuis la mise en place de l’historique.'}</p>`;
+    } catch(e){ if (el.isConnected) el.innerHTML = `<p class="empty-line">Historique indisponible : ${esc(e.message || e)}</p>`; }
+  }
+}
 function loadLib(){
   if (window.supabase?.createClient) return Promise.resolve();
   return new Promise((ok, ko) => { const sc = document.createElement('script'); sc.src = SUPABASE_LIB; sc.onload = ok; sc.onerror = () => ko(new Error('Bibliothèque Supabase introuvable')); document.head.append(sc); });
@@ -3218,6 +3372,7 @@ function render(){
   $('#main').innerHTML = (bk ? `<button class="btn small back-nav" data-act="nav-back">${icon('chev')}Retour à ${esc(bl)}</button>` : '') + VIEWS[S.view].shell().replace('</header>', '</header>' + am);
   fillList(); fillDetail();
   document.body.classList.toggle('placing', S.view === 'planning' && !!S.ppick); if (S.view === 'planning') planSuggest(S.ppick);
+  if (!$('#detail') && $('[data-jrn]')) jrnRefresh();
   if (gs){ const g2 = $('.wkgrid-wrap'); if (g2){ g2.scrollTop = gs[0]; g2.scrollLeft = gs[1]; } }
 }
 const AUTOIO = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting){ AUTOIO.unobserve(e.target); e.target.click(); } }), {rootMargin:'600px'}) : null;
@@ -3228,7 +3383,7 @@ function autoSel(){
   const cur = S.sel[S.view]; if (cur && (S.view === 'pieces' ? getPiece(cur) : get(S.view, cur))) return;
   const f = $('#list [data-act=select][data-id]'); if (!f) return; S.sel[S.view] = f.dataset.id; f.classList.add('sel');
 }
-function fillDetail(){ contIdx = null; autoSel(); const el = $('#detail'); if (el) el.innerHTML = VIEWS[S.view].detail(); $('#main .split')?.classList.toggle('has-sel', S.view === 'pieces' && !!getPiece(S.sel.pieces)); }
+function fillDetail(){ contIdx = null; autoSel(); const el = $('#detail'); if (el){ el.innerHTML = VIEWS[S.view].detail(); const sid = S.sel[S.view]; if (['pieces', 'taches', 'interventions', 'kks'].includes(S.view) && sid && !el.querySelector('.placeholder')) el.insertAdjacentHTML('beforeend', jrnBlock(sid)); } if ($('[data-jrn]')) jrnRefresh(); $('#main .split')?.classList.toggle('has-sel', S.view === 'pieces' && !!getPiece(S.sel.pieces)); }
 function go(view, id){
   S.view = view; if (id !== undefined) S.sel[view] = id;
   closeSearch(); render();
@@ -4017,7 +4172,7 @@ function planSheetHTML(){
     <p class="xf">Imprimé le ${fmtDT(new Date().toISOString())} · TriFlow</p></article>`;
 }
 
-const OPT_SECS = [['lieux', 'Emplacements', 'shelf'], ['kks', 'Équipements (KKS)', 'plant'], ['personnes', 'Personnes', 'person'], ['fournisseurs', 'Fournisseurs', 'truck'], ['listes', 'Listes', 'list'], ['etiquettes', 'Étiquettes & QR', 'qr'], ['donnees', 'Sauvegarde', 'save'], ['connexion', 'Connexion', 'person']];
+const OPT_SECS = [['historique', 'Historique', 'list'], ['lieux', 'Emplacements', 'shelf'], ['kks', 'Équipements (KKS)', 'plant'], ['personnes', 'Personnes', 'person'], ['fournisseurs', 'Fournisseurs', 'truck'], ['listes', 'Listes', 'list'], ['etiquettes', 'Étiquettes & QR', 'qr'], ['donnees', 'Sauvegarde', 'save'], ['connexion', 'Connexion', 'person']];
 const OPT = {};
 OPT.lieux = () => {
   const salles = db.salles.filter(live).sort((a, b) => (!!a.statut - !!b.statut) || coll.compare(salleCode(a), salleCode(b))), sArch = db.salles.filter(x => x.arch);
@@ -4121,6 +4276,15 @@ function fourDialog(name){
       render(); toast(isNew ? 'Fournisseur ajouté' : 'Fournisseur renommé');
     }});
 }
+OPT.historique = () => {
+  if (!CLOUD.on) return `<section class="opt-sec"><div class="head"><h2>Historique</h2></div><div class="pad"><p>L’historique est tenu par la base partagée : il est disponible une fois connecté.</p></div></section>`;
+  const f = S.jf || (S.jf = {}), ppl = [...new Set(Object.keys(db.reglages.moi || {}))];
+  return `<section class="opt-sec"><div class="head"><h2>Historique</h2></div><div class="pad">
+    <p class="hint">Qui a fait quoi, et quand : sorties et entrées de stock, rapports, tâches, pièces, planning, réglages. Les plus récents en premier.</p>
+    <div class="ychips" role="tablist" style="padding:0;border:0;margin:8px 0">${J_TYPES.map(([k, t]) => `<button role="tab" class="ychip" data-act="jtype" data-k="${k}" aria-selected="${(f.col || '') === k}">${t}</button>`).join('')}</div>
+    <div class="tools" style="margin-bottom:10px"><input type="search" data-jq placeholder="Chercher : nom, pièce, rapport…" value="${esc(f.q || '')}" style="max-width:340px" aria-label="Chercher dans l’historique"></div>
+    <div data-jrn="" data-full="1"><p class="empty-line">Chargement…</p></div></div></section>`;
+};
 OPT.connexion = () => {
   const c = CLOUD.cfg();
   return `<section class="opt-sec"><div class="head"><h2>Sur ce poste</h2></div><div class="pad"><p>${meId() ? `Vous êtes <strong>${esc(persName(getPers(meId())))}</strong>. ${NOFILTER_GRP.includes(getPers(meId()).groupe) ? 'Comme cadre / administration, vous voyez tout par défaut.' : 'À chaque ouverture, l’accueil, les tâches et les rapports sont filtrés sur vous et votre groupe ; le filtre se désactive avec « Tout le monde ». Les archives ne sont jamais filtrées.'}` : 'Personne n’est choisi : tout le monde voit tout.'}</p><div class="tools"><button class="btn" data-act="me">${icon('person')}${meId() ? 'Changer' : 'Choisir mon nom'}</button></div></div></section><section class="opt-sec"><div class="head"><h2>Base partagée</h2></div><div class="pad">
@@ -5129,6 +5293,8 @@ const ACT = {
     const x = get(d.col, d.id); if (!x || !HARD[d.col]) return; const [lbl, more] = HARD_LBL[d.col];
     const name = d.col === 'interventions' ? `${x.num} · ${x.titre || ''}` : d.col === 'pieces' ? `${x.ref} · ${x.designation}` : x.titre;
     confirmDialog(`Supprimer ${lbl} définitivement ?`, `« ${esc(name)} » sera effacé et ne pourra pas être restauré depuis les archives. ${more}`, 'Supprimer', () => HARD[d.col](x)); },
+  jtype(d){ S.jf = {...(S.jf || {}), col:d.k}; S.jlim = 100; render(); },
+  jmore(){ S.jlim = (S.jlim || 100) + 100; jrnRefresh(); },
   'four-del'(d){ if (!canDel()){ toast('Seuls les cadres peuvent supprimer définitivement.', 'bad'); return; } confirmDialog('Supprimer le fournisseur', `« ${esc(d.name)} » sera retiré définitivement de la liste. Les pièces gardent le nom écrit dans leur fiche.`, 'Supprimer', () => { tx(() => { db.listes.fournArch = db.listes.fournArch.filter(x => x !== d.name); }); render(); }); },
   menu(d, t){
     const l = t.nextElementSibling, open = l.hidden; closeMenus(l); l.hidden = !open; t.setAttribute('aria-expanded', String(open));
@@ -5269,6 +5435,7 @@ document.addEventListener('click', e => {
   if (t.dataset.act !== 'menu') closeMenus();
   try { fn(t.dataset, t); } catch(x){ toast(x.message, 'bad'); }
 });
+document.addEventListener('input', e => { if (!e.target.matches('[data-jq]')) return; clearTimeout(jrnRefresh.t); jrnRefresh.t = setTimeout(() => { S.jf = {...(S.jf || {}), q:e.target.value}; jrnRefresh(); }, 300); });
 document.addEventListener('keydown', e => {
   if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('tr[data-act]')){ e.preventDefault(); e.target.click(); }
   if (e.key === '/' && !e.target.closest('input,textarea,select,dialog')){ e.preventDefault(); const q = document.querySelector('.page-head input[type=search]'); if (q) q.focus(); }

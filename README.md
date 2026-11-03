@@ -37,6 +37,7 @@ Chaque ligne a une `collection`, un `id`, le contenu `data` (JSON) et un numéro
 | `histo` | Historique de stock repris de CareOffice |
 | `personnes` | Personnel, synchronisé avec le Planning Tridel |
 | `plan` | Planning de la semaine (une case = une personne, un jour, une tâche et/ou un texte) |
+| `journal` | Historique « qui a fait quoi » (une phrase par action ; non chargé au démarrage, lu dans Options › Historique et en bas des fiches) |
 | `config` (id `main`) | Réglages, listes (fournisseurs, types…), « qui est qui » (`reglages.moi`) |
 
 Rien n'est supprimé par défaut : les éléments **archivés** gardent un champ `arch` (date) et peuvent être restaurés depuis l'application.

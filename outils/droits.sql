@@ -42,9 +42,9 @@ grant execute on function public.is_cadre() to authenticated;
 drop policy if exists "gmao_suppression" on public.docs;
 create policy "gmao_suppression" on public.docs for delete to authenticated
   using (
-    public.is_cadre()
+    collection <> 'journal' and (public.is_cadre()
     or collection = 'plan'
-    or (updated_by = auth.uid() and updated_at > now() - interval '1 day')
+    or (updated_by = auth.uid() and updated_at > now() - interval '1 day'))
   );
 
 -- Journal des modifications (tenu par la base, non falsifiable depuis le site)
@@ -80,4 +80,9 @@ $$;
 
 drop trigger if exists tf_journal on public.docs;
 create trigger tf_journal after update or delete on public.docs
-  for each row execute function public.tf_journal();
+  for each row when (old.collection <> 'journal') execute function public.tf_journal();
+
+-- L'historique lisible de l'application (collection « journal ») ne peut être ni modifié par d'autres, ni effacé
+drop policy if exists "gmao_modif" on public.docs;
+create policy "gmao_modif" on public.docs for update to authenticated
+  using (collection <> 'journal' or updated_by = auth.uid()) with check (true);
