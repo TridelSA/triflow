@@ -94,7 +94,7 @@ async def main():
 
         print('Pages (ordinateur)')
         for js, nom in [("go('accueil')", 'accueil'), ("S.sel.pieces=null; go('pieces')", 'pieces'), ("go('pieces','p1')", 'piece'),
-                        ("S.ttab='petits'; go('taches')", 'taches-petits'), ("S.ttab='rec'; go('taches')", 'taches-recurrentes'),
+                        ("go('taches','t2')", 'travaux-afaire'), ("S.statut='actives'; go('interventions')", 'travaux-encours'),
                         ("go('interventions','i1')", 'rapport'), ("go('planning')", 'planning'), ("go('kks')", 'installation'),
                         ("S.opt='historique'; go('options')", 'options-historique'), ("S.opt='roles'; go('options')", 'options-roles'),
                         ("S.opt='personnes'; go('options')", 'options-personnes')]:
@@ -102,11 +102,34 @@ async def main():
         ok(await pg.evaluate("S.pweek === planWeek()"), 'le planning s’ouvre sur la semaine suivante')
 
         print('Parcours')
-        await aller("go('taches'); newTacheDialog()", 'dialogue-nouvelle-tache', 300)
-        await pg.click('dialog[open] [data-kind=petit]'); await pg.wait_for_timeout(200)
-        await pg.fill('dialog[open] input[name=titre]', 'Petit travail de test'); await pg.click('dialog[open] .prio-o.info')
+        ok(await pg.evaluate("document.querySelectorAll('#nav [data-view=taches]').length === 1 && !document.querySelector('#nav [data-view=interventions]')"), 'une seule entrée « Travaux » dans la navigation')
+        await aller("go('taches'); newTacheDialog()", 'dialogue-nouveau-travail', 300)
+        ok(await pg.evaluate("!document.querySelector('dialog[open] [data-once]').hidden && document.querySelector('dialog[open] [data-rec]').hidden"), 'nouveau travail : « une seule fois » par défaut')
+        await pg.fill('dialog[open] input[name=titre]', 'Petit travail de test'); await pg.click('dialog[open] .prio-o.info:has(input[name=prio])')
         await pg.click('dialog[open] button[type=submit]'); await pg.wait_for_timeout(500)
-        ok(await pg.evaluate("db.taches.some(t => t.titre === 'Petit travail de test' && t.kind === 'petit' && t.prio === 'normale')"), 'création d’un petit travail')
+        ok(await pg.evaluate("db.taches.some(t => t.titre === 'Petit travail de test' && t.kind === 'petit' && t.prio === 'normale' && !t.rapport)"), 'création d’un travail (une seule fois)')
+        await pg.evaluate("newTacheDialog()"); await pg.wait_for_timeout(200)
+        await pg.fill('dialog[open] input[name=titre]', 'Changer une ampoule'); await pg.select_option('dialog[open] select[name=unite]', 'semaine')
+        await pg.click('dialog[open] .rap-pick label:has(input[value=non])'); await pg.click('dialog[open] button[type=submit]'); await pg.wait_for_timeout(500)
+        ok(await pg.evaluate("db.taches.some(t => t.titre === 'Changer une ampoule' && t.kind === 'rec' && t.freq.unite === 'semaine' && t.rapport === 'non')"), 'création d’un travail qui revient, sans rapport')
+        n_int = await pg.evaluate("db.interventions.length")
+        await pg.evaluate("doTache(db.taches.find(t => t.titre === 'Changer une ampoule'))"); await pg.wait_for_timeout(400)
+        ok(await pg.evaluate(f"!document.querySelector('dialog[open]') && db.interventions.length === {n_int} && db.taches.find(t => t.titre === 'Changer une ampoule').faits.length === 1"), '« Jamais de rapport » : coché directement')
+        await aller("go('taches','t2'); doTache(get('taches','t2'))", 'dialogue-rapport-ou-pas', 300)
+        ok(await pg.evaluate("document.querySelectorAll('dialog[open] [data-r]').length === 2"), 'C’est fait : on demande s’il faut un rapport')
+        await pg.click('dialog[open] [data-r=non]'); await pg.wait_for_timeout(400)
+        ok(await pg.evaluate(f"get('taches','t2').actif === false && get('taches','t2').faits.length === 1 && db.interventions.length === {n_int}"), '« Non, juste cocher » : fait sans rapport')
+        await aller("S.statut='terminee'; go('interventions')", 'ordi-travaux-fait')
+        ok(await pg.evaluate("!!document.querySelector('#list [data-id=\"t:t2\"]') && !!document.querySelector('#list [data-id=i1]')"), 'onglet « Fait » : rapports et travaux sans rapport')
+        await pg.click('#list [data-id="t:t2"]'); await pg.wait_for_timeout(300)
+        ok(await pg.evaluate("document.querySelector('#detail .pd-title')?.textContent === 'Changer le néon'"), 'fiche d’un travail fait sans rapport')
+        await pg.evaluate("doTache(get('taches','t1'))"); await pg.wait_for_timeout(300)
+        await pg.check('dialog[open] input[name=keep]'); await pg.click('dialog[open] [data-r=oui]'); await pg.wait_for_timeout(400)
+        ok(await pg.evaluate("get('taches','t1').rapport === 'oui' && !!document.querySelector('dialog[open] input[name=titre]')?.value"), '« Oui, faire un rapport » + retenir : le rapport s’ouvre')
+        await pg.click('dialog[open] button[type=submit]'); await pg.wait_for_timeout(500)
+        ok(await pg.evaluate(f"db.interventions.length === {n_int + 1} && get('taches','t1').prochaine > todayISO()"), 'rapport enregistré, la tâche passe à la date suivante')
+        await pg.click('#main [data-act=wtab][data-w=encours]'); await pg.wait_for_timeout(300)
+        ok(await pg.evaluate("S.view === 'interventions' && S.statut === 'actives'"), 'onglet « En cours »')
         await aller("go('planning')", 'planning-2')
         ok(await pg.evaluate("document.querySelectorAll('.wkgrid th.pn').length > 3"), 'planning affiché')
         ok(await pg.evaluate("![...document.querySelectorAll('.wkgrid th.pn')].some(x => x.textContent.includes('ECHO'))"), 'personne en vacances masquée du planning')
@@ -120,7 +143,7 @@ async def main():
 
         print('Pages (téléphone)')
         await pg.set_viewport_size({'width': 390, 'height': 844})
-        for js, nom in [("go('accueil')", 'accueil'), ("S.sel.pieces=null; go('pieces')", 'pieces'), ("go('taches')", 'taches'),
+        for js, nom in [("go('accueil')", 'accueil'), ("S.sel.pieces=null; go('pieces')", 'pieces'), ("S.sel.taches=null; go('taches')", 'travaux'), ("S.sel.interventions=null; S.statut='terminee'; go('interventions')", 'travaux-fait'),
                         ("go('interventions','i1')", 'rapport'), ("go('planning')", 'planning')]:
             await aller(js, 'tel-' + nom)
         await b.close()

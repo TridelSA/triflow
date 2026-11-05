@@ -23,6 +23,7 @@ Repères dans le fichier (chercher ces commentaires) :
 | `HISTORIQUE (journal` | Journal « qui a fait quoi » : `jDescribe`, `JRN`, `jrnBlock`, `jCtx`. |
 | `const S = {` | État de l'interface (vue, sélection, filtres). |
 | `const VIEWS = {}` puis `VIEWS.accueil/pieces/taches/interventions/kks/planning/options` | Chaque page : `shell()` (en-tête), `list()`, `detail()`. |
+| `/* ---------- Travaux` | Page « Travaux » = vues `taches` (onglet À faire) et `interventions` (En cours / Fait) avec un en-tête commun (`travauxShell`, `wtabs`). « C’est fait » : `doTache` (demande s’il faut un rapport), `finishTask` (coché sans rapport). |
 | `const OPT_SECS` / `OPT.xxx = () =>` | Sections des Options (Historique, Rôles, Personnes…). |
 | `const ACT = {` | Toutes les actions. Un élément `data-act="nom"` appelle `ACT.nom(dataset, element)`. |
 | `function dialog({` | Fenêtres. `onSave` peut être `async` ; lancer une `Error` affiche le message dans la fenêtre. `info:true` = sans bouton Annuler. |
@@ -38,7 +39,7 @@ Repères dans le fichier (chercher ces commentaires) :
 
 ## Données (Supabase, une seule table `docs`)
 Chaque fiche = `(collection, id, data jsonb, rev)`. Collections : `pieces`, `salles`, `lieux`, `kks`, `taches`, `interventions`, `mouvements`, `histo` (stock repris de CareOffice), `personnes`, `plan`, `journal` (non chargé au démarrage), `config` (id `main` : `listes`, `reglages`).
-- **Tâches** : `kind:'petit'` (petit travail, `prio` haute/normale/basse, date facultative) ou récurrente (`freq`, `prochaine`). `isPetit(t)` inclut aussi les anciennes tâches « une seule fois ».
+- **Tâches** (appelées « travaux » dans l’interface) : `kind:'petit'` (une seule fois, `prio` haute/normale/basse, date facultative) ou récurrente (`freq`, `prochaine`). `isPetit(t)` inclut aussi les anciennes tâches « une seule fois ». `rapport` : vide = demander, `'oui'` = toujours, `'non'` = jamais. `faits` : `[{date, who}]` = fait sans rapport (affiché dans l’onglet « Fait »).
 - **Rapports** : numéro `R26-017` (`nextNum`, `renumberInts`) ; `co` = ancien numéro CareOffice, caché, sert à éviter les doublons à l'import.
 - **Personnes et présences** : viennent du Planning Tridel (`PLANNING_URL`, fichier `planning-AAAA.json`, champs `nom`, `categorie`, `planning{date: code}`). Codes dans `PCODE`. Disponible au planning = `DISPO` (R, PIQ, EN, PI, CA) ; congés = `CONGE`.
 - **Rôles** : cadres = groupe « Cadres » reconnu par l'e-mail ; responsable par groupe dans `reglages.resp` (droits à définir plus tard, Options › Rôles).
