@@ -604,6 +604,13 @@ details.more > *:not(summary){margin-top:12px}
 .rrow .ploc{display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--ink);min-width:0;overflow:hidden;white-space:nowrap}
 .rrow .ploc .kks{font-size:.72rem;padding:0 5px}
 .rrow .rwho{overflow:hidden;text-overflow:ellipsis}
+.itbl .sub .kq{font-family:var(--f-mono);font-weight:600;color:var(--steel)}
+.rrow .requip{display:flex;align-items:center;gap:7px;min-width:0;font-size:.86rem;font-weight:600;color:var(--steel)}
+.rrow .requip .kks{font-size:.76rem;padding:1px 6px;flex:none}
+.rrow .requip .rq{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rrow .ploc{font-size:.75rem;color:var(--muted)}
+.equip-hero{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0 4px;padding:8px 12px;border-radius:10px;background:var(--steel-soft);font-weight:600;font-size:1rem;color:var(--ink)}
+.equip-hero .kks{font-size:.9rem;padding:2px 8px}
 .pp.four{background:var(--steel-soft)}
 .pp .ico{width:13px;height:13px;align-self:center}
 .pbtn.four{display:inline-flex;align-items:center;gap:6px}
@@ -3498,7 +3505,7 @@ function mvTable(list, withPiece){
 }
 function intTable(list, noK = false){
   if (!list.length) return '<p class="empty-line">Aucun rapport.</p>';
-  return `<div class="tbl-wrap"><table class="tbl compact itbl"><tbody>${[...list].sort((a, b) => b.date.localeCompare(a.date)).map(i => `<tr data-act="goto" data-view="interventions" data-id="${i.id}" tabindex="0"><td class="ref">${esc(i.num)}</td><td>${esc(i.titre || '(sans titre)')}<span class="sub">${fmtD(i.date)}${!noK && kInfo(i)?.code ? ' · ' + esc(kInfo(i).code) : ''}</span></td><td class="num">${i.statut !== 'terminee' ? statutChip(i.statut) : ''}</td></tr>`).join('')}</tbody></table></div>`;
+  return `<div class="tbl-wrap"><table class="tbl compact itbl"><tbody>${[...list].sort((a, b) => b.date.localeCompare(a.date)).map(i => `<tr data-act="goto" data-view="interventions" data-id="${i.id}" tabindex="0"><td class="ref">${esc(i.num)}</td><td>${esc(i.titre || '(sans titre)')}<span class="sub">${fmtD(i.date)}${!noK && kInfo(i)?.code ? ` · <b class="kq">${esc(kInfo(i).code)}</b> ${esc(kInfo(i).designation || '')}` : ''}</span></td><td class="num">${i.statut !== 'terminee' ? statutChip(i.statut) : ''}</td></tr>`).join('')}</tbody></table></div>`;
 }
 
 /* =====================================================================
@@ -3902,7 +3909,7 @@ VIEWS.interventions = {
     const chips = years.length > 1 || stChip ? `<div class="ychips" role="tablist" aria-label="Filtrer les rapports">${stChip}${openOnly ? '' : `${years.length > 1 ? `<button role="tab" class="ychip" data-act="ryear" data-y="all" aria-selected="${y === 'all'}">Toutes <small>${all.length}</small></button>` : ''}${years.length > 1 ? years.map(x => `<button role="tab" class="ychip" data-act="ryear" data-y="${x}" aria-selected="${y === x}">${x} <small>${yc.get(x)}</small></button>`).join('') : ''}`}${openOnly ? `<button class="ychip" data-act="rstat">Voir tous les rapports</button>` : ''}</div>` : '';
     const row = i => { const k = kInfo(i), d = i.date || '', who = intPers(i).slice(0, 3).map(x => x.nom).join(', ') + (i.intervenants.length > 3 ? ` +${i.intervenants.length - 3}` : '');
       return `<button class="rrow ${S.sel.interventions === i.id ? 'sel' : ''}" data-act="select" data-id="${i.id}"><span class="rday"><b>${+d.slice(8, 10) || ''}</b><small>${MS[+d.slice(5, 7) - 1] || ''}</small></span>
-        <span class="pm"><span class="pdes">${esc(i.titre || '(sans titre)')}</span><span class="ploc">${k?.code ? `<span class="kks">${esc(k.code)}</span>` : ''}${i.type ? `<span>${esc(i.type)}</span>` : ''}${who ? `<span class="muted rwho">${esc(who)}</span>` : ''}</span></span>
+        <span class="pm"><span class="pdes">${esc(i.titre || '(sans titre)')}</span>${k?.code || k?.designation ? `<span class="requip">${k.code ? `<span class="kks">${esc(k.code)}</span>` : ''}<span class="rq">${esc(k.designation || '')}</span></span>` : ''}<span class="ploc">${i.type ? `<span>${esc(i.type)}</span>` : ''}${who ? `<span class="muted rwho">${esc(who)}</span>` : ''}</span></span>
         ${i.statut !== 'terminee' ? statutChip(i.statut) : ''}</button>`; };
     return `${chips}${years.length > 1 && !openOnly ? '' : `<div class="list-bar"><span class="muted">${rows.length} rapport(s)${openOnly ? ' en cours' : ''}</span></div>`}
       <div class="rlist">${groups.map(g => `<div class="rmonth"><span>${g.k ? MO[+g.k.slice(5, 7) - 1] + ' ' + g.k.slice(0, 4) : 'Sans date'}</span><small>${mcount.get(g.k) || g.list.length}</small></div>${g.list.map(row).join('')}`).join('')}
@@ -3916,9 +3923,10 @@ VIEWS.interventions = {
     const pills = intPers(i).map(x => `<span class="pp ${isFourId(x.id) ? 'four' : ''}">${isFourId(x.id) ? icon('truck') : ''}${getPers(x.id) ? `<button class="link" data-act="pers-ints" data-id="${x.id}" title="Tous ses rapports">${esc(persName(x))}</button>` : isFourId(x.id) ? `<button class="link" data-act="four-ints" data-name="${esc(x.id.slice(5))}" title="Tous ses rapports">${esc(persName(x))}</button>` : `<button class="link" data-act="name-ints" data-name="${esc(x.nom)}" title="Tous ses rapports">${esc(persName(x))}</button>`}${x.groupe ? `<small>${esc(x.groupe)}</small>` : ''}</span>`).join('');
     return `${archBanner('interventions', i)}<div class="pd-head"><span class="pd-id">${esc(i.num)}</span><div class="pd-tools">${i.statut !== 'terminee' ? statutChip(i.statut) : ''}<button class="btn small" data-act="edit-int" data-id="${i.id}">${icon('edit')}${i.statut === 'terminee' ? 'Modifier' : 'Compléter'}</button><button class="btn small" data-act="print-int" data-id="${i.id}">${icon('printer')}Imprimer</button>${menu([i.arch ? ['unarch', 'Restaurer le rapport', 'archive', {col:'interventions', id:i.id}] : ['arch', 'Archiver le rapport', 'archive', {col:'interventions', id:i.id}], hardItem('interventions', i.id)].filter(Boolean), 'Plus', 'more', 'small')}</div></div>
       <h2 class="pd-title">${esc(i.titre)}</h2>
+      ${k ? `<div class="equip-hero">${kTagI(i)}<span>${esc(k.designation || '')}</span></div>` : ''}
       <p class="pd-sub">${fmtD(i.date)}${i.type ? ` · ${esc(i.type)}` : ''}${i.duree ? ` · ${num(i.duree)} h` : ''}${i.statut === 'terminee' ? ' · <span style="color:var(--ok)">terminé</span>' : ''}</p>
       <dl class="pd-info rep">
-        <dt>Équipement</dt><dd>${k ? `${kTagI(i)} ${esc(k.designation)}` : '—'}</dd>
+        ${k ? '' : '<dt>Équipement</dt><dd>—</dd>'}
         ${T ? `<dt>Tâche</dt><dd>${get('taches', i.tacheId) ? `<button class="link" data-act="goto" data-view="taches" data-id="${i.tacheId}">${esc(T.titre)}</button>` : esc(T.titre)} <span class="muted">· ${esc(T.freq)}</span></dd>` : ''}
         <dt>Intervenants</dt><dd>${pills ? `<span class="pps">${pills}</span>` : '—'}</dd></dl>
       ${i.constat ? `<section class="pd-sec"><h3>${icon('report')}Constat / demande</h3><p class="pre">${esc(i.constat)}</p></section>` : ''}
