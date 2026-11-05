@@ -1109,6 +1109,18 @@ tr.grp.old th{color:var(--muted)}
 .jl .jt{min-width:0;overflow-wrap:anywhere}
 .jl time{font-family:var(--f-mono);font-size:.75rem;color:var(--muted);white-space:nowrap}
 @media (max-width:760px){ .jl{grid-template-columns:22px minmax(0,1fr)} .jl time,.jl .link{grid-column:2} }
+.jctx{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.jc{display:grid;grid-template-columns:118px minmax(0,1fr);gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:.88rem}
+.jc:last-child{border-bottom:0}
+.jc time{font-family:var(--f-mono);font-size:.76rem;color:var(--muted);padding-top:2px;white-space:nowrap}
+.jc-t{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.jc-w{display:inline-flex;align-items:center;gap:4px;font-size:.8rem;color:var(--muted)}
+.jc-w .ico{width:13px;height:13px}
+.jc-x{margin-top:2px;color:var(--muted);font-size:.84rem;overflow-wrap:anywhere}
+.jc-x .jsep{color:var(--line)}
+.jc-x .jar{color:var(--accent);font-weight:700}
+.jc.j-stock b{color:var(--accent)} .jc.j-delete b{color:var(--bad)}
+@media (max-width:560px){ .jc{grid-template-columns:1fr;gap:2px} }
 .plan-sheet.xls{font-family:Calibri,Carlito,'Segoe UI',Arial,sans-serif;color:#000;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .xls .xt{font-size:22pt;font-weight:700;text-align:center;margin:0 0 5mm;font-family:inherit;letter-spacing:0}
 .xtbl{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11pt}
@@ -3013,16 +3025,32 @@ const JRN = {
 };
 const jIcon = a => ({stock:'move', create:'plus', delete:'out', archive:'archive', restore:'archive', plan:'calendar', bulk:'save'}[a] || 'edit');
 const jLine = (e, withObj = true) => `<li class="jl j-${e.act}"><span class="ji">${icon(jIcon(e.act))}</span><span class="jt"><b>${esc(e.nom || e.by || '?')}</b> ${esc(e.txt)}</span><time>${fmtDT(e.at)}</time>${withObj && e.ref && e.col !== 'config' && (e.col !== 'plan') && get(e.col, e.ref) ? `<button class="link" data-act="goto" data-view="${e.col === 'mouvements' ? 'pieces' : e.col === 'salles' || e.col === 'lieux' ? 'lieux' : e.col}" data-id="${e.ref}">Ouvrir</button>` : ''}</li>`;
+/* Vue « sur la fiche » : on ne répète pas le nom de la fiche, on dit ce qui a changé */
+function jCtx(e){
+  const t = e.txt || '', L = e.lbl || '', after = L && t.includes(L) ? t.slice(t.indexOf(L) + L.length).replace(/^\s*:\s*/, '') : '';
+  if (e.act === 'stock'){ const out = /^a sorti/.test(t); return [out ? 'Sortie de stock' : 'Entrée en stock', t.replace(/^a (sorti|entré) /, '').replace(' de ' + L, '')]; }
+  if (e.act === 'create') return ['Création', ''];
+  if (e.act === 'delete') return ['Suppression définitive', ''];
+  if (e.act === 'archive') return [/fusionné/.test(t) ? 'Fusion de doublon' : 'Archivage', ''];
+  if (e.act === 'restore') return ['Restauration', ''];
+  if (/^a terminé/.test(t)) return ['Rapport terminé', ''];
+  if (/^a passé en cours/.test(t)) return ['Passé en cours', ''];
+  if (/^a rouvert/.test(t)) return ['Rapport rouvert', ''];
+  if (/^a fait la tâche/.test(t)) return ['Faite', (t.match(/\((.*)\)$/) || [])[1] || ''];
+  return ['Modification', after];
+}
+const jCtxLine = e => { const [tt, dd] = jCtx(e); return `<li class="jc j-${e.act}"><time>${fmtDT(e.at)}</time><div class="jc-b"><div class="jc-t"><b>${esc(tt)}</b><span class="jc-w">${icon('person')}${esc(e.nom || e.by || '?')}</span></div>${dd ? `<div class="jc-x">${esc(dd).replace(/ · /g, '<span class="jsep"> · </span>').replace(/ → /g, ' <span class="jar">→</span> ')}</div>` : ''}</div></li>`; };
 /* Bloc « Historique » en bas d'une fiche : chargé à la demande */
-const jrnBlock = ref => CLOUD.on ? `<section class="pd-sec"><h3>${icon('list')}Qui a fait quoi</h3><div data-jrn="${esc(ref)}"><p class="empty-line">Chargement…</p></div></section>` : '';
+const jrnBlock = ref => CLOUD.on ? `<section class="pd-sec"><h3>${icon('list')}Modifications</h3><div data-jrn="${esc(ref)}"><p class="empty-line">Chargement…</p></div></section>` : '';
 async function jrnRefresh(){
   for (const el of $$('[data-jrn]')){
     const ref = el.dataset.jrn, full = el.dataset.full === '1';
     try {
       const f = full ? S.jf || {} : {ref};
-      const rows = await JRN.query({...f, limit:full ? (S.jlim || 100) : 30});
+      let rows = await JRN.query({...f, limit:full ? (S.jlim || 100) : 30});
+      if (!full && S.view === 'pieces') rows = rows.filter(e => e.act !== 'stock');
       if (!el.isConnected) continue;
-      el.innerHTML = rows.length ? `<ul class="jlist">${rows.map(e => jLine(e, full)).join('')}</ul>${full && rows.length >= (S.jlim || 100) ? `<p class="list-note"><button class="link" data-act="jmore">Voir plus</button></p>` : ''}` : `<p class="empty-line">${full ? 'Aucune action enregistrée pour ce filtre.' : 'Aucune modification enregistrée depuis la mise en place de l’historique.'}</p>`;
+      el.innerHTML = rows.length ? `<ul class="${full ? 'jlist' : 'jctx'}">${rows.map(e => full ? jLine(e, true) : jCtxLine(e)).join('')}</ul>${full && rows.length >= (S.jlim || 100) ? `<p class="list-note"><button class="link" data-act="jmore">Voir plus</button></p>` : ''}` : `<p class="empty-line">${full ? 'Aucune action enregistrée pour ce filtre.' : 'Aucune modification enregistrée depuis la mise en place de l’historique.'}</p>`;
     } catch(e){ if (el.isConnected) el.innerHTML = `<p class="empty-line">Historique indisponible : ${esc(e.message || e)}</p>`; }
   }
 }
@@ -3692,7 +3720,7 @@ function travauxHTML(t){
 
 /* Historique d'une pièce : mouvements TriFlow + historique repris de CareOffice */
 function pieceHistory(p){
-  const own = db.mouvements.filter(m => m.pieceId === p.id).map(m => ({date:m.date, qte:m.qte, motif:m.motif + (m.ref ? ' ' + m.ref : ''), lieu:getLieu(m.lieuId) ? lieuCode(getLieu(m.lieuId)) : '', who:m.who || ''}));
+  const own = db.mouvements.filter(m => m.pieceId === p.id).map(m => ({date:m.date, qte:m.qte, motif:m.motif + (m.ref ? ' ' + m.ref : ''), lieu:getLieu(m.lieuId) ? lieuCode(getLieu(m.lieuId)) : '', who:m.who || (m._by ? byWho(m._by) : '')}));
   const old = (get('histo', p.id)?.l || []).map(h => ({date:h.d, qte:h.q, neutral:!!h.n, motif:h.t, lieu:h.lieu || '', who:h.w || ''}));
   return [...own, ...old].sort((a, b) => String(b.date).localeCompare(String(a.date)));
 }
