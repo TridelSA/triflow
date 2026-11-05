@@ -3221,7 +3221,7 @@ function meDialog(){
     onSave(f){ setMe(val(f, 'me')); S.pour = ''; S.pourInit = false; render(); toast(val(f, 'me') ? `Bonjour ${persName(getPers(val(f, 'me')))}` : 'Accueil pour tout le monde'); }});
 }
 /* « Modifié par … » : chaque fiche enregistrée garde l'adresse de la personne et l'heure */
-function byWho(email){ const id = db.reglages.moi?.[String(email || '').toLowerCase()]; const p = id && getPers(id); return p ? persName(p) : String(email || '').split('@')[0]; }
+function byWho(email){ const id = db.reglages.moi?.[String(email || '').toLowerCase()]; const p = (id && getPers(id)) || personFromEmail(email); return p ? persName(p) : String(email || '').split('@')[0]; }
 const byLine = x => x && x._by ? `<p class="byline">${icon('edit')}Modifié par ${esc(byWho(x._by))} · ${esc(fmtDT(x._at))}</p>` : '';
 const FOUR_GRP = 'Entreprise externe';
 const fourSnap = n => ({nom:n, prenom:'', groupe:FOUR_GRP});
