@@ -15,7 +15,7 @@ Ce document sert à **reprendre TriFlow** : comprendre où sont les choses, l'ad
 
 | Élément | Où | Rôle |
 |---|---|---|
-| `index.html` | ce dépôt | Toute l'application : une seule page HTML/CSS/JavaScript, sans outil de compilation. |
+| `index.html`, `css/`, `js/` | ce dépôt | L'application : une page HTML, une feuille de styles et des scripts chargés dans l'ordre, sans outil de compilation (détail dans `CLAUDE.md`). |
 | `manifest.json`, icônes | ce dépôt | Icône et nom de l'application sur les téléphones. |
 | Base Supabase | supabase.com | Une seule table `docs` : chaque fiche (pièce, rapport, tâche…) est un document JSON. |
 | `outils/supabase.sql` | ce dépôt | Script de création de la table, des droits et de la fonction d'enregistrement `save_docs`. |
@@ -78,7 +78,7 @@ La liste du personnel et les groupes viennent du **Planning Tridel** (fichier Ex
 
 ## 3. Modifier le site
 
-1. Modifier `index.html` (directement sur GitHub ou en local).
+1. Modifier `index.html`, `css/triflow.css` ou un fichier de `js/` (directement sur GitHub ou en local), puis changer le numéro `?v=` des balises dans `index.html`.
 2. Enregistrer (commit) sur la branche `main` : GitHub Pages met le site à jour tout seul.
 3. Les postes reçoivent la nouvelle version au prochain chargement (Ctrl+F5 pour forcer).
 

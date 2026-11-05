@@ -11,24 +11,30 @@ Le demandeur est **Thomas Bonnant**, responsable informatique. Il décrit ses be
 - Rien n'est supprimé par défaut : on **archive** (champ `arch`). La suppression définitive est réservée aux **cadres** (`canDel()`).
 
 ## Où est le code
-**Tout est dans `index.html`** (HTML + CSS + JavaScript, ~5 600 lignes, sans outil de compilation). C'est la seule source : on la modifie directement. GitHub Pages publie le site à chaque commit sur `main`.
+Pas d'outil de compilation : `index.html` (squelette) charge `css/triflow.css` puis les scripts `js/` **dans l'ordre**. Ce sont des scripts classiques qui partagent les mêmes variables globales. GitHub Pages publie le site à chaque commit sur `main`.
 
-Repères dans le fichier (chercher ces commentaires) :
-| Où | Quoi |
+| Fichier | Contenu |
 |---|---|
-| `<style>` (début) | Styles. Variables de couleur dans `:root` (clair) et `prefers-color-scheme: dark`. Bloc « Ergonomie v5 » et suivants = ajouts récents. |
-| `/* ---------- Écrans moyens & téléphone` | Règles téléphone. D'autres `@media (max-width:760px)` existent plus bas. |
-| `const COLS`, `let db`, `migrate(d)` | Modèle de données et migrations (drapeaux `d.meta.xxxV` : une migration ne tourne qu'une fois). |
-| `const CLOUD = {` | Synchronisation Supabase : `loadAll` (cache IndexedDB + delta), `push` (diff, lots de 400, `_by`/`_at`), temps réel. |
-| `HISTORIQUE (journal` | Journal « qui a fait quoi » : `jDescribe`, `JRN`, `jrnBlock`, `jCtx`. |
-| `const S = {` | État de l'interface (vue, sélection, filtres). |
-| `const VIEWS = {}` puis `VIEWS.accueil/pieces/taches/interventions/kks/planning/options` | Chaque page : `shell()` (en-tête), `list()`, `detail()`. |
-| `/* ---------- Travaux` | Page « Travaux » = vues `taches` (onglet À faire) et `interventions` (En cours / Fait) avec un en-tête commun (`travauxShell`, `wtabs`). « C’est fait » : `doTache` (demande s’il faut un rapport), `finishTask` (coché sans rapport). |
-| `const OPT_SECS` / `OPT.xxx = () =>` | Sections des Options (Historique, Rôles, Personnes…). |
-| `const ACT = {` | Toutes les actions. Un élément `data-act="nom"` appelle `ACT.nom(dataset, element)`. |
-| `function dialog({` | Fenêtres. `onSave` peut être `async` ; lancer une `Error` affiche le message dans la fenêtre. `info:true` = sans bouton Annuler. |
-| `tacheDialog`, `newTacheDialog`, `interventionDialog`, `pieceDialog`, `planDialog`, `planInline`, `locDialog` | Formulaires principaux. |
-| `planSheetHTML` | Feuille A3 imprimée du planning (reprend le modèle Excel de Tridel). |
+| `css/triflow.css` | Tous les styles. Couleurs dans `:root` et `prefers-color-scheme: dark`. Règles téléphone : `@media (max-width:760px)` (plusieurs blocs). |
+| `js/qrcode.js` | Bibliothèque QR (ne pas modifier). |
+| `js/1-base.js` | Outils, `ICONS`, `menu()`, migrations des données (`migrate`, drapeaux `d.meta.xxxV`). |
+| `js/2-cloud.js` | `COLS`, `CLOUD` : Supabase (chargement + cache IndexedDB, `push`, temps réel). |
+| `js/3-coeur.js` | Journal « qui a fait quoi » (`jDescribe`, `JRN`, `jCtx`), connexion, **`tx()`**, identité et droits (`personFromEmail`, `canDel`, `meId`), aide, archives, stock (`addStock`), numéros (`nextNum`), `dueInfo`, état **`S`**, `render`/`fillList`/`fillDetail`. |
+| `js/4-accueil-pieces.js` | `VIEWS`, pages Accueil et Pièces, doublons, emplacements. |
+| `js/5-travaux-installation.js` | Page Travaux (tâches et rapports, `newTacheDialog`, `tacheDialog`), Installation (KKS). |
+| `js/6-planning-options.js` | Planning (`PCODE`, `DISPO`, grille, panneau « À planifier », `planInline`, `planSheetHTML` = feuille A3), emplacements (`locDialog`), accès (`accessDialog`), pages Options (`OPT.xxx`). |
+| `js/7-recherche-scan.js` | Recherche globale, scan QR. |
+| `js/8-fenetres.js` | `dialog()` (fenêtres : `onSave` peut être `async`, une `Error` s'affiche dans la fenêtre, `info:true` = sans Annuler), fenêtres pièce/mouvement/emplacements, imports, étiquettes, impression, `combo()`. |
+| `js/9-rapports-exports.js` | Fenêtre rapport (`interventionDialog`), KKS, personnes, synchronisation du personnel, exports Excel. |
+| `js/10-evenements.js` | **`ACT`** (toutes les actions : `data-act="nom"` appelle `ACT.nom(dataset, element)`), événements, démarrage. |
+
+**Après toute modification d'un fichier `css/` ou `js/`**, changer le numéro `?v=` (date-heure, ex. `?v=202611052215`) sur **toutes** les balises de `index.html`, pour que les navigateurs prennent la nouvelle version.
+
+## Économiser (important : l'abonnement a des limites)
+- **Ne jamais lire un fichier en entier sans raison.** Chercher d'abord (Grep sur un nom de fonction ou un texte affiché), puis lire seulement les lignes utiles.
+- Ne pas relire un fichier qu'on vient de modifier.
+- Tests : `python3 outils/tests/test.py` sans captures pour un petit changement ; `--captures` et regarder **une ou deux** captures seulement quand l'affichage change.
+- Réponses courtes : ce qui a changé et où le voir.
 
 ### Règles d'écriture
 - **Toute modification de données passe par `tx(() => { … })`** (enregistre, met à jour l'historique, permet « Annuler »). Puis `render()` ou `fillList()` / `fillDetail()`.
@@ -59,7 +65,7 @@ python3 outils/tests/test.py --captures
 ```
 Le test ouvre `index.html` dans un vrai navigateur avec une **fausse base** (`outils/tests/supabase-factice.js`, mot de passe `secret`) et un **faux planning** (personnes inventées), crée quelques fiches, fait le tour des pages (ordinateur et téléphone) et vérifie les parcours principaux. Il échoue à la moindre erreur JavaScript. Les captures vont dans `outils/tests/captures/` (non versionné) : **les regarder** quand on touche à l'affichage. Ajouter une vérification au test quand on ajoute une fonction.
 
-Vérification rapide de syntaxe : extraire le plus grand `<script>` et lancer `node --check`.
+Vérification rapide de syntaxe : `node --check js/<fichier>.js`.
 
 ## Publier
 Commit sur `main` avec un message en français qui dit ce qui change pour l'utilisateur, puis `git push`. Ensuite, résumer à Thomas en quelques lignes ce qui a changé et où le voir.
