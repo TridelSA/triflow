@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+"""
+Tests automatiques de TriFlow (navigateur réel, fausse base, données inventées).
+
+    pip install playwright && playwright install chromium   # une seule fois
+    python3 outils/tests/test.py            # depuis la racine du dépôt
+    python3 outils/tests/test.py --captures # garde aussi des captures dans outils/tests/captures/
+
+Le script lance un petit serveur local, ouvre index.html avec une fausse base Supabase
+(supabase-factice.js) et un faux Planning Tridel (personnes inventées), crée quelques fiches,
+fait le tour des pages sur ordinateur et sur téléphone, vérifie quelques parcours
+et s'arrête en erreur à la moindre erreur JavaScript.
+"""
+import asyncio, datetime, functools, http.server, json, os, sys, threading
+
+RACINE = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+ICI = os.path.dirname(os.path.abspath(__file__))
+CAPTURES = '--captures' in sys.argv
+PORT = 8799
+
+def serveur():
+    class Muet(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, *a): pass
+    h = functools.partial(Muet, directory=RACINE)
+    s = http.server.ThreadingHTTPServer(('127.0.0.1', PORT), h)
+    threading.Thread(target=s.serve_forever, daemon=True).start()
+    return s
+
+def faux_planning(annee):
+    """Planning Tridel inventé : quelques personnes par groupe, codes sur toute l'année."""
+    groupes = {'Électricien': ['ALPHA', 'BRAVO'], 'Automaticien': ['CHARLIE'], 'Mécanicien': ['DELTA', 'ECHO', 'FOXTROT'],
+               'Intendance': ['GOLF', 'HOTEL'], 'Chauffeurs-grutiers': ['INDIA'], 'Cadres': ['JULIETT', 'TESTEUR']}
+    d0 = datetime.date(annee, 1, 1); jours = [(d0 + datetime.timedelta(i)) for i in range(366) if (d0 + datetime.timedelta(i)).year == annee]
+    emp = []
+    for g, noms in groupes.items():
+        for i, n in enumerate(noms):
+            pl = {}
+            for d in jours:
+                if d.weekday() >= 5: continue
+                code = 'R'
+                if n == 'ECHO': code = 'VA'                       # en vacances toute l'année : masqué du planning
+                elif n == 'BRAVO' and d.weekday() == 2: code = 'MC'
+                elif n == 'DELTA' and d.weekday() < 2: code = 'RM'
+                pl[d.isoformat()] = code
+            emp.append({'nom': n, 'categorie': g, 'planning': pl, 'commentaires': {}})
+    return json.dumps({'annee': annee, 'employes': emp})
+
+async def main():
+    from playwright.async_api import async_playwright
+    srv = serveur()
+    factice = open(os.path.join(ICI, 'supabase-factice.js'), encoding='utf-8').read()
+    erreurs, echecs = [], []
+    if CAPTURES: os.makedirs(os.path.join(ICI, 'captures'), exist_ok=True)
+    def ok(cond, msg):
+        print(('  ✓ ' if cond else '  ✗ ') + msg)
+        if not cond: echecs.append(msg)
+    async with async_playwright() as p:
+        b = await p.chromium.launch()
+        pg = await b.new_page(viewport={'width': 1300, 'height': 820})
+        pg.on('pageerror', lambda e: erreurs.append(str(e)))
+        await pg.route('**/supabase.js', lambda r: r.fulfill(status=200, content_type='application/javascript', body=factice))
+        await pg.route('**/planning/planning-*.json', lambda r: r.fulfill(status=200, content_type='application/json', body=faux_planning(int(r.request.url.split('planning-')[1][:4]))))
+        await pg.route('**/jsQR*', lambda r: r.fulfill(status=200, content_type='application/javascript', body='window.jsQR=()=>null;'))
+        async def capture(nom):
+            if CAPTURES: await pg.screenshot(path=os.path.join(ICI, 'captures', nom + '.png'))
+        async def aller(js, nom, attente=600):
+            await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close())")
+            await pg.evaluate(js); await pg.wait_for_timeout(attente); await capture(nom)
+
+        print('Connexion')
+        await pg.goto(f'http://127.0.0.1:{PORT}/'); await pg.wait_for_timeout(400)
+        await pg.evaluate("localStorage.clear(); localStorage.setItem('tf-welcome', '1')"); await pg.reload(); await pg.wait_for_timeout(500)
+        await pg.fill('#login input[name=email]', 'test.testeur@exemple.ch'); await pg.fill('#login input[name=pw]', 'secret'); await pg.click('#login button')
+        await pg.wait_for_timeout(2000)
+        ok(await pg.evaluate("!!CLOUD.user"), 'connecté à la fausse base')
+        ok(await pg.evaluate("db.personnes.length > 5"), 'personnel repris du faux Planning Tridel')
+        ok(await pg.evaluate("personFromEmail('test.testeur@exemple.ch')?.nom === 'TESTEUR'"), 'personne reconnue par son e-mail')
+        ok(await pg.evaluate("canDel()"), 'un cadre peut supprimer définitivement')
+
+        print('Données de test')
+        await pg.evaluate("""tx(() => {
+          db.salles.push({id:'s1', code:'E9.99', nom:'Magasin test'}); db.lieux.push({id:'l1', salleId:'s1', code:'A / 1 / 2'});
+          db.kks.push({id:'k1', code:'0ABC10AA001', designation:'Pompe de test'});
+          db.pieces.push({id:'p1', ref:'90001', designation:'Contacteur 24V', fabricant:'Marque', unite:'pce', stockMin:2, notes:'', kks:['k1'], stock:[{lieuId:'l1', qte:5}]});
+          db.taches.push({id:'t1', titre:'Graissage des paliers', kksId:'k1', assign:{type:'groupe', v:'Mécanicien'}, freq:{n:1, unite:'mois'}, prochaine:isoAdd(todayISO(), -3), actif:true, kind:'rec'});
+          db.taches.push({id:'t2', titre:'Changer le néon', kksId:'', assign:{type:'groupe', v:'Électricien'}, freq:{n:1, unite:'once'}, prochaine:'', actif:true, kind:'petit', prio:'haute'});
+          db.interventions.push({id:'i1', num:nextNum(todayISO()), date:todayISO(), type:'', statut:'terminee', titre:'Remplacement joint', kksId:'k1', constat:'', travaux:'Joint remplacé', duree:'', intervenants:[], pieces:[]});
+        })""")
+        await pg.wait_for_timeout(800)
+        await pg.evaluate("tx(() => addStock(getPiece('p1'), 'l1', -2, 'Sortie test', ''))"); await pg.wait_for_timeout(800)
+        ok(await pg.evaluate("getPiece('p1').stock[0].qte === 3"), 'sortie de stock')
+        rows = await pg.evaluate("JRN.query({}).then(r => r.map(e => e.txt))")
+        ok(any('a sorti 2' in t for t in rows), 'sortie notée dans l’historique')
+
+        print('Pages (ordinateur)')
+        for js, nom in [("go('accueil')", 'accueil'), ("S.sel.pieces=null; go('pieces')", 'pieces'), ("go('pieces','p1')", 'piece'),
+                        ("S.ttab='petits'; go('taches')", 'taches-petits'), ("S.ttab='rec'; go('taches')", 'taches-recurrentes'),
+                        ("go('interventions','i1')", 'rapport'), ("go('planning')", 'planning'), ("go('kks')", 'installation'),
+                        ("S.opt='historique'; go('options')", 'options-historique'), ("S.opt='roles'; go('options')", 'options-roles'),
+                        ("S.opt='personnes'; go('options')", 'options-personnes')]:
+            await aller(js, 'ordi-' + nom)
+        ok(await pg.evaluate("S.pweek === planWeek()"), 'le planning s’ouvre sur la semaine suivante')
+
+        print('Parcours')
+        await aller("go('taches'); newTacheDialog()", 'dialogue-nouvelle-tache', 300)
+        await pg.click('dialog[open] [data-kind=petit]'); await pg.wait_for_timeout(200)
+        await pg.fill('dialog[open] input[name=titre]', 'Petit travail de test'); await pg.click('dialog[open] .prio-o.info')
+        await pg.click('dialog[open] button[type=submit]'); await pg.wait_for_timeout(500)
+        ok(await pg.evaluate("db.taches.some(t => t.titre === 'Petit travail de test' && t.kind === 'petit' && t.prio === 'normale')"), 'création d’un petit travail')
+        await aller("go('planning')", 'planning-2')
+        ok(await pg.evaluate("document.querySelectorAll('.wkgrid th.pn').length > 3"), 'planning affiché')
+        ok(await pg.evaluate("![...document.querySelectorAll('.wkgrid th.pn')].some(x => x.textContent.includes('ECHO'))"), 'personne en vacances masquée du planning')
+        who = await pg.evaluate("db.personnes.find(p => p.nom === 'ALPHA').id"); mon = await pg.evaluate("S.pweek")
+        await pg.click(f'.wkgrid .pc[data-who="{who}"][data-date="{mon}"]'); await pg.keyboard.type('Texte de test'); await pg.keyboard.press('Enter'); await pg.wait_for_timeout(400)
+        ok(await pg.evaluate(f"db.plan.some(x => x.who === '{who}' && x.text === 'Texte de test')"), 'saisie directe dans le planning')
+        await aller("S.sel.pieces=null; go('pieces'); locDialog('')", 'dialogue-emplacements', 300)
+        ok(await pg.evaluate("document.querySelectorAll('dialog[open] .loc-i').length >= 1"), 'recherche par emplacement')
+        await aller("go('interventions'); interventionDialog(null)", 'dialogue-rapport', 300)
+        ok(await pg.evaluate("!!document.querySelector('dialog[open] [data-padd]') && !document.querySelector('dialog[open] [data-pgrid]')"), 'intervenants par recherche seule')
+
+        print('Pages (téléphone)')
+        await pg.set_viewport_size({'width': 390, 'height': 844})
+        for js, nom in [("go('accueil')", 'accueil'), ("S.sel.pieces=null; go('pieces')", 'pieces'), ("go('taches')", 'taches'),
+                        ("go('interventions','i1')", 'rapport'), ("go('planning')", 'planning')]:
+            await aller(js, 'tel-' + nom)
+        await b.close()
+    srv.shutdown()
+    for e in erreurs: print('  ✗ Erreur JavaScript : ' + e)
+    if erreurs or echecs:
+        print(f'\nÉCHEC : {len(echecs)} vérification(s) et {len(erreurs)} erreur(s) JavaScript.'); sys.exit(1)
+    print('\nTout est bon.' + (' Captures : outils/tests/captures/' if CAPTURES else ''))
+
+asyncio.run(main())

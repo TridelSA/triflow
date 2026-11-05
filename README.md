@@ -86,6 +86,11 @@ Le site garde une copie locale des données (IndexedDB, base `triflow-cache`) po
 
 ---
 
+### Avec Claude Code
+Le fichier `CLAUDE.md` décrit le projet pour Claude (structure du code, règles, interdits) et les tests automatiques sont dans `outils/tests/` (`python3 outils/tests/test.py --captures`, avec une fausse base et des données inventées). Ouvrir Claude Code sur ce dépôt et demander les changements en français.
+
+---
+
 ## 4. Sauvegardes
 
 ### Automatique (chaque lundi)
