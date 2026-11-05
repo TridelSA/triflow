@@ -46,8 +46,8 @@ function doneHTML(t){
   const reps = db.interventions.filter(i => i.tacheId === t.id && live(i)), fs = t.faits || [];
   if (!reps.length && !fs.length) return '<p class="empty-line">Pas encore fait.</p>';
   const names = ids => (ids || []).map(id => getPers(id)).filter(Boolean).map(persName).join(', ');
-  const rows = [...reps.map(i => ({d:i.date, h:`<tr data-act="goto" data-view="interventions" data-id="${i.id}" tabindex="0"><td class="ref">${esc(i.num)}</td><td>${esc(i.titre || '(sans titre)')}<span class="sub">${fmtD(i.date)}</span></td><td class="num">${i.statut !== 'terminee' ? statutChip(i.statut) : ''}</td></tr>`})),
-    ...fs.map(f => ({d:f.date, h:`<tr><td class="ref">—</td><td>Fait, sans rapport<span class="sub">${fmtD(f.date)}${names(f.who) ? ' · ' + esc(names(f.who)) : ''}</span></td><td></td></tr>`}))].sort((a, b) => b.d.localeCompare(a.d));
+  const rows = [...reps.map(i => ({d:i.date, h:`<tr data-act="goto" data-view="interventions" data-id="${i.id}" tabindex="0"><td class="ref">${fmtD(i.date)}</td><td>${esc(i.titre || '(sans titre)')}<span class="sub">${esc(i.num)}</span></td><td class="num">${i.statut !== 'terminee' ? statutChip(i.statut) : ''}</td></tr>`})),
+    ...fs.map(f => ({d:f.date, h:`<tr><td class="ref">${fmtD(f.date)}</td><td>Fait, sans rapport${names(f.who) ? `<span class="sub">${esc(names(f.who))}</span>` : ''}</td><td></td></tr>`}))].sort((a, b) => b.d.localeCompare(a.d));
   return `<div class="tbl-wrap"><table class="tbl compact itbl"><tbody>${rows.map(r => r.h).join('')}</tbody></table></div>`;
 }
 /* Quand ? : regroupement des travaux à faire */
