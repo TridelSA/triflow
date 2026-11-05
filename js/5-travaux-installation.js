@@ -95,13 +95,13 @@ VIEWS.taches = {
     const off = t.actif === false, di = dueInfo(t), RAP = {oui:'avec rapport', non:'sans rapport'};
     return `${archBanner('taches', t)}<div class="pd-head"><span class="pd-id">${isPetit(t) ? 'Une seule fois' + (prioOf(t) !== 'normale' ? ' · priorité ' + PRIO[prioOf(t)][0].toLowerCase() : '') : esc(freqLabel(t.freq))}</span><div class="pd-tools"><button class="btn small" data-act="edit-tache" data-id="${t.id}">${icon('edit')}Modifier</button>${menu([t.arch ? ['unarch', 'Restaurer', 'archive', {col:'taches', id:t.id}] : ['arch', 'Archiver', 'archive', {col:'taches', id:t.id}], hardItem('taches', t.id)].filter(Boolean), 'Plus', 'more', 'small')}</div></div>
       <h2 class="pd-title">${esc(t.titre)}</h2>
+      ${k ? `<div class="equip-hero">${kksTag(k)}<span>${esc(k.designation || '')}</span></div>` : ''}
       <p class="pd-sub">${t.assign?.v ? `Pour <strong style="font-weight:600">${esc(assignLabel(t.assign))}</strong>` : '<span class="muted">Pour personne en particulier</span>'}${last ? ` · fait la dernière fois le ${fmtD(last)}` : ''}${RAP[t.rapport] ? ` · ${RAP[t.rapport]}` : ''}</p>
       <div class="pd-stock ${!off && (di.k === 'retard' || tKey(t) === 'retard') ? 'late' : ''}">
         <div class="pd-qty">${off ? '<span class="l" style="font-size:1rem">Fait</span>' : isPetit(t) ? `<span class="l">${t.prochaine ? 'Pour le' : 'Quand ?'}</span>${t.prochaine ? `<span class="n" style="font-size:1.5rem">${fmtD(t.prochaine)}</span>` : '<span class="n" style="font-size:1.2rem">Dès que possible</span>'}${prioOf(t) !== 'normale' ? di.chip : ''}` : `<span class="l">Prochaine fois</span><span class="n" style="font-size:1.5rem">${fmtD(t.prochaine)}</span>${di.k === 'plus' ? '' : di.chip}`}</div>
         ${off || t.arch ? '' : run ? `<button class="btn primary" data-act="edit-int" data-id="${run.id}">${icon('report')}Compléter le rapport ${esc(run.num)}</button>` : `<button class="btn primary" data-act="do-tache" data-id="${t.id}">${icon('check')}C’est fait</button>`}
       </div>
       ${!off && !t.arch && !isPetit(t) && daysTo(t.prochaine) < 0 ? `<p class="recal">${icon('repeat')}<span>Plus d’actualité ?</span><button class="btn small" data-act="recaler" data-id="${t.id}">Recaler sur la prochaine échéance</button></p>` : ''}
-      ${k ? `<section class="pd-sec"><h3>${icon('plant')}Équipement</h3><div class="pd-k">${kksTag(k)}<span class="t">${esc(k.designation)}</span></div></section>` : ''}
       ${t.description ? `<section class="pd-sec"><h3>${icon('list')}Ce qu’il faut faire</h3><p class="pre">${esc(t.description)}</p></section>` : ''}
       <section class="pd-sec"><h3>${icon('check')}Déjà fait</h3>${doneHTML(t)}</section>${byLine(t)}`;
   }

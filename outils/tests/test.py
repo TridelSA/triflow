@@ -124,6 +124,8 @@ async def main():
         ok(await pg.evaluate("!!document.querySelector('#list [data-id=\"t:t2\"]') && !!document.querySelector('#list [data-id=i1]')"), 'onglet « Fait » : rapports et travaux sans rapport')
         await pg.click('#list [data-id="t:t2"]'); await pg.wait_for_timeout(300)
         ok(await pg.evaluate("document.querySelector('#detail .pd-title')?.textContent === 'Changer le néon'"), 'fiche d’un travail fait sans rapport')
+        await pg.evaluate("S.sel.taches='t1'; go('taches','t1')"); await pg.wait_for_timeout(300)
+        ok(await pg.evaluate("document.querySelector('#detail .pd-title + .equip-hero')?.textContent.includes('Pompe de test')"), 'travail : équipement juste sous le titre')
         await pg.evaluate("doTache(get('taches','t1'))"); await pg.wait_for_timeout(300)
         await pg.check('dialog[open] input[name=keep]'); await pg.click('dialog[open] [data-r=oui]'); await pg.wait_for_timeout(400)
         ok(await pg.evaluate("get('taches','t1').rapport === 'oui' && !!document.querySelector('dialog[open] input[name=titre]')?.value"), '« Oui, faire un rapport » + retenir : le rapport s’ouvre')
