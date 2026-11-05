@@ -1208,3 +1208,36 @@ body.placing .wkgrid .pc{cursor:copy}
 .ps-t small .rep{display:inline-flex;align-items:center;gap:2px}.ps-t small .rep .ico{width:11px;height:11px}
 .ps-t small .chip{font-size:.66rem;padding:0 6px}
 .wkgrid tr.pg.on th{background:var(--accent-soft);color:var(--ink)}
+
+/* ---------- Accueil (esprit Planning Tridel : bandeau du jour, cartes arrondies et douces) ---------- */
+.home-hero{position:relative;border-radius:22px;background:linear-gradient(160deg,var(--accent-soft),var(--surface) 70%);border:1px solid var(--line);box-shadow:0 1px 2px rgba(16,31,54,.04),0 14px 30px -10px rgba(16,31,54,.12);margin-bottom:18px;overflow:hidden}
+.hh-top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;padding:20px 22px 16px}
+.hh-date{margin:0 0 2px;color:var(--muted);font-size:.85rem;font-weight:600}
+.hh-date::first-letter{text-transform:uppercase}
+.home-hero h1{margin:0;font-size:1.8rem}
+.hh-qa{display:flex;gap:8px;flex-wrap:wrap}
+.hq{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:600;font-size:.88rem;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.hq .ico{width:17px;height:17px;color:var(--accent)}
+.hq:hover{border-color:var(--accent-line);background:var(--accent-soft)}
+.hh-strip{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;padding:10px 22px;font-size:.82rem;border-top:1px solid var(--line);background:linear-gradient(90deg,#FFF1DF,#EEE8FF)}
+.hs-l{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#9E4C0A}
+.hs-g{display:inline-flex;align-items:center;gap:5px;color:var(--ink)}
+.hs-g b{font-weight:700;margin-right:3px}
+.home-cols .hcol{display:flex;flex-direction:column;gap:18px;min-width:0}
+.home-card{border-radius:22px;box-shadow:0 1px 2px rgba(16,31,54,.04),0 14px 30px -10px rgba(16,31,54,.12)}
+.home-card .panel-head{padding:16px 18px 8px}
+.home-card .who-line{display:block;padding:0 18px 6px}
+.hc-sub{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 18px 6px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.hc-sub span{display:inline-flex;align-items:center;gap:6px}.hc-sub .ico{width:14px;height:14px}
+.hc-sub b{background:var(--sunk);color:var(--ink);border-radius:999px;padding:0 7px;font-size:.72rem}
+.hc-sub .link{text-transform:none;letter-spacing:0;font-size:.82rem}
+.home-card .ptoday{margin:0 12px 4px}
+.hc-empty{padding:0 18px 16px;margin:0}
+.hstock{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:4px 16px 16px}
+.hs-k{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:14px;background:var(--sunk)}
+.hs-k b{font-family:var(--f-mono);font-size:1.5rem;line-height:1}
+.hs-k span{font-size:.8rem;color:var(--muted)}
+.hs-k.warn{background:var(--warn-soft)}.hs-k.warn b{color:var(--warn)}
+.hs-k.bad{background:var(--bad-soft)}.hs-k.bad b{color:var(--bad)}
+@media (prefers-color-scheme:dark){ .hh-strip{background:linear-gradient(90deg,#3A2A18,#2B2A5E)} .hs-l{color:#F2B176} }
+@media (max-width:760px){ .hh-qa{display:none} .home-hero h1{font-size:1.45rem} .hh-top{padding:16px 16px 12px} .hh-strip{padding:10px 16px;gap:4px 14px} .home-card{border-radius:18px} }

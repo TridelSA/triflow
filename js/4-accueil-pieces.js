@@ -16,31 +16,48 @@ function weekHTML(){
       return `<button class="pit ${t ? 'task' : ''} ${done ? 'done' : ''}" data-act="${t ? 'goto' : 'nav'}" data-view="${t ? 'taches' : 'planning'}" ${t ? `data-id="${t.id}"` : ''}>${t ? icon(done ? 'check' : 'repeat') : ''}<span>${esc(t ? t.titre : x.text)}</span>${t && x.text ? `<small>${esc(x.text)}</small>` : ''}</button>`; }).join('');
     const abs = pc && pc[1] === 'abs';
     return `<div class="wd ${d === today ? 'today' : ''} ${d < today ? 'past' : ''}"><span class="wdl">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></span><span class="wdi">${pc && !isDispo(pr.code) ? `<span class="pcode ${'k-' + pc[1]}" title="${esc(pc[0])}">${esc(pr.code)}</span>` : ''}${abs ? `<span class="abs">${esc(pc[0])}</span>` : ''}${it || (abs ? '' : '<span class="muted">—</span>')}</span></div>`; }).join('');
-  return `<section class="panel"><div class="panel-head"><h2>${we ? 'La semaine prochaine' : 'Ma semaine'} <span class="muted" style="font-size:.9rem">sem. ${isoWeek(mon)}</span></h2><button class="link" data-act="nav" data-view="planning">Planning</button></div><div class="week">${rows}</div></section>`;
+  return `<section class="panel home-card"><div class="panel-head"><h2>${we ? 'La semaine prochaine' : 'Ma semaine'} <span class="muted" style="font-size:.9rem">sem. ${isoWeek(mon)}</span></h2><button class="link" data-act="nav" data-view="planning">Planning</button></div><div class="week">${rows}</div></section>`;
+}
+/* Accueil, dans l'esprit du Planning Tridel : un bandeau « aujourd'hui » (date, présents par métier),
+   puis une seule carte « À faire » (planning du jour, rapports à terminer, travaux urgents), ma semaine et le stock. */
+const MOIS_L = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+function homePresence(today){
+  const P = PLANS[today.slice(0, 4)]; if (!P){ loadPresence(today.slice(0, 4)); return ''; }
+  if (P.loading) return '<span class="hs-g muted">Présences : chargement…</span>';
+  if (!P.byNom.size) return '';
+  const ppl = db.personnes.filter(p => live(p) && p.actif !== false);
+  const g = METIERS.map(([k, lbl]) => { const here = ppl.filter(p => metOf(p.groupe) === k && isDispo(presOf(p, today)?.code)).sort(persSort);
+    return `<span class="hs-g">${mdot(k)}<b>${lbl}</b>${here.length ? esc(here.map(p => p.nom).join(', ')) : '<span class="muted">personne</span>'}</span>`; }).join('');
+  return `<span class="hs-l">Présents aujourd’hui</span>${g}`;
 }
 VIEWS.accueil = {
   shell(){
+    const today = todayISO(), dt = new Date(today + 'T12:00:00'), me = meId(), P = me && getPers(me), mine = !!S.pour;
+    const dayTxt = `${DAYN[(dt.getDay() + 6) % 7].toLowerCase()} ${dt.getDate()} ${MOIS_L[dt.getMonth()]} · semaine ${isoWeek(today)}`;
+    const qa = (act, type, ic, t) => `<button class="hq" data-act="${act}" ${type ? `data-type="${type}"` : ''}>${icon(ic)}<span>${t}</span></button>`;
+    const pres = homePresence(today);
+    /* À faire : planning du jour, rapports à terminer, travaux en retard ou de la semaine */
+    const td = me ? db.plan.filter(x => x.who === me && x.date === today) : [];
+    const tdH = td.map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null, done = t && doneOn(t, x.date); return `<div class="ptd ${done ? 'done' : ''}"><button class="pit ${t ? 'task' : ''}" data-act="${t ? 'goto' : 'nav'}" data-view="${t ? 'taches' : 'planning'}" ${t ? `data-id="${t.id}"` : ''}>${t ? icon('check') : ''}<span>${esc(t ? t.titre : x.text)}</span>${t && x.text ? `<small>${esc(x.text)}</small>` : ''}</button>${done ? `<span class="ok-tag">${icon('check')}Fait</span>` : `<button class="btn small primary" data-act="plan-done" data-id="${x.id}">${icon('check')}C’est fait</button>`}</div>`; }).join('');
     const open = db.interventions.filter(i => live(i) && i.statut !== 'terminee' && intFor(i, S.pour)).sort((a, b) => b.date.localeCompare(a.date));
-    const qa = (act, type, ic, t) => `<button class="qa" data-act="${act}" ${type ? `data-type="${type}"` : ''}><span class="qi">${icon(ic)}</span><strong>${t}</strong></button>`;
+    const mineT = db.taches.filter(t => live(t) && t.actif !== false && forWho(t, S.pour));
+    const urg = mineT.filter(t => ['retard', 'semaine'].includes(tKey(t)) || (isPetit(t) && !t.prochaine && prioOf(t) === 'haute')).sort((a, b) => (a.prochaine || '0').localeCompare(b.prochaine || '0') || petitSort(a, b));
+    const nLate = mineT.filter(t => tKey(t) === 'retard').length;
+    const sub = (t, n, act = '') => `<div class="hc-sub"><span>${t}${n != null ? ` <b>${n}</b>` : ''}</span>${act}</div>`;
+    const who = me ? `<span class="who-line">${mine ? `${icon('person')}<b>${esc(persName(P))}</b>${S.pour === 'p:' + me && P.groupe ? ` et ${esc(P.groupe)}` : ''} · <button class="link" data-act="pour-all">Tout voir</button>` : `${icon('person')}Tout le monde · <button class="link" data-act="pour-me">Mes affaires</button>`}</span>` : `<span class="who-line"><button class="link" data-act="me">${icon('person')}Qui êtes-vous ? Choisissez votre nom</button></span>`;
+    const afaire = `<section class="panel home-card"><div class="panel-head"><h2>${mine ? 'Mon travail' : 'À faire'}</h2><button class="link" data-act="nav" data-view="taches">Tous les travaux</button></div>${who}
+      ${tdH ? sub(`${icon('calendar')}Aujourd’hui au planning`) + `<div class="ptoday">${tdH}</div>` : ''}
+      ${open.length ? sub(`${icon('report')}Rapports à terminer`, open.length, open.length > 4 ? '<button class="link" data-act="wtab" data-w="encours">Tous</button>' : '') + intTable(open.slice(0, 4)) : ''}
+      ${sub(`${icon('list')}En retard et cette semaine`, urg.length, urg.length > 6 ? `<button class="link" data-act="tf" data-f="${nLate ? 'retard' : 'semaine'}">Voir les ${urg.length}</button>` : '')}
+      ${urg.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${urg.slice(0, 6).map(t => tacheRow(t, false)).join('')}</tbody></table></div>` : '<p class="empty-line hc-empty">Rien d’urgent.</p>'}</section>`;
+    const low = db.pieces.filter(p => live(p) && isLow(p)).length, zero = db.pieces.filter(p => live(p) && isOut(p)).length;
+    const stock = `<section class="panel home-card"><div class="panel-head"><h2>Stock</h2><button class="link" data-act="nav" data-view="pieces">Pièces</button></div><div class="hstock">
+      <button class="hs-k ${low ? 'warn' : ''}" data-act="show-low"><b>${num(low)}</b><span>sous le minimum</span></button><button class="hs-k ${zero ? 'bad' : ''}" data-act="show-zero"><b>${num(zero)}</b><span>à zéro</span></button></div></section>`;
     return `${db.meta.demo ? `<div class="notice"><p><strong>Données d'exemple.</strong> Elles sont fictives et servent à essayer l'outil.</p><button class="btn" data-act="clear-demo">Effacer les exemples</button></div>` : ''}
-    <header class="page-head"><h1>Accueil</h1></header>
-    ${(() => { const low = db.pieces.filter(p => live(p) && isLow(p)).length, zero = db.pieces.filter(p => live(p) && isOut(p)).length, me = !!S.pour, lateAll = db.taches.filter(t => live(t) && t.actif !== false && !isPetit(t) && daysTo(t.prochaine) < 0 && forWho(t, S.pour)), late = lateAll.filter(t => !isOld(t)).length, old = lateAll.length - late;
-      const k = (act, n, t, ic, tone, extra = '') => `<button class="kpi ${n ? tone : 'calm'}" data-act="${act}" ${extra}><span class="ki">${icon(ic)}</span><span class="kn">${num(n)}</span><span class="kt">${t}</span></button>`;
-      return `<div class="kpis">${k('show-low', low, 'Sous le stock minimum', 'box', 'warn')}${k('show-zero', zero, 'Pièces à zéro', 'box', 'calm')}${k('tf', late, (me ? 'Mes travaux en retard' : 'Travaux en retard') + (old ? `<small class="kt2">+ ${old} depuis plus d’un an</small>` : ''), 'repeat', 'bad', 'data-f="retard"')}${k('wtab', open.length, S.pour ? 'Mes rapports en cours' : 'Rapports en cours', 'report', 'info', 'data-w="encours"')}</div>`; })()}
-    <div class="quick">${qa('scan', '', 'scan', 'Scanner un QR')}${qa('quick-move', 'sortie', 'move', 'Mouvement de stock')}${qa('new-int', '', 'report', 'Nouveau rapport')}${qa('new-tache', '', 'check', 'Nouveau travail')}</div>
-    <div class="cols">
-      <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
-      ${(() => { const me = meId(), mine = !!S.pour; const mineT = db.taches.filter(t => live(t) && t.actif !== false && forWho(t, S.pour)), pH = mineT.filter(t => isPetit(t) && (prioOf(t) === 'haute' || daysTo(t.prochaine) <= 7)).sort(petitSort);
-        const dueAll = [...pH, ...mineT.filter(t => !isPetit(t) && daysTo(t.prochaine) <= 7).sort(urgSort)], due = dueAll.slice(0, 6);
-        const who = me ? `<span class="who-line">${mine ? `${icon('person')}<b>${esc(persName(getPers(me)))}</b>${S.pour === 'p:' + me && getPers(me).groupe ? ` et ${esc(getPers(me).groupe)}` : ''} · <button class="link" data-act="pour-all">Tout voir</button>` : `${icon('person')}Tout le monde · <button class="link" data-act="pour-me">Mes affaires</button>`}</span>` : `<span class="who-line"><button class="link" data-act="me">${icon('person')}Qui êtes-vous ? Choisissez votre nom pour voir vos tâches</button></span>`;
-        const td = me ? db.plan.filter(x => x.who === me && x.date === todayISO()) : [];
-        const tdH = td.length ? `<div class="ptoday"><b>${icon('calendar')}Aujourd’hui au planning</b>${td.map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null, done = t && doneOn(t, x.date); return `<div class="ptd ${done ? 'done' : ''}"><button class="pit ${t ? 'task' : ''}" data-act="${t ? 'goto' : 'nav'}" data-view="${t ? 'taches' : 'planning'}" ${t ? `data-id="${t.id}"` : ''}>${t ? icon('repeat') : ''}<span>${esc(t ? t.titre : x.text)}</span>${t && x.text ? `<small>${esc(x.text)}</small>` : ''}</button>${done ? `<span class="ok-tag">${icon('check')}Fait</span>` : `<button class="btn small primary" data-act="plan-done" data-id="${x.id}">${icon('check')}C’est fait</button>`}</div>`; }).join('')}</div>` : '';
-        return `<section class="panel"><div class="panel-head"><h2>${mine ? 'Mes travaux' : 'Travaux à faire'}${dueAll.length ? ` <span class="muted" style="font-size:.9rem">${dueAll.length}</span>` : ''}</h2><button class="link" data-act="nav" data-view="taches">${dueAll.length > 5 ? `Voir les ${dueAll.length}` : 'Toutes'}</button></div>${who}${tdH}${due.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${due.map(t => tacheRow(t, false)).join('')}</tbody></table></div>` : '<div style="padding:0 16px 16px"><p class="empty-line">Rien en retard ni dans les 7 prochains jours.</p></div>'}</section>`; })()}
-      <section class="panel"><div class="panel-head"><h2>Rapports en cours</h2><button class="link" data-act="wtab" data-w="encours">Tous</button></div>${open.length ? intTable(open) : '<div style="padding:0 16px 16px"><p class="empty-line">Aucun rapport en cours.</p></div>'}</section>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:18px;min-width:0">${weekHTML()}${(() => { const done = db.interventions.filter(i => live(i) && i.statut === 'terminee' && intFor(i, S.pour)).sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 5);
-        return `<section class="panel"><div class="panel-head"><h2>${S.pour ? 'Derniers rapports' : 'Derniers rapports'}</h2><button class="link" data-act="wtab" data-w="fait">Tous</button></div>${done.length ? intTable(done) : '<div style="padding:0 16px 16px"><p class="empty-line">Aucun rapport terminé.</p></div>'}</section>`; })()}</div>
-    </div>`;
+    <section class="home-hero"><div class="hh-top"><div><p class="hh-date">${dayTxt}</p><h1>${P ? `Bonjour ${esc(P.prenom || persName(P))}` : 'Bonjour'}</h1></div>
+      <div class="hh-qa">${qa('scan', '', 'scan', 'Scanner')}${qa('quick-move', 'sortie', 'move', 'Mouvement')}${qa('new-int', '', 'report', 'Rapport')}${qa('new-tache', '', 'check', 'Travail')}</div></div>
+      ${pres ? `<div class="hh-strip">${pres}</div>` : ''}</section>
+    <div class="cols home-cols"><div class="hcol">${afaire}</div><div class="hcol">${weekHTML()}${stock}</div></div>`;
   },
   list: () => '', detail: () => ''
 };
