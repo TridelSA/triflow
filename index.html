@@ -1044,10 +1044,18 @@ tr.grp.old th{color:var(--muted)}
 .loc-on .loc-x{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:1rem}
 .loc-on .loc-x:hover{background:rgba(255,255,255,.2)}
 .loc-crumbs{margin:12px 0 8px}
-.loc-list{display:flex;flex-direction:column;gap:6px;max-height:55vh;overflow:auto}
-.loc-i{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:auto minmax(0,1fr) auto 18px;gap:10px;align-items:center;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.loc-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;max-height:55vh;overflow:auto;align-content:start}
+.locpop{position:absolute;z-index:40;width:min(720px,calc(100vw - 32px));background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.18);padding:12px}
+.locpop-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 2px 10px}
+.locpop-h .ico{width:17px;height:17px;color:var(--accent)}
+.locpop-h small{color:var(--muted);font-size:.8rem}
+.locpop-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;max-height:50vh;overflow:auto}
+.loc-i .plate{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;justify-self:start}
+.loc-i{all:unset;box-sizing:border-box;cursor:pointer;display:flex !important;align-items:center;gap:8px;min-width:0;gap:10px;align-items:center;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
 .loc-i:hover{border-color:var(--accent-line);background:var(--accent-soft)}
-.loc-i .t{color:var(--muted);font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.loc-i .plate{flex:0 1 auto;min-width:0}.loc-i .cnt{margin-left:auto;flex:none}.loc-i > .ico{flex:none}
+.loc-i .t{flex:0 1 auto;min-width:0;color:var(--muted);font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.loc-i .t:empty{display:none}
 .loc-i .cnt{font-size:.82rem;font-weight:600;white-space:nowrap}
 .loc-i.empty .cnt{color:var(--muted);font-weight:400}
 .loc-i .ico{width:16px;height:16px;color:var(--muted)}
@@ -3511,7 +3519,7 @@ function filteredPieces(){
   return rows.sort((a, b) => idn(a) - idn(b) || coll.compare(a.ref, b.ref));
 }
 VIEWS.pieces = {
-  shell: () => `<header class="page-head"><h1>Pièces</h1><div class="tools">${searchBox('pieces', 'Rechercher une pièce…')}<button class="btn icon-only" data-act="scan" title="Scanner un QR code" aria-label="Scanner un QR code">${icon('scan')}</button><button class="btn primary" data-act="new-piece">${icon('plus')}Nouvelle pièce</button>
+  shell: () => `<header class="page-head"><h1>Pièces</h1><div class="tools">${searchBox('pieces', 'Rechercher une pièce…')}<button class="btn icon-only" data-act="scan" title="Scanner un QR code" aria-label="Scanner un QR code">${icon('scan')}</button><button class="btn" data-act="ploc" title="Chercher les pièces par emplacement">${icon('shelf')}<span class="hide-sm">Emplacement</span></button><button class="btn primary" data-act="new-piece">${icon('plus')}Nouvelle pièce</button>
     ${menu([['labels-list', 'Étiquettes QR de la liste', 'qr', {}], ['toggle-low', S.lowOnly ? 'Afficher toutes les pièces' : 'Pièces sous le stock minimum', 'list', {}], ['xl-pieces', 'Exporter la liste (Excel)', 'excel', {}], '-', ['to-order', 'Liste à commander', 'truck', {}], ['dups', 'Rechercher les doublons', 'merge', {}], ['relink-kks', 'Relier les repères KKS cités dans les notes', 'plant', {}], archItem('pieces'), '-', ['import-pieces', 'Importer depuis CareOffice (fichier)', 'save', {}]])}</div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list(){
@@ -4044,7 +4052,7 @@ VIEWS.planning = {
         ${menu([['plan-hide', 'Personnes affichées…', 'person', {}]])}</div></header>
       <div class="ptip-row"><p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez dans une case et tapez le travail à faire : <b>Entrée</b> valide, <b>Tab</b> passe au jour suivant. Le petit <b>⋯</b> permet de lier une tâche ou de remplir plusieurs jours.</p>${planLegend()}</div>
       <div class="pwrap ${S.pside ? '' : 'noside'}"><div class="wkgrid-wrap"><table class="wkgrid"><thead><tr><th></th>${days.map((d, i) => `<th class="${d === today ? 'today' : ''}">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>${S.pside ? planSideHTML(days, ppl) : ''}</div>
-      ${conge.length ? `<p class="hint pconge">${icon('calendar')}Pas disponibles cette semaine (ni R, PIQ, EN, PI ou CA), masqués : ${conge.sort(persSort).map(p => esc(persName(p))).join(', ')}.</p>` : ''}
+      ${conge.length ? `<p class="hint pconge">${icon('calendar')}Pas disponibles cette semaine : ${conge.sort(persSort).map(p => esc(persName(p))).join(', ')}.</p>` : ''}
       <div class="pmobile">${mobile}</div>`;
   },
   list: () => '', detail: () => ''
@@ -4182,13 +4190,36 @@ function accessDialog(){
     }});
 }
 /* Recherche des pièces par emplacement : on descend Local › allée › étagère… et on voit combien de pièces il y a à chaque niveau */
-function locDialog(start){
+function locIndex(){
+  if (locIndex.c && locIndex.c.rev === REV && locIndex.c.db === db) return locIndex.c;
   const live2 = db.lieux.filter(liveLieu), codes = new Map(live2.map(l => [l.id, lieuCode(l)]));
   const per = new Map(); for (const p of db.pieces) if (live(p)) for (const x of p.stock){ const c = codes.get(x.lieuId); if (!c) continue; if (!per.has(c)) per.set(c, new Set()); per.get(c).add(p.id); }
   const allCodes = [...new Set(codes.values())];
   const under = pre => { const set = new Set(); for (const [c, ids] of per) if (!pre || c === pre || c.startsWith(pre + ' / ')) ids.forEach(i => set.add(i)); return set.size; };
   const salleName = code => { const sa = db.salles.find(x => salleCode(x) === code); return sa && sa.nom && sa.nom !== code ? sa.nom : ''; };
   const kids = pre => { const m = new Map(); for (const c of allCodes){ if (pre && !(c === pre || c.startsWith(pre + ' / '))) continue; const rest = pre ? c.slice(pre.length + 3) : c; if (!rest) continue; const seg = rest.split(' / ')[0]; const k = pre ? pre + ' / ' + seg : seg; if (!m.has(k)) m.set(k, seg); } return [...m].sort((a, b) => coll.compare(a[1], b[1])); };
+  return (locIndex.c = {rev:REV, db, under, kids, salleName});
+}
+const locTile = (k, seg, c, leaf, name) => `<button type="button" class="loc-i ${c ? '' : 'empty'}" title="${esc(k + (name ? ' · ' + name : ''))}" data-go="${esc(k)}" data-leaf="${leaf ? 1 : ''}"><span class="plate">${esc(seg)}</span><span class="t">${esc(name || '')}</span><span class="cnt">${c ? num(c) + ' pièce' + (c > 1 ? 's' : '') : 'vide'}</span>${leaf ? '' : icon('chev')}</button>`;
+/* Clic dans la recherche des pièces (vide) : les locaux sont proposés tout de suite */
+function locPop(show){
+  const inp = $('#q-pieces'); let pop = $('#locpop');
+  if (!show || !inp || inp.value.trim()){ if (pop) pop.remove(); return; }
+  const {under, kids, salleName} = locIndex(), top = kids('');
+  const host = inp.closest('.page-head') || inp.parentElement;
+  if (!pop){ pop = document.createElement('div'); pop.id = 'locpop'; pop.className = 'locpop'; host.style.position = 'relative'; host.append(pop); }
+  const r = inp.getBoundingClientRect(), pr = host.getBoundingClientRect();
+  pop.style.left = (r.left - pr.left) + 'px'; pop.style.top = (r.bottom - pr.top + 6) + 'px';
+  pop.innerHTML = `<div class="locpop-h">${icon('shelf')}<b>Chercher par emplacement</b><small>ou tapez un nom, un ID, une référence…</small></div><div class="locpop-g">${top.map(([k, seg]) => locTile(k, seg, under(k), !kids(k).length, salleName(seg))).join('')}</div>`;
+}
+document.addEventListener('focusin', e => { if (e.target.id === 'q-pieces') locPop(true); });
+document.addEventListener('input', e => { if (e.target.id === 'q-pieces') locPop(true); });
+document.addEventListener('mousedown', e => { if ($('#locpop') && !e.target.closest('#locpop') && e.target.id !== 'q-pieces') locPop(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#locpop')) locPop(false); });
+document.addEventListener('click', e => { const b = e.target.closest('#locpop [data-go]'); if (!b) return; e.preventDefault(); const k = b.dataset.go; locPop(false);
+  if (b.dataset.leaf){ S.ploc = k; S.lowOnly = S.zeroOnly = false; S.plimit = 200; S.sel.pieces = null; go('pieces'); } else locDialog(k); });
+function locDialog(start){
+  const {under, kids, salleName} = locIndex();
   let cur = start;
   dialog({title:'Pièces par emplacement', saveLabel:'Voir les pièces', wide:true,
     body:`<input type="search" data-lq placeholder="Filtrer : E1.14, palette, ratelier…" aria-label="Filtrer les emplacements" autocomplete="off"><nav class="crumbs loc-crumbs" data-lcr></nav><div class="loc-list" data-ll></div>`,
@@ -4199,7 +4230,7 @@ function locDialog(start){
         cr.innerHTML = `<button type="button" class="link" data-go="">Tous les locaux</button>` + segs.map((sg, i) => ` <span class="muted">›</span> ${i === segs.length - 1 ? `<strong>${esc(sg)}</strong>` : `<button type="button" class="link" data-go="${esc(segs.slice(0, i + 1).join(' / '))}">${esc(sg)}</button>`}`).join('');
         const n = norm(q.value || ''); let ks = kids(cur);
         if (n) ks = ks.filter(([k, seg]) => norm(k + ' ' + (cur ? '' : salleName(seg))).includes(n));
-        ll.innerHTML = ks.length ? ks.map(([k, seg]) => { const c = under(k), leaf = !kids(k).length; return `<button type="button" class="loc-i ${c ? '' : 'empty'}" data-go="${esc(k)}" data-leaf="${leaf ? 1 : ''}"><span class="plate">${esc(seg)}</span>${!cur && salleName(seg) ? `<span class="t">${esc(salleName(seg))}</span>` : '<span class="t"></span>'}<span class="cnt">${c ? num(c) + ' pièce' + (c > 1 ? 's' : '') : 'vide'}</span>${leaf ? '' : icon('chev')}</button>`; }).join('') : '<p class="empty-line">Aucun emplacement plus détaillé.</p>';
+        ll.innerHTML = ks.length ? ks.map(([k, seg]) => locTile(k, seg, under(k), !kids(k).length, cur ? '' : salleName(seg))).join('') : '<p class="empty-line">Aucun emplacement plus détaillé.</p>';
         const total = under(cur); btn.textContent = cur ? `Voir les ${num(total)} pièce${total > 1 ? 's' : ''} de ${cur}` : 'Choisissez un local'; btn.disabled = !cur;
       };
       d.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (!b) return; cur = b.dataset.go; q.value = '';
