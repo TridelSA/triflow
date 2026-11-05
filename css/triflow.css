@@ -1196,3 +1196,15 @@ body.placing .wkgrid .pc{cursor:copy}
 .wkgrid .pc:not(:has(.pinl)):hover{background:color-mix(in srgb, var(--accent-soft) 55%, transparent)}
 .wkgrid .pc:not(:has(.pit,.pinl))::after{content:'+';position:absolute;left:8px;bottom:5px;font-size:1rem;line-height:1;color:var(--accent);opacity:0;transition:opacity .12s}
 .wkgrid .pc:not(:has(.pit,.pinl)):hover::after{opacity:.7}
+
+/* Métiers (planning) : même pastille de couleur dans « À planifier » et dans la grille */
+.mdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:1px;flex:none}
+.m-elec{background:#E3A008}.m-auto{background:#7C5CD6}.m-meca{background:#D2622E}.m-intend{background:#2E8FC2}
+.ps-met{display:flex;flex-wrap:wrap;gap:5px}
+.ps-met .ychip{font-size:.76rem;padding:4px 9px}
+.ps-met .ychip small{color:inherit;font-size:.72rem}
+.ps-t .t{display:flex;align-items:baseline}
+.ps-t .t .mdot{margin-top:4px}
+.ps-t small .rep{display:inline-flex;align-items:center;gap:2px}.ps-t small .rep .ico{width:11px;height:11px}
+.ps-t small .chip{font-size:.66rem;padding:0 6px}
+.wkgrid tr.pg.on th{background:var(--accent-soft);color:var(--ink)}

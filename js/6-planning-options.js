@@ -85,22 +85,22 @@ VIEWS.planning = {
     let rows = '', lastG = null, lastEq = null;
     for (const p of ppl){
       const g = p.groupe || 'Sans groupe', eq = g === 'Équipe' ? EQUIPE_NO[String(p.nom).toUpperCase()] || '' : '';
-      if (g !== lastG){ rows += `<tr class="pg"><th colspan="${nd + 1}">${esc(g === 'Équipe' ? 'Équipes de rotation' : g)}</th></tr>`; lastG = g; lastEq = null; }
+      if (g !== lastG){ const mk = metOf(g); rows += `<tr class="pg ${mk && S.pmet === mk ? 'on' : ''}"><th colspan="${nd + 1}">${mdot(mk)}${esc(g === 'Équipe' ? 'Équipes de rotation' : g)}</th></tr>`; lastG = g; lastEq = null; }
       if (eq && eq !== lastEq && lastEq !== null) rows += `<tr class="peq"><td colspan="${nd + 1}"></td></tr>`;
       lastEq = eq || lastEq;
       rows += `<tr class="${p.id === me ? 'me' : ''}"><th class="pn">${esc(persName(p))}${eq ? `<small>Éq. ${eq}</small>` : ''}</th>${days.map(d => `<td class="${d === today ? 'today' : ''}">${planCell(p.id, d, p)}</td>`).join('')}</tr>`;
     }
     rows += `<tr class="pg"><th colspan="${nd + 1}">Général</th></tr>` + PLAN_ROWS.map(([w, t, ic]) => `<tr class="prow2"><th class="pn">${icon(ic)}${t}</th>${days.map(d => `<td class="${d === today ? 'today' : ''}">${planCell(w, d, null)}</td>`).join('')}</tr>`).join('');
     const mobile = `<div class="pdays">${days.map((d, i) => `<button class="pday ${i === mday ? 'on' : ''} ${d === today ? 'today' : ''}" data-act="pday" data-i="${i}"><b>${DAYS[i]}</b><span>${+d.slice(8)}</span></button>`).join('')}</div>
-      <div class="pmlist">${(() => { const d = days[mday]; let h = '', lg = null; for (const p of ppl){ const g = p.groupe || 'Sans groupe'; if (g !== lg){ h += `<div class="pmg">${esc(g === 'Équipe' ? 'Équipes de rotation' : g)}</div>`; lg = g; } h += `<div class="pmr ${p.id === me ? 'me' : ''}"><span class="pn">${esc(persName(p))}</span>${planCell(p.id, d, p)}</div>`; }
+      <div class="pmlist">${(() => { const d = days[mday]; let h = '', lg = null; for (const p of ppl){ const g = p.groupe || 'Sans groupe'; if (g !== lg){ h += `<div class="pmg">${mdot(metOf(g))}${esc(g === 'Équipe' ? 'Équipes de rotation' : g)}</div>`; lg = g; } h += `<div class="pmr ${p.id === me ? 'me' : ''}"><span class="pn">${esc(persName(p))}</span>${planCell(p.id, d, p)}</div>`; }
         h += '<div class="pmg">Général</div>' + PLAN_ROWS.map(([w, t]) => `<div class="pmr"><span class="pn">${t}</span>${planCell(w, d, null)}</div>`).join(''); return h; })()}</div>`;
     return `<header class="page-head"><h1>Planning</h1><div class="tools">
         <div class="pweek"><button class="btn icon-only" data-act="pweek" data-n="-7" aria-label="Semaine précédente">${icon('chev')}</button><div class="pw-l"><b>Semaine ${isoWeek(mon)}</b><span>${range}</span></div><button class="btn icon-only" data-act="pweek" data-n="7" aria-label="Semaine suivante">${icon('chev')}</button></div>
-        <button class="btn side-tg ${S.pside ? 'on' : ''}" data-act="plan-side" title="Liste des tâches à glisser dans le planning">${icon('repeat')}Tâches à planifier${(() => { const n = planSideTasks(days, ppl, 'petits').length + planSideTasks(days, ppl, 'rec').filter(t => t.prochaine <= days[days.length - 1]).length; return n ? ` <span class="badge">${n}</span>` : ''; })()}</button>
+        <button class="btn side-tg ${S.pside ? 'on' : ''}" data-act="plan-side" title="Liste des travaux à glisser dans le planning">${icon('list')}Travaux à planifier${(() => { const n = planSideCount(days, ppl); return n ? ` <span class="badge">${n}</span>` : ''; })()}</button>
         ${mon !== planWeek() ? `<button class="btn small" data-act="pweek" data-n="0">Semaine prochaine</button>` : `<button class="btn small" data-act="pweek" data-n="-7">Cette semaine</button>`}
         <button class="btn primary" data-act="plan-print" data-f="a3" title="Imprimer la semaine sur une feuille A3 paysage">${icon('printer')}Imprimer A3</button>
         ${menu([['plan-hide', 'Personnes affichées…', 'person', {}]])}</div></header>
-      <div class="ptip-row"><p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez dans une case et tapez le travail à faire : <b>Entrée</b> valide, <b>Tab</b> passe au jour suivant. Le petit <b>⋯</b> permet de lier une tâche ou de remplir plusieurs jours.</p>${planLegend()}</div>
+      <div class="ptip-row"><p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez dans une case et tapez le travail à faire : <b>Entrée</b> valide, <b>Tab</b> passe au jour suivant. Le petit <b>⋯</b> permet de lier un travail ou de remplir plusieurs jours.</p>${planLegend()}</div>
       <div class="pwrap ${S.pside ? '' : 'noside'}"><div class="wkgrid-wrap"><table class="wkgrid"><thead><tr><th></th>${days.map((d, i) => `<th class="${d === today ? 'today' : ''}">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>${S.pside ? planSideHTML(days, ppl) : ''}</div>
       ${conge.length ? `<p class="hint pconge">${icon('calendar')}Pas disponibles cette semaine : ${conge.sort(persSort).map(p => esc(persName(p))).join(', ')}.</p>` : ''}
       <div class="pmobile">${mobile}</div>`;
@@ -112,33 +112,44 @@ function planLegend(){
   const g = (k, title) => { const l = [...seen.values()].filter(x => x.k === k); return l.length ? `<b>${title}</b>${l.map(x => `<span>${x.c.map(c => `<span class="pcode k-${k}">${c}</span>`).join('')}${esc(x.t)}</span>`).join('')}` : ''; };
   return `<details class="plegend"><summary>${icon('list')}Que veulent dire les codes ?</summary><div class="lg">${g('on', 'Présent')}${g('rot', 'Rotation')}${g('piq', 'Piquet')}${g('off', 'Congé')}${g('abs', 'Absent')}</div></details>`;
 }
-/* Tâches à planifier cette semaine (ou en retard) pour les personnes affichées, à glisser dans une case */
-function planSideTasks(days, ppl, kind = S.psf === 'rec' ? 'rec' : 'petits'){
+/* Les quatre métiers qui reviennent le plus : même nom et même couleur dans « À planifier » et dans la grille */
+const METIERS = [['elec', 'Électricité', /^elec/], ['auto', 'Automation', /^auto/], ['meca', 'Mécanique', /^meca/], ['intend', 'Intendance', /^intend/]];
+const metOf = g => (METIERS.find(m => m[2].test(norm(g || ''))) || [''])[0];
+const tMet = t => metOf(t.assign?.type === 'personne' ? getPers(t.assign.v)?.groupe : t.assign?.v);
+const mdot = k => k ? `<i class="mdot m-${k}" aria-hidden="true"></i>` : '';
+/* Quand ? par rapport à la semaine affichée */
+const pKey = (t, start, end) => !t.prochaine ? 'asap' : daysTo(t.prochaine) < -365 ? 'vieux' : t.prochaine < start ? 'retard' : t.prochaine <= end ? 'semaine' : 'plus';
+const P_URG = ['retard', 'semaine', 'asap'];
+/* Travaux pas encore placés cette semaine, pour les personnes affichées, à glisser dans une case */
+function planSideTasks(days, ppl){
   const end = days[days.length - 1], start = days[0], q = norm(S.q.planside || '');
   const whoKeys = ppl.map(p => 'p:' + p.id), planned = new Set(db.plan.filter(x => x.tacheId && x.date >= start && x.date <= end).map(x => x.tacheId));
-  let ts = db.taches.filter(t => live(t) && t.actif !== false && (kind === 'petits' ? isPetit(t) : !isPetit(t)) && !planned.has(t.id) && (!t.assign?.v || whoKeys.some(k => forWho(t, k))));
+  let ts = db.taches.filter(t => live(t) && t.actif !== false && !planned.has(t.id) && (!t.assign?.v || whoKeys.some(k => forWho(t, k))));
   if (q) ts = ts.filter(t => norm(`${t.titre} ${getKks(t.kksId)?.code || ''} ${assignLabel(t.assign)}`).includes(q));
-  return ts.sort(kind === 'petits' ? petitSort : urgSort);
+  return ts;
 }
-/* Panneau « À planifier » : petits travaux d'abord, puis tâches récurrentes. Glisser dans une case, ou cliquer puis cliquer la case */
+const planSideCount = (days, ppl) => planSideTasks(days, ppl).filter(t => P_URG.includes(pKey(t, days[0], days[days.length - 1]))).length;
+/* Panneau « À planifier » : pastilles par métier, puis En retard / Cette semaine / Dès que possible / Plus tard. Glisser dans une case, ou cliquer puis cliquer la case */
 function planSideHTML(days, ppl){
-  const start = days[0], end = days[days.length - 1], kind = S.psf === 'rec' ? 'rec' : 'petits', ts = planSideTasks(days, ppl, kind);
-  const nP = planSideTasks(days, ppl, 'petits').length, nR = planSideTasks(days, ppl, 'rec').filter(t => t.prochaine <= end).length;
-  const sec = kind === 'petits' ? {haute:[], normale:[], basse:[]} : {late:[], week:[], later:[], old:[]};
-  for (const t of ts) if (kind === 'petits') sec[prioOf(t)].push(t); else sec[isOld(t) ? 'old' : t.prochaine < start ? 'late' : t.prochaine <= end ? 'week' : 'later'].push(t);
-  const when = t => { if (kind === 'petits') return t.prochaine ? fmtD(t.prochaine) : ''; const n = daysTo(t.prochaine); return t.prochaine < start ? (isOld(t) ? t.prochaine.slice(0, 4) : lateLbl(-n)) : t.prochaine <= end ? DAYS[(new Date(t.prochaine + 'T12:00:00').getDay() + 6) % 7] + ' ' + +t.prochaine.slice(8) : fmtD(t.prochaine); };
-  const card = (t, cls) => { const k = getKks(t.kksId); return `<div class="ps-t ${cls} ${S.ppick === t.id ? 'picked' : ''}" draggable="true" data-tid="${t.id}" data-act="plan-pick" data-id="${t.id}" tabindex="0" title="Glissez dans une case, ou cliquez puis cliquez la case"><span class="t">${esc(t.titre)}</span><small>${k ? `<span class="kks">${esc(k.code)}</span>` : ''}<span class="who">${esc(assignLabel(t.assign))}</span><span class="when">${when(t)}</span></small></div>`; };
-  const block = (key, title, cls, open = true) => { const l = sec[key]; if (!l || !l.length) return ''; const shown = l.slice(0, 120);
+  const start = days[0], end = days[days.length - 1], met = S.pmet || '', all = planSideTasks(days, ppl), ts = met ? all.filter(t => tMet(t) === met) : all;
+  const cnt = m => all.filter(t => (!m || tMet(t) === m) && P_URG.includes(pKey(t, start, end))).length;
+  const chip = (k, lbl) => `<button role="tab" class="ychip" data-act="plan-met" data-m="${k}" aria-selected="${met === k}">${mdot(k)}${lbl} <small>${cnt(k)}</small></button>`;
+  const sec = {retard:[], semaine:[], asap:[], plus:[], vieux:[]};
+  for (const t of ts) sec[pKey(t, start, end)].push(t);
+  for (const k of ['retard', 'semaine', 'plus', 'vieux']) sec[k].sort((a, b) => a.prochaine.localeCompare(b.prochaine) || petitSort(a, b));
+  sec.asap.sort(petitSort);
+  const when = t => { if (!t.prochaine) return ''; const n = daysTo(t.prochaine); return t.prochaine < start ? (n < -365 ? t.prochaine.slice(0, 4) : lateLbl(-n)) : t.prochaine <= end ? DAYS[(new Date(t.prochaine + 'T12:00:00').getDay() + 6) % 7] + ' ' + +t.prochaine.slice(8) : fmtD(t.prochaine); };
+  const card = (t, cls) => { const k = getKks(t.kksId); return `<div class="ps-t ${cls} ${S.ppick === t.id ? 'picked' : ''}" draggable="true" data-tid="${t.id}" data-act="plan-pick" data-id="${t.id}" tabindex="0" title="Glissez dans une case, ou cliquez puis cliquez la case"><span class="t">${mdot(tMet(t))}${esc(t.titre)}</span><small>${isPetit(t) && prioOf(t) === 'haute' ? '<span class="chip prio bad">Haute</span>' : ''}${k ? `<span class="kks">${esc(k.code)}</span>` : ''}<span class="who">${esc(assignLabel(t.assign))}</span>${isPetit(t) ? '' : `<span class="rep">${icon('repeat')}${esc(freqLabel(t.freq))}</span>`}<span class="when">${when(t)}</span></small></div>`; };
+  const block = (key, title, cls, open = true) => { const l = sec[key]; if (!l.length) return ''; const shown = l.slice(0, 120);
     return `<details class="ps-g ${cls}" ${open ? 'open' : ''}><summary><span>${title}</span><b>${l.length}</b></summary>${shown.map(t => card(t, cls)).join('')}${l.length > shown.length ? `<p class="list-note">${l.length - shown.length} autre(s) : filtrez.</p>` : ''}</details>`; };
   const pk = S.ppick && get('taches', S.ppick);
-  const body = kind === 'petits' ? block('haute', 'Priorité haute', 'late') + block('normale', 'Priorité normale', 'week') + block('basse', 'Priorité basse', 'later', false)
-    : block('late', 'En retard', 'late') + block('week', 'Cette semaine', 'week') + block('later', 'Plus tard', 'later', false) + block('old', 'Anciens retards', 'old', false);
+  const body = block('retard', 'En retard', 'late') + block('semaine', 'Cette semaine', 'week') + block('asap', 'Dès que possible', 'week') + block('plus', 'Plus tard', 'later', false) + block('vieux', 'Anciens retards', 'old', false);
   return `<aside class="pside"><div class="ps-h"><div class="ps-top"><b>À planifier</b><button class="icon-btn" data-act="plan-side" aria-label="Fermer la liste" title="Fermer">×</button></div>
-      <div class="ps-seg" role="tablist"><button role="tab" data-act="plan-psf" data-f="petits" aria-selected="${kind === 'petits'}">Petits travaux <small>${nP}</small></button><button role="tab" data-act="plan-psf" data-f="rec" aria-selected="${kind === 'rec'}">Récurrentes <small>${nR}</small></button></div>
-      <input type="search" data-search="planside" data-pside="1" placeholder="Filtrer : mot, KKS, nom…" value="${esc(S.q.planside || '')}" aria-label="Filtrer les tâches à planifier"></div>
+      <div class="ps-met" role="tablist" aria-label="Métier">${chip('', 'Tout')}${METIERS.map(m => chip(m[0], m[1])).join('')}</div>
+      <input type="search" data-search="planside" data-pside="1" placeholder="Filtrer : mot, KKS, nom…" value="${esc(S.q.planside || '')}" aria-label="Filtrer les travaux à planifier"></div>
     ${pk ? `<div class="ps-pick">${icon('calendar')}<span>Cliquez la case où placer <b>${esc(pk.titre)}</b></span><button class="link" data-act="plan-pick" data-id="${pk.id}">Annuler</button></div>` : ''}
-    <div class="ps-l">${ts.length ? body : `<p class="empty-line" style="padding:12px">${kind === 'petits' ? 'Aucun petit travail en attente.' : 'Rien à planifier : tout est déjà placé.'}</p>`}</div>
-    <p class="hint ps-f">Glissez une tâche dans une case, ou cliquez-la puis cliquez la case. Les cases des personnes concernées s’éclairent.</p></aside>`;
+    <div class="ps-l">${ts.length ? body : `<p class="empty-line" style="padding:12px">Rien à planifier${met ? ' pour ce métier' : ''}.</p>`}</div>
+    <p class="hint ps-f">Glissez un travail dans une case, ou cliquez-le puis cliquez la case. Les cases des personnes concernées s’éclairent.</p></aside>`;
 }
 function planSuggest(tid){
   $$('.wkgrid .pc.sug').forEach(x => x.classList.remove('sug'));
@@ -300,7 +311,7 @@ function planDialog(who, date, item, pre = ''){
   const titre = `${p ? esc(persName(p)) : esc(row ? row[1] : '')} · ${dayLbl(date)}`;
   dialog({title: isNew ? `Planifier · ${titre}` : titre, saveLabel: isNew ? 'Ajouter' : 'Enregistrer',
     body:`${pc && pc[1] === 'abs' ? `<p class="dlg-warn">${icon('out')}${esc(persName(p))} est absent ce jour-là : ${esc(pc[0])}${pr.note ? ' · ' + esc(pr.note) : ''}.</p>` : pc ? `<p class="hint">Au planning : <b>${esc(pr.code)}</b> · ${esc(pc[0])}${pr.note ? ' · ' + esc(pr.note) : ''}</p>` : ''}
-      ${row && who !== 'row:autres' ? '' : `<label>Tâche de TriFlow <span class="muted">(facultatif)</span><input name="tache" data-id="${t0 ? t0.id : ''}" data-label="${t0 ? esc(t0.titre) : ''}" value="${t0 ? esc(t0.titre) : ''}" placeholder="Choisir une tâche : tapez un mot ou un KKS…"></label>`}
+      ${row && who !== 'row:autres' ? '' : `<label>Travail de TriFlow <span class="muted">(facultatif)</span><input name="tache" data-id="${t0 ? t0.id : ''}" data-label="${t0 ? esc(t0.titre) : ''}" value="${t0 ? esc(t0.titre) : ''}" placeholder="Choisir une tâche : tapez un mot ou un KKS…"></label>`}
       <label>${row && who !== 'row:autres' ? (who === 'row:ext' ? 'Entreprise et travail' : 'Réservation') : 'Travail à faire / remarque'}<textarea name="text" rows="3" ${who === 'row:ext' ? 'list="dl-marques"' : ''} placeholder="${who === 'row:ext' ? 'ex. Caliqua : révision vanne 1LAB40AA410' : who === 'row:nacelle' ? 'ex. Nacelle 20 m · halle chaudière · 8h–12h' : 'ex. Aider Lima au remplacement des toiles'}">${esc(item?.text || pre)}</textarea></label>
       ${isNew ? `<fieldset><legend>Jours</legend><div class="pdchk">${days.map((d, i) => `<label class="chk"><input type="checkbox" name="d" value="${d}" ${d === date ? 'checked' : ''}> ${DAYS[i]} ${+d.slice(8)}</label>`).join('')}</div></fieldset>
       ${mates.length ? `<fieldset><legend>Aussi pour</legend><div class="pdchk">${mates.map(x => { const q = presOf(x, date), a = q && PCODE[q.code]?.[1] === 'abs'; return `<label class="chk ${a ? 'abs' : ''}"><input type="checkbox" name="m" value="${x.id}"> ${esc(persName(x))}${a ? ` <small>(${esc(q.code)})</small>` : ''}</label>`; }).join('')}</div></fieldset>` : ''}` : ''}

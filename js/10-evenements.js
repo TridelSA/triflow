@@ -8,7 +8,7 @@ const ACT = {
   pweek(d){ const n = +d.n; S.pweek = n ? isoAdd(S.pweek || planWeek(), n) : planWeek(); S.pday = null; render(); },
   pday(d){ S.pday = +d.i; render(); },
   'plan-pick'(d){ S.ppick = S.ppick === d.id ? null : d.id; render(); },
-  'plan-psf'(d){ S.psf = d.f; render(); },
+  'plan-met'(d){ S.pmet = d.m || ''; render(); },
   'plan-add'(d, t){ if (S.ppick){ placeTask(S.ppick, d.who, d.date); return; }
     /* Un seul texte par case : si la case a déjà du texte, on le modifie au lieu d'ajouter un nouveau bloc */
     const ex = planTextItem(d.who, d.date);
