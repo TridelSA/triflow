@@ -127,7 +127,7 @@ function tacheDialog(t, kksId){
       <label>Pour qui ?<input name="assign" data-id="${esc(aId)}" data-label="${esc(aId ? assignLabel(v.assign) : '')}" value="${esc(aId ? assignLabel(v.assign) : '')}" placeholder="Un corps de métier ou une personne"></label>
       <label>Équipement (repère KKS)<input name="kks" data-id="${k ? k.id : ''}" data-label="${k ? esc(kksLabel(k)) : ''}" value="${k ? esc(kksLabel(k)) : ''}" placeholder="Facultatif : code ou désignation"></label>
       <fieldset><legend>Faut-il un rapport ?</legend><div class="prio-pick rap-pick" role="radiogroup" aria-label="Rapport">${pill('rapport', 'oui', 'Oui', 'info', v.rapport || 'oui')}${pill('rapport', 'non', 'Non', 'info', v.rapport || 'oui')}</div>
-        <p class="hint" style="margin:0">« Non » pour les petites choses (ampoule, nettoyage…) : on coche, c’est tout.</p></fieldset>
+        </fieldset>
       <label>Ce qu’il faut faire<textarea name="description" rows="3" placeholder="Consignes, points de contrôle… (facultatif)">${esc(v.description)}</textarea></label>`,
     onOpen(f, d){
       combo(f.elements.kks, {items: () => db.kks.filter(live).map(x => ({id:x.id, key:x.code, label:kksLabel(x), search:x.code + ' ' + x.designation, html:`<span class="kks">${esc(x.code)}</span> ${esc(x.designation)}`}))});
