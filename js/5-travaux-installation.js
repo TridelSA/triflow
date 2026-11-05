@@ -92,7 +92,7 @@ VIEWS.taches = {
     const t = get('taches', S.sel.taches);
     if (!t) return placeholder('check', 'Choisissez un travail pour le faire, voir quand il a été fait ou le modifier.');
     const k = getKks(t.kksId), run = openRun(t), last = [...db.interventions.filter(i => i.tacheId === t.id && live(i)).map(i => i.date), ...(t.faits || []).map(f => f.date)].sort().pop();
-    const off = t.actif === false, di = dueInfo(t), RAP = {oui:'toujours avec rapport', non:'sans rapport'};
+    const off = t.actif === false, di = dueInfo(t), RAP = {oui:'avec rapport', non:'sans rapport'};
     return `${archBanner('taches', t)}<div class="pd-head"><span class="pd-id">${isPetit(t) ? 'Une seule fois' + (prioOf(t) !== 'normale' ? ' · priorité ' + PRIO[prioOf(t)][0].toLowerCase() : '') : esc(freqLabel(t.freq))}</span><div class="pd-tools"><button class="btn small" data-act="edit-tache" data-id="${t.id}">${icon('edit')}Modifier</button>${menu([t.arch ? ['unarch', 'Restaurer', 'archive', {col:'taches', id:t.id}] : ['arch', 'Archiver', 'archive', {col:'taches', id:t.id}], hardItem('taches', t.id)].filter(Boolean), 'Plus', 'more', 'small')}</div></div>
       <h2 class="pd-title">${esc(t.titre)}</h2>
       <p class="pd-sub">${t.assign?.v ? `Pour <strong style="font-weight:600">${esc(assignLabel(t.assign))}</strong>` : '<span class="muted">Pour personne en particulier</span>'}${last ? ` · fait la dernière fois le ${fmtD(last)}` : ''}${RAP[t.rapport] ? ` · ${RAP[t.rapport]}` : ''}</p>
@@ -109,7 +109,7 @@ VIEWS.taches = {
 function newTacheDialog(kksId){ tacheDialog(null, kksId); }
 function tacheDialog(t, kksId){
   const isNew = !t, petit0 = t ? isPetit(t) : true;
-  const v = t || {titre:'', description:'', kksId:kksId || '', assign:{type:'groupe', v:''}, freq:{n:1, unite:'once'}, prochaine:'', actif:true, prio:'normale', rapport:''};
+  const v = t || {titre:'', description:'', kksId:kksId || '', assign:{type:'groupe', v:''}, freq:{n:1, unite:'once'}, prochaine:'', actif:true, prio:'normale', rapport:'oui'};
   const k = getKks(v.kksId);
   const assignItems = () => [
     ...db.listes.groupes.filter(g => db.personnes.some(p => p.groupe === g && p.actif !== false)).map(g => ({id:'g:' + g, label:g, search:'groupe métier ' + g, html:`<strong>${esc(g)}</strong>`, right:'<span class="muted">Corps de métier</span>'})),
@@ -126,8 +126,8 @@ function tacheDialog(t, kksId){
         <div data-rec><label>${isNew || petit0 ? 'Première fois le' : 'Prochaine fois le'}<input name="prochaine" type="date" value="${esc(petit0 ? (v.prochaine || todayISO()) : v.prochaine)}"></label><p class="hint" data-fprev></p></div></fieldset>
       <label>Pour qui ?<input name="assign" data-id="${esc(aId)}" data-label="${esc(aId ? assignLabel(v.assign) : '')}" value="${esc(aId ? assignLabel(v.assign) : '')}" placeholder="Un corps de métier ou une personne"></label>
       <label>Équipement (repère KKS)<input name="kks" data-id="${k ? k.id : ''}" data-label="${k ? esc(kksLabel(k)) : ''}" value="${k ? esc(kksLabel(k)) : ''}" placeholder="Facultatif : code ou désignation"></label>
-      <fieldset><legend>Un rapport quand c’est fait ?</legend><div class="prio-pick rap-pick" role="radiogroup" aria-label="Rapport">${pill('rapport', '', 'Demander', 'info', v.rapport || '')}${pill('rapport', 'oui', 'Toujours', 'info', v.rapport || '')}${pill('rapport', 'non', 'Jamais', 'info', v.rapport || '')}</div>
-        <p class="hint" style="margin:0">« Jamais » pour les petites choses (ampoule, nettoyage…) : on coche, c’est tout.</p></fieldset>
+      <fieldset><legend>Faut-il un rapport ?</legend><div class="prio-pick rap-pick" role="radiogroup" aria-label="Rapport">${pill('rapport', 'oui', 'Oui', 'info', v.rapport || 'oui')}${pill('rapport', 'non', 'Non', 'info', v.rapport || 'oui')}</div>
+        <p class="hint" style="margin:0">« Non » pour les petites choses (ampoule, nettoyage…) : on coche, c’est tout.</p></fieldset>
       <label>Ce qu’il faut faire<textarea name="description" rows="3" placeholder="Consignes, points de contrôle… (facultatif)">${esc(v.description)}</textarea></label>`,
     onOpen(f, d){
       combo(f.elements.kks, {items: () => db.kks.filter(live).map(x => ({id:x.id, key:x.code, label:kksLabel(x), search:x.code + ' ' + x.designation, html:`<span class="kks">${esc(x.code)}</span> ${esc(x.designation)}`}))});
