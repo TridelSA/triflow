@@ -1064,6 +1064,28 @@ tr.grp.old th{color:var(--muted)}
 .roles dt{font-weight:600}
 .roles dd{margin:0;color:var(--muted)}
 @media (max-width:760px){ .roles{grid-template-columns:1fr} .roles dd{margin-bottom:6px} }
+.ttabs{display:flex;border-bottom:1px solid var(--line)}
+.ttabs button{all:unset;cursor:pointer;flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 10px;font-weight:600;font-size:.92rem;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.ttabs button .ico{width:17px;height:17px}
+.ttabs button small{font-weight:600;font-size:.75rem;background:var(--sunk);border-radius:999px;padding:1px 8px}
+.ttabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent)}
+.ttabs button[aria-selected=true] small{background:var(--accent);color:var(--accent-ink)}
+.chip.prio::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.kind-pick{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.kind{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:6px;padding:16px;border:1.5px solid var(--line);border-radius:14px;background:var(--surface)}
+.kind:hover,.kind:focus-visible{border-color:var(--accent);background:var(--accent-soft)}
+.kind .ico{width:24px;height:24px;color:var(--accent)}
+.kind b{font-size:1.05rem}
+.kind span{font-size:.86rem;color:var(--muted);line-height:1.35}
+@media (max-width:560px){ .kind-pick{grid-template-columns:1fr} }
+.prio-pick{display:flex;gap:8px;margin-bottom:10px}
+.prio-o{flex:1;display:flex !important;flex-direction:row !important;align-items:center;justify-content:center;gap:6px;margin:0;padding:9px 6px;border:1.5px solid var(--line);border-radius:10px;cursor:pointer;font-weight:600}
+.prio-o input{width:auto;min-height:0;margin:0}
+.prio-o:has(input:checked){border-color:currentColor}
+.prio-o.bad:has(input:checked){background:var(--bad-soft);color:var(--bad)}
+.prio-o.info:has(input:checked){background:var(--info-soft);color:var(--info)}
+.prio-o.off:has(input:checked){background:var(--sunk);color:var(--ink)}
+.ps-seg button small{font-size:.72rem;opacity:.7;margin-left:3px}
 .pconge{display:flex;align-items:center;gap:6px;margin:10px 2px 0}
 .pconge .ico{width:15px;height:15px;flex:none}
 .jlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
@@ -3347,9 +3369,17 @@ const assignLabel = a => !a || !a.v ? 'Non attribuée' : a.type === 'personne' ?
 const daysTo = iso => Math.round((new Date(iso + 'T12:00') - new Date(todayISO() + 'T12:00')) / 864e5);
 const lateLbl = n => n < 14 ? `${n} j` : n < 60 ? `${Math.round(n / 7)} sem.` : `${Math.round(n / 30.4)} mois`;
 /* Retard de plus d'un an : tâche « en souffrance » (souvent reprise de CareOffice) — affichée en gris pour que le rouge reste réservé à l'urgent */
-const isOld = t => t.actif !== false && daysTo(t.prochaine) < -365;
+/* Deux sortes de tâches : les petits travaux (ponctuels, avec une priorité) et les tâches récurrentes (entretien périodique) */
+const isPetit = t => t.kind === 'petit' || t.freq?.unite === 'once';
+const PRIO = {haute:['Haute', 'bad'], normale:['Normale', 'info'], basse:['Basse', 'off']};
+const prioOf = t => PRIO[t.prio] ? t.prio : 'normale';
+const PRIO_N = {haute:0, normale:1, basse:2};
+const petitSort = (a, b) => (PRIO_N[prioOf(a)] - PRIO_N[prioOf(b)]) || (a.prochaine || '9').localeCompare(b.prochaine || '9') || coll.compare(a.titre, b.titre);
+const isOld = t => !isPetit(t) && t.actif !== false && daysTo(t.prochaine) < -365;
 const urgSort = (a, b) => (isOld(a) - isOld(b)) || a.prochaine.localeCompare(b.prochaine);
 function dueInfo(t){
+  if (isPetit(t)){ const p = prioOf(t), n = t.prochaine ? daysTo(t.prochaine) : NaN;
+    return {k:'p-' + p, chip:`<span class="chip prio ${PRIO[p][1]}">${PRIO[p][0]}</span>${isNaN(n) ? '' : ` <span class="chip ${n < -365 ? 'old' : n < 0 ? 'bad' : n <= 7 ? 'warn' : 'off'}">${n < 0 ? 'depuis le' : 'pour le'} ${fmtD(t.prochaine)}</span>`}`}; }
   const n = daysTo(t.prochaine);
   if (n < -365) return {k:'vieux', chip:`<span class="chip old" title="Échéance : ${fmtD(t.prochaine)}">En retard depuis ${t.prochaine.slice(0, 4)}</span>`};
   if (n < 0) return {k:'retard', chip:`<span class="chip bad" title="Échéance : ${fmtD(t.prochaine)}">En retard · ${lateLbl(-n)}</span>`};
@@ -3387,7 +3417,7 @@ let db = CLOUD.cfg().url ? migrate(blank()) : load();
 if (!db){ db = seed(); save(); }
 
 /* ---------------- État d'affichage ---------------- */
-const S = {pwe:false, psf:'semaine', ppick:null, pside:(() => { try { return localStorage.getItem('tf-pside') !== '0'; } catch(e){ return true; } })(), pour:'', tf:'', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:'', optfour:''}, lowOnly:false, zeroOnly:false, psort:'iddesc', plimit:200, rlimit:300, back:[], statut:'toutes', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux', arch:{}};
+const S = {ttab:'petits', pwe:false, psf:'petits', ppick:null, pside:(() => { try { return localStorage.getItem('tf-pside') !== '0'; } catch(e){ return true; } })(), pour:'', tf:'', view:'accueil', sel:{}, tab:{}, q:{pieces:'', lieux:'', interventions:'', kks:'', optkks:'', optpers:'', optfour:''}, lowOnly:false, zeroOnly:false, psort:'iddesc', plimit:200, rlimit:300, back:[], statut:'toutes', zone:'', sys:'', sysExp:new Set(), sysAuto:null, grpOpen:new Set(), opt:'lieux', arch:{}};
 
 function toast(msg, kind = '', undo = false){
   const t = $('#toast'); t.textContent = msg; t.className = 'show ' + kind + (undo ? ' undo' : '');
@@ -3490,13 +3520,14 @@ VIEWS.accueil = {
     const qa = (act, type, ic, t) => `<button class="qa" data-act="${act}" ${type ? `data-type="${type}"` : ''}><span class="qi">${icon(ic)}</span><strong>${t}</strong></button>`;
     return `${db.meta.demo ? `<div class="notice"><p><strong>Données d'exemple.</strong> Elles sont fictives et servent à essayer l'outil.</p><button class="btn" data-act="clear-demo">Effacer les exemples</button></div>` : ''}
     <header class="page-head"><h1>Accueil</h1></header>
-    ${(() => { const low = db.pieces.filter(p => live(p) && isLow(p)).length, zero = db.pieces.filter(p => live(p) && isOut(p)).length, me = !!S.pour, lateAll = db.taches.filter(t => live(t) && t.actif !== false && daysTo(t.prochaine) < 0 && forWho(t, S.pour)), late = lateAll.filter(t => !isOld(t)).length, old = lateAll.length - late;
+    ${(() => { const low = db.pieces.filter(p => live(p) && isLow(p)).length, zero = db.pieces.filter(p => live(p) && isOut(p)).length, me = !!S.pour, lateAll = db.taches.filter(t => live(t) && t.actif !== false && !isPetit(t) && daysTo(t.prochaine) < 0 && forWho(t, S.pour)), late = lateAll.filter(t => !isOld(t)).length, old = lateAll.length - late;
       const k = (act, n, t, ic, tone, extra = '') => `<button class="kpi ${n ? tone : 'calm'}" data-act="${act}" ${extra}><span class="ki">${icon(ic)}</span><span class="kn">${num(n)}</span><span class="kt">${t}</span></button>`;
       return `<div class="kpis">${k('show-low', low, 'Sous le stock minimum', 'box', 'warn')}${k('show-zero', zero, 'Pièces à zéro', 'box', 'calm')}${k('tf', late, (me ? 'Mes tâches en retard' : 'Tâches en retard') + (old ? `<small class="kt2">+ ${old} depuis plus d’un an</small>` : ''), 'repeat', 'bad', 'data-f="retard"')}${k('nav', open.length, S.pour ? 'Mes rapports ouverts' : 'Rapports ouverts', 'report', 'info', 'data-view="interventions"')}</div>`; })()}
     <div class="quick">${qa('scan', '', 'scan', 'Scanner un QR')}${qa('quick-move', 'sortie', 'move', 'Mouvement de stock')}${qa('new-int', '', 'report', 'Nouveau rapport')}${qa('new-tache', '', 'repeat', 'Nouvelle tâche')}</div>
     <div class="cols">
       <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
-      ${(() => { const me = meId(), mine = !!S.pour; const dueAll = db.taches.filter(t => live(t) && t.actif !== false && daysTo(t.prochaine) <= 7 && forWho(t, S.pour)).sort(urgSort), due = dueAll.slice(0, 5);
+      ${(() => { const me = meId(), mine = !!S.pour; const mineT = db.taches.filter(t => live(t) && t.actif !== false && forWho(t, S.pour)), pH = mineT.filter(t => isPetit(t) && (prioOf(t) === 'haute' || daysTo(t.prochaine) <= 7)).sort(petitSort);
+        const dueAll = [...pH, ...mineT.filter(t => !isPetit(t) && daysTo(t.prochaine) <= 7).sort(urgSort)], due = dueAll.slice(0, 6);
         const who = me ? `<span class="who-line">${mine ? `${icon('person')}<b>${esc(persName(getPers(me)))}</b>${S.pour === 'p:' + me && getPers(me).groupe ? ` et ${esc(getPers(me).groupe)}` : ''} · <button class="link" data-act="pour-all">Tout voir</button>` : `${icon('person')}Tout le monde · <button class="link" data-act="pour-me">Mes affaires</button>`}</span>` : `<span class="who-line"><button class="link" data-act="me">${icon('person')}Qui êtes-vous ? Choisissez votre nom pour voir vos tâches</button></span>`;
         const td = me ? db.plan.filter(x => x.who === me && x.date === todayISO()) : [];
         const tdH = td.length ? `<div class="ptoday"><b>${icon('calendar')}Aujourd’hui au planning</b>${td.map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null, done = t && db.interventions.some(i => i.tacheId === t.id && i.date === x.date); return `<div class="ptd ${done ? 'done' : ''}"><button class="pit ${t ? 'task' : ''}" data-act="${t ? 'goto' : 'nav'}" data-view="${t ? 'taches' : 'planning'}" ${t ? `data-id="${t.id}"` : ''}>${t ? icon('repeat') : ''}<span>${esc(t ? t.titre : x.text)}</span>${t && x.text ? `<small>${esc(x.text)}</small>` : ''}</button>${done ? `<span class="ok-tag">${icon('check')}Fait</span>` : `<button class="btn small primary" data-act="plan-done" data-id="${x.id}">${icon('check')}C’est fait</button>`}</div>`; }).join('')}</div>` : '';
@@ -3723,7 +3754,9 @@ function baseTaches(){
   return rows;
 }
 function filteredTaches(){
-  const rows = baseTaches().filter(t => S.arch.taches || (S.tf ? tKey(t) === S.tf : t.actif !== false));
+  const pt = S.ttab !== 'rec';
+  const rows = baseTaches().filter(t => S.arch.taches || (isPetit(t) === pt && (S.tf ? tKey(t) === S.tf : t.actif !== false)));
+  if (pt && !S.arch.taches) return rows.sort((a, b) => (a.actif === false) - (b.actif === false) || petitSort(a, b));
   return rows.sort((a, b) => (a.actif === false) - (b.actif === false) || a.prochaine.localeCompare(b.prochaine));
 }
 function pourSelect(){
@@ -3734,7 +3767,7 @@ function pourSelect(){
 function tacheRow(t, withSel = true){
   const k = getKks(t.kksId), run = openRun(t), off = t.actif === false;
   return `<tr data-act="${withSel ? 'select' : 'goto'}" ${withSel ? '' : 'data-view="taches"'} data-id="${t.id}" class="${withSel && S.sel.taches === t.id ? 'sel' : ''}" tabindex="0">
-    <td><span class="des">${esc(t.titre)}</span><span class="sub">${k ? esc(k.code) + ' · ' : ''}${esc(assignLabel(t.assign))} · ${esc(freqLabel(t.freq))}</span>${!off && !run ? `<span class="mdue">${dueInfo(t).chip}</span>` : ''}</td>
+    <td><span class="des">${esc(t.titre)}</span><span class="sub">${k ? esc(k.code) + ' · ' : ''}${esc(assignLabel(t.assign))}${isPetit(t) ? '' : ' · ' + esc(freqLabel(t.freq))}</span>${!off && !run ? `<span class="mdue">${dueInfo(t).chip}</span>` : ''}</td>
     <td class="num"><span class="trow-r">${off ? '<span class="chip ok">Faite</span>' : run ? '<span class="chip info">En cours</span>' : dueInfo(t).chip}${!off && !run && !t.arch ? `<button class="tick" data-act="do-tache" data-id="${t.id}" title="C’est fait : remplir le rapport" aria-label="Faire la tâche ${esc(t.titre)}">${icon('check')}</button>` : ''}</span></td></tr>`;
 }
 VIEWS.taches = {
@@ -3745,14 +3778,18 @@ VIEWS.taches = {
   list(){
     if (!db.taches.length) return empty('Aucune tâche', '<p>Créez une tâche récurrente (graissage, contrôle, étalonnage…) avec « Nouvelle tâche ».</p>');
     const rows = filteredTaches();
-    const cnt = {}; if (!S.arch.taches) for (const t of baseTaches()){ const k = tKey(t); cnt[k] = (cnt[k] || 0) + 1; }
-    const afaire = (cnt.retard || 0) + (cnt.vieux || 0) + (cnt.semaine || 0) + (cnt.plus || 0);
+    const pt = S.ttab !== 'rec', base = S.arch.taches ? [] : baseTaches();
+    const cnt = {}; for (const t of base.filter(t => isPetit(t) === pt)){ const k = tKey(t); cnt[k] = (cnt[k] || 0) + 1; }
+    const nP = base.filter(t => isPetit(t) && t.actif !== false).length, nR = base.filter(t => !isPetit(t) && t.actif !== false).length;
+    const tabs = S.arch.taches ? '' : `<div class="ttabs" role="tablist"><button role="tab" data-act="ttab" data-t="petits" aria-selected="${pt}">${icon('check')}Petits travaux <small>${nP}</small></button><button role="tab" data-act="ttab" data-t="rec" aria-selected="${!pt}">${icon('repeat')}Tâches récurrentes <small>${nR}</small></button></div>`;
+    const afaire = pt ? (cnt['p-haute'] || 0) + (cnt['p-normale'] || 0) + (cnt['p-basse'] || 0) : (cnt.retard || 0) + (cnt.vieux || 0) + (cnt.semaine || 0) + (cnt.plus || 0);
     const chip = (f, t, n, tone = '') => f && !n && S.tf !== f ? '' : `<button role="tab" class="ychip ${tone}" data-act="tf" data-f="${f}" aria-selected="${(S.tf || '') === f}">${t} <small>${n || 0}</small></button>`;
-    const chips = S.arch.taches ? '' : `<div class="fchips" role="tablist" aria-label="Quelles tâches">${pourSelect()}<span class="ysep" aria-hidden="true"></span>${chip('', 'À faire', afaire)}${chip('retard', 'En retard', cnt.retard, 'bad')}${chip('semaine', 'Cette semaine', cnt.semaine, 'warn')}${chip('plus', 'Plus tard', cnt.plus)}${chip('vieux', 'Anciens retards', cnt.vieux)}${chip('fait', 'Faites', cnt.fait)}</div>`;
+    const chips = S.arch.taches ? '' : tabs + `<div class="fchips" role="tablist" aria-label="Quelles tâches">${pourSelect()}<span class="ysep" aria-hidden="true"></span>${chip('', 'À faire', afaire)}${pt ? `${chip('p-haute', 'Priorité haute', cnt['p-haute'], 'bad')}${chip('p-normale', 'Normale', cnt['p-normale'])}${chip('p-basse', 'Basse', cnt['p-basse'])}${chip('fait', 'Faits', cnt.fait)}` : `${chip('retard', 'En retard', cnt.retard, 'bad')}${chip('semaine', 'Cette semaine', cnt.semaine, 'warn')}${chip('plus', 'Plus tard', cnt.plus)}${chip('vieux', 'Anciens retards', cnt.vieux)}${chip('fait', 'Faites', cnt.fait)}`}</div>`;
     if (!rows.length) return chips + (S.arch.taches ? empty('Aucune tâche archivée', '') : empty('Rien à faire', '<p>Aucune tâche pour cette sélection.</p>'));
-    const grp = {retard:[], semaine:[], plus:[], vieux:[], fait:[]};
+    const grp = {retard:[], semaine:[], plus:[], vieux:[], fait:[], 'p-haute':[], 'p-normale':[], 'p-basse':[]};
     rows.forEach(t => grp[tKey(t)].push(t));
     const sec = (key, title) => grp[key].length ? `<tbody><tr class="grp ${key === 'vieux' ? 'old' : ''}"><th colspan="2"><span>${title}</span> <span class="muted" style="font-family:var(--f-body);font-size:.8rem">${grp[key].length}</span></th></tr>${grp[key].map(t => tacheRow(t)).join('')}</tbody>` : '';
+    if (pt && !S.arch.taches) return `${chips}<div class="tbl-wrap"><table class="tbl">${sec('p-haute', 'Priorité haute')}${sec('p-normale', 'Priorité normale')}${sec('p-basse', 'Priorité basse')}${sec('fait', 'Faits')}</table></div>`;
     return `${chips}<div class="tbl-wrap"><table class="tbl">${sec('retard', 'En retard')}${sec('semaine', 'Cette semaine')}${sec('plus', 'Plus tard')}${sec('vieux', 'En retard depuis plus d’un an')}${sec('fait', 'Faites')}</table></div>`;
   },
   detail(){
@@ -3760,11 +3797,11 @@ VIEWS.taches = {
     if (!t) return placeholder('check', 'Choisissez une tâche pour la faire, voir son historique ou la modifier.');
     const k = getKks(t.kksId), run = openRun(t), done = db.interventions.filter(i => i.tacheId === t.id && live(i)).sort((a, b) => b.date.localeCompare(a.date));
     const off = t.actif === false, di = dueInfo(t);
-    return `${archBanner('taches', t)}<div class="pd-head"><span class="pd-id">${esc(freqLabel(t.freq))}</span><div class="pd-tools"><button class="btn small" data-act="edit-tache" data-id="${t.id}">${icon('edit')}Modifier</button>${menu([t.arch ? ['unarch', 'Restaurer la tâche', 'archive', {col:'taches', id:t.id}] : ['arch', 'Archiver la tâche', 'archive', {col:'taches', id:t.id}], hardItem('taches', t.id)].filter(Boolean), 'Plus', 'more', 'small')}</div></div>
+    return `${archBanner('taches', t)}<div class="pd-head"><span class="pd-id">${isPetit(t) ? 'Petit travail · priorité ' + PRIO[prioOf(t)][0].toLowerCase() : esc(freqLabel(t.freq))}</span><div class="pd-tools"><button class="btn small" data-act="edit-tache" data-id="${t.id}">${icon('edit')}Modifier</button>${menu([t.arch ? ['unarch', 'Restaurer la tâche', 'archive', {col:'taches', id:t.id}] : ['arch', 'Archiver la tâche', 'archive', {col:'taches', id:t.id}], hardItem('taches', t.id)].filter(Boolean), 'Plus', 'more', 'small')}</div></div>
       <h2 class="pd-title">${esc(t.titre)}</h2>
       <p class="pd-sub">${t.assign?.v ? `Pour <strong style="font-weight:600">${esc(assignLabel(t.assign))}</strong>` : '<span class="muted">Non attribuée</span>'}${done[0] ? ` · faite la dernière fois le ${fmtD(done[0].date)}` : ''}</p>
       <div class="pd-stock ${!off && di.k === 'retard' ? 'late' : ''}">
-        <div class="pd-qty">${off ? '<span class="l" style="font-size:1rem">Tâche unique, déjà faite</span>' : `<span class="l">Prochaine fois</span><span class="n" style="font-size:1.5rem">${fmtD(t.prochaine)}</span>${di.k === 'plus' ? '' : di.chip}`}</div>
+        <div class="pd-qty">${off ? `<span class="l" style="font-size:1rem">${isPetit(t) ? 'Fait' : 'Tâche unique, déjà faite'}</span>` : isPetit(t) ? `<span class="l">${t.prochaine ? 'Pour le' : 'Priorité'}</span>${t.prochaine ? `<span class="n" style="font-size:1.5rem">${fmtD(t.prochaine)}</span>` : ''}${di.chip}` : `<span class="l">Prochaine fois</span><span class="n" style="font-size:1.5rem">${fmtD(t.prochaine)}</span>${di.k === 'plus' ? '' : di.chip}`}</div>
         ${off || t.arch ? '' : run ? `<button class="btn primary" data-act="edit-int" data-id="${run.id}">${icon('report')}Compléter le rapport ${esc(run.num)}</button>` : `<button class="btn primary" data-act="do-tache" data-id="${t.id}">${icon('check')}C’est fait</button>`}
       </div>
       ${!off && !t.arch && daysTo(t.prochaine) < 0 ? `<p class="recal">${icon('repeat')}<span>Déjà faite sans rapport, ou plus d’actualité ?</span><button class="btn small" data-act="recaler" data-id="${t.id}">Recaler sur ${t.freq.unite === 'once' ? 'aujourd’hui' : 'la prochaine échéance'}</button></p>` : ''}
@@ -3774,46 +3811,53 @@ VIEWS.taches = {
       <section class="pd-sec"><h3>${icon('report')}Rapports faits <span class="muted">${done.length || ''}</span></h3>${intTable(done)}</section>${byLine(t)}`;
   }
 };
-function tacheDialog(t, kksId){
-  const isNew = !t;
-  const v = t || {titre:'', description:'', kksId:kksId || '', assign:{type:'groupe', v:''}, freq:{n:1, unite:'mois'}, prochaine:todayISO(), actif:true};
+function newTacheDialog(kksId){
+  dialog({title:'Nouvelle tâche', saveLabel:'Fermer', info:true, body:`<p class="hint" style="margin-top:0">Quel genre de tâche ?</p><div class="kind-pick">
+      <button type="button" class="kind" data-kind="petit">${icon('check')}<b>Petit travail</b><span>À faire au passage, une seule fois. Avec une priorité : haute, normale ou basse.</span></button>
+      <button type="button" class="kind" data-kind="rec">${icon('repeat')}<b>Tâche récurrente</b><span>Entretien qui revient : chaque mois, chaque année… La date suivante se calcule toute seule.</span></button></div>`,
+    onOpen(f, d){ d.querySelectorAll('[data-kind]').forEach(b => b.onclick = () => { d.close(); tacheDialog(null, kksId, b.dataset.kind); }); }, onSave(){}});
+}
+function tacheDialog(t, kksId, kind){
+  const isNew = !t, petit = t ? isPetit(t) : kind === 'petit';
+  const v = t || {titre:'', description:'', kksId:kksId || '', assign:{type:'groupe', v:''}, freq:petit ? {n:1, unite:'once'} : {n:1, unite:'mois'}, prochaine:petit ? '' : todayISO(), actif:true, prio:'normale'};
   const k = getKks(v.kksId);
   const assignItems = () => [
     ...db.listes.groupes.filter(g => db.personnes.some(p => p.groupe === g && p.actif !== false)).map(g => ({id:'g:' + g, label:g, search:'groupe métier ' + g, html:`<strong>${esc(g)}</strong>`, right:'<span class="muted">Corps de métier</span>'})),
     ...db.personnes.filter(p => p.actif !== false && live(p)).sort(persSort).map(p => ({id:'p:' + p.id, label:persName(p), search:persName(p) + ' ' + (p.groupe || ''), html:esc(persName(p)), right:`<span class="muted">${esc(p.groupe || '')}</span>`}))];
   const aId = v.assign?.v ? (v.assign.type === 'personne' ? 'p:' : 'g:') + v.assign.v : '';
-  dialog({title: isNew ? 'Nouvelle tâche' : 'Modifier la tâche',
-    body:`<label>Tâche<input name="titre" value="${esc(v.titre)}" required placeholder="ex. Graissage des paliers"></label>
+  dialog({title: isNew ? (petit ? 'Nouveau petit travail' : 'Nouvelle tâche récurrente') : (petit ? 'Modifier le petit travail' : 'Modifier la tâche récurrente'),
+    body:`<label>${petit ? 'Travail' : 'Tâche'}<input name="titre" value="${esc(v.titre)}" required placeholder="${petit ? 'ex. Changer le néon de l’atelier' : 'ex. Graissage des paliers'}"></label>
       <label>Équipement (repère KKS)<input name="kks" data-id="${k ? k.id : ''}" data-label="${k ? esc(kksLabel(k)) : ''}" value="${k ? esc(kksLabel(k)) : ''}" placeholder="Facultatif : code ou désignation"></label>
       <label>Attribuée à<input name="assign" data-id="${esc(aId)}" data-label="${esc(aId ? assignLabel(v.assign) : '')}" value="${esc(aId ? assignLabel(v.assign) : '')}" placeholder="Un corps de métier ou une personne"></label>
-      <fieldset><legend>Fréquence</legend>
-        <div class="freq"><select name="unite" aria-label="Fréquence">${[['once', 'Une seule fois'], ['jour', 'Tous les … jours'], ['semaine', 'Toutes les … semaines'], ['mois', 'Tous les … mois'], ['an', 'Tous les … ans']].map(([a, b]) => opt(a, b, v.freq.unite)).join('')}</select>
+      ${petit ? `<fieldset><legend>Priorité</legend><div class="prio-pick">${Object.entries(PRIO).map(([k, [lbl, tone]]) => `<label class="prio-o ${tone}"><input type="radio" name="prio" value="${k}" ${prioOf(v) === k ? 'checked' : ''}><span>${lbl}</span></label>`).join('')}</div>
+        <label>Pour le <span class="muted">(facultatif)</span><input name="prochaine" type="date" value="${esc(v.prochaine || '')}"></label></fieldset>` : `<fieldset><legend>Fréquence</legend>
+        <div class="freq"><select name="unite" aria-label="Fréquence">${[['jour', 'Tous les … jours'], ['semaine', 'Toutes les … semaines'], ['mois', 'Tous les … mois'], ['an', 'Tous les … ans']].map(([a, b]) => opt(a, b, v.freq.unite)).join('')}</select>
         <input name="n" type="number" min="1" step="1" value="${esc(v.freq.n)}" aria-label="Intervalle" data-n></div>
         <label>${isNew ? 'Première fois le' : 'Prochaine fois le'}<input name="prochaine" type="date" value="${esc(v.prochaine)}" required></label>
-        <p class="hint" data-fprev></p></fieldset>
+        <p class="hint" data-fprev></p></fieldset>`}
       <label>Ce qu’il faut faire<textarea name="description" rows="4" placeholder="Consignes, points de contrôle…">${esc(v.description)}</textarea></label>`,
     onOpen(f, d){
       combo(f.elements.kks, {items: () => db.kks.filter(live).map(x => ({id:x.id, key:x.code, label:kksLabel(x), search:x.code + ' ' + x.designation, html:`<span class="kks">${esc(x.code)}</span> ${esc(x.designation)}`}))});
       combo(f.elements.assign, {items:assignItems});
-      const u = () => { const un = val(f, 'unite'), n = Math.max(1, +val(f, 'n') || 1); $('[data-n]', d).hidden = un === 'once'; const p = val(f, 'prochaine');
+      const u = () => { if (petit) return; const un = val(f, 'unite'), n = Math.max(1, +val(f, 'n') || 1); $('[data-n]', d).hidden = un === 'once'; const p = val(f, 'prochaine');
         $('[data-fprev]', d).textContent = un === 'once' || !p ? '' : `${freqLabel({n, unite:un})} : ${fmtD(p)}, puis ${fmtD(addFreq(p, n, un))}, ${fmtD(addFreq(addFreq(p, n, un), n, un))}…`; };
       f.addEventListener('input', u); f.addEventListener('change', u); u();
     },
     del: isNew ? null : archDel('taches', t, () => HARD.taches(t)),
     onSave(f){
-      const titre = val(f, 'titre'), prochaine = val(f, 'prochaine'), unite = val(f, 'unite'), n = Math.max(1, Math.round(+val(f, 'n') || 1));
-      if (!titre) throw new Error('Indiquez la tâche.');
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(prochaine)) throw new Error('Indiquez la date.');
+      const titre = val(f, 'titre'), prochaine = val(f, 'prochaine'), unite = petit ? 'once' : val(f, 'unite'), n = petit ? 1 : Math.max(1, Math.round(+val(f, 'n') || 1));
+      if (!titre) throw new Error(petit ? 'Indiquez le travail.' : 'Indiquez la tâche.');
+      if (!petit && !/^\d{4}-\d{2}-\d{2}$/.test(prochaine)) throw new Error('Indiquez la date.');
       let kk = null; const ki = f.elements.kks; if (ki.value.trim()){ kk = getKks(ki.dataset.id) || findKks(ki.value); if (!kk) throw new Error('Repère KKS inconnu : choisissez-le dans la liste.'); }
       const ai = f.elements.assign; let assign = {type:'groupe', v:''};
       if (ai.value.trim()){ const id = ai.dataset.id || ''; if (!id) throw new Error('Choisissez un corps de métier ou une personne dans la liste.'); assign = id.startsWith('g:') ? {type:'groupe', v:id.slice(2)} : {type:'personne', v:id.slice(2)}; }
-      const data = {titre, description:val(f, 'description'), kksId:kk ? kk.id : '', assign, freq:{n, unite}, prochaine};
+      const data = {titre, description:val(f, 'description'), kksId:kk ? kk.id : '', assign, freq:{n, unite}, prochaine, ...(petit ? {kind:'petit', prio:(f.querySelector('input[name=prio]:checked') || {}).value || 'normale'} : {kind:'rec'})};
       tx(() => { if (isNew){ const x = {id:uid(), actif:true, ...data}; db.taches.push(x); S.sel.taches = x.id; } else Object.assign(t, data, {actif:true}); });
-      S.view = 'taches'; render(); toast(isNew ? 'Tâche créée' : 'Tâche enregistrée');
+      S.view = 'taches'; S.ttab = petit ? 'petits' : 'rec'; S.tf = ''; render(); toast(isNew ? (petit ? 'Petit travail créé' : 'Tâche créée') : 'Enregistré');
     }});
 }
 function tachesSheetHTML(){
-  const rows = baseTaches().filter(t => t.actif !== false && daysTo(t.prochaine) <= 7).sort(urgSort);
+  const rows = [...baseTaches().filter(t => t.actif !== false && isPetit(t) && (prioOf(t) === 'haute' || daysTo(t.prochaine) <= 7)).sort(petitSort), ...baseTaches().filter(t => t.actif !== false && !isPetit(t) && daysTo(t.prochaine) <= 7).sort(urgSort)];
   const who = S.pour ? (S.pour.startsWith('g:') ? S.pour.slice(2) : persName(getPers(S.pour.slice(2)) || {nom:''})) : 'Tout le monde';
   return `<article class="rpt"><header class="rpt-head"><div><div class="rpt-org">Tridel · Maintenance</div><h1>Liste de travail</h1></div><div class="rpt-num"><div>${esc(who)}</div><div>${fmtD(todayISO())}</div></div></header>
     ${rows.length ? `<table class="rpt-tbl"><thead><tr><th style="width:8mm"></th><th>Tâche</th><th>Équipement</th><th>Pour</th><th>Prévue</th></tr></thead><tbody>${rows.map(t => { const k = getKks(t.kksId); return `<tr><td><span class="box"></span></td><td><strong>${esc(t.titre)}</strong>${t.description ? `<br><span style="font-size:8.5pt">${esc(t.description)}</span>` : ''}</td><td class="mono">${k ? esc(k.code) : ''}</td><td>${esc(assignLabel(t.assign))}</td><td>${fmtD(t.prochaine)}${daysTo(t.prochaine) < 0 ? ' (retard)' : ''}</td></tr>`; }).join('')}</tbody></table>` : '<p>Aucune tâche en retard ou prévue dans les 7 jours.</p>'}
@@ -4056,7 +4100,7 @@ VIEWS.planning = {
         h += '<div class="pmg">Général</div>' + PLAN_ROWS.map(([w, t]) => `<div class="pmr"><span class="pn">${t}</span>${planCell(w, d, null)}</div>`).join(''); return h; })()}</div>`;
     return `<header class="page-head"><h1>Planning</h1><div class="tools">
         <div class="pweek"><button class="btn icon-only" data-act="pweek" data-n="-7" aria-label="Semaine précédente">${icon('chev')}</button><div class="pw-l"><b>Semaine ${isoWeek(mon)}</b><span>${range}</span></div><button class="btn icon-only" data-act="pweek" data-n="7" aria-label="Semaine suivante">${icon('chev')}</button></div>
-        <button class="btn side-tg ${S.pside ? 'on' : ''}" data-act="plan-side" title="Liste des tâches à glisser dans le planning">${icon('repeat')}Tâches à planifier${(() => { const n = planSideTasks(days, ppl, 'semaine').length; return n ? ` <span class="badge">${n}</span>` : ''; })()}</button>
+        <button class="btn side-tg ${S.pside ? 'on' : ''}" data-act="plan-side" title="Liste des tâches à glisser dans le planning">${icon('repeat')}Tâches à planifier${(() => { const n = planSideTasks(days, ppl, 'petits').length + planSideTasks(days, ppl, 'rec').filter(t => t.prochaine <= days[days.length - 1]).length; return n ? ` <span class="badge">${n}</span>` : ''; })()}</button>
         ${mon !== thisWeek() ? `<button class="btn small" data-act="pweek" data-n="0">Cette semaine</button>` : ''}
         <button class="btn primary" data-act="plan-print" data-f="a3" title="Imprimer la semaine sur une feuille A3 paysage">${icon('printer')}Imprimer A3</button>
         ${menu([['plan-hide', 'Personnes affichées…', 'person', {}]])}</div></header>
@@ -4073,28 +4117,31 @@ function planLegend(){
   return `<details class="plegend"><summary>${icon('list')}Que veulent dire les codes ?</summary><div class="lg">${g('on', 'Présent')}${g('rot', 'Rotation')}${g('piq', 'Piquet')}${g('off', 'Congé')}${g('abs', 'Absent')}</div></details>`;
 }
 /* Tâches à planifier cette semaine (ou en retard) pour les personnes affichées, à glisser dans une case */
-function planSideTasks(days, ppl, mode = S.psf){
+function planSideTasks(days, ppl, kind = S.psf === 'rec' ? 'rec' : 'petits'){
   const end = days[days.length - 1], start = days[0], q = norm(S.q.planside || '');
   const whoKeys = ppl.map(p => 'p:' + p.id), planned = new Set(db.plan.filter(x => x.tacheId && x.date >= start && x.date <= end).map(x => x.tacheId));
-  let ts = db.taches.filter(t => live(t) && t.actif !== false && (mode === 'tout' || t.prochaine <= end) && !planned.has(t.id) && whoKeys.some(k => forWho(t, k)));
+  let ts = db.taches.filter(t => live(t) && t.actif !== false && (kind === 'petits' ? isPetit(t) : !isPetit(t)) && !planned.has(t.id) && (!t.assign?.v || whoKeys.some(k => forWho(t, k))));
   if (q) ts = ts.filter(t => norm(`${t.titre} ${getKks(t.kksId)?.code || ''} ${assignLabel(t.assign)}`).includes(q));
-  return ts.sort(urgSort);
+  return ts.sort(kind === 'petits' ? petitSort : urgSort);
 }
-/* Panneau « À planifier » : glisser une tâche dans une case, ou cliquer la tâche puis la case */
+/* Panneau « À planifier » : petits travaux d'abord, puis tâches récurrentes. Glisser dans une case, ou cliquer puis cliquer la case */
 function planSideHTML(days, ppl){
-  const start = days[0], end = days[days.length - 1], ts = planSideTasks(days, ppl);
-  const sec = {late:[], week:[], later:[], old:[]};
-  for (const t of ts) sec[isOld(t) ? 'old' : t.prochaine < start ? 'late' : t.prochaine <= end ? 'week' : 'later'].push(t);
-  const when = t => { const n = daysTo(t.prochaine); return t.prochaine < start ? (isOld(t) ? t.prochaine.slice(0, 4) : lateLbl(-n)) : t.prochaine <= end ? DAYS[(new Date(t.prochaine + 'T12:00:00').getDay() + 6) % 7] + ' ' + +t.prochaine.slice(8) : fmtD(t.prochaine); };
+  const start = days[0], end = days[days.length - 1], kind = S.psf === 'rec' ? 'rec' : 'petits', ts = planSideTasks(days, ppl, kind);
+  const nP = planSideTasks(days, ppl, 'petits').length, nR = planSideTasks(days, ppl, 'rec').filter(t => t.prochaine <= end).length;
+  const sec = kind === 'petits' ? {haute:[], normale:[], basse:[]} : {late:[], week:[], later:[], old:[]};
+  for (const t of ts) if (kind === 'petits') sec[prioOf(t)].push(t); else sec[isOld(t) ? 'old' : t.prochaine < start ? 'late' : t.prochaine <= end ? 'week' : 'later'].push(t);
+  const when = t => { if (kind === 'petits') return t.prochaine ? fmtD(t.prochaine) : ''; const n = daysTo(t.prochaine); return t.prochaine < start ? (isOld(t) ? t.prochaine.slice(0, 4) : lateLbl(-n)) : t.prochaine <= end ? DAYS[(new Date(t.prochaine + 'T12:00:00').getDay() + 6) % 7] + ' ' + +t.prochaine.slice(8) : fmtD(t.prochaine); };
   const card = (t, cls) => { const k = getKks(t.kksId); return `<div class="ps-t ${cls} ${S.ppick === t.id ? 'picked' : ''}" draggable="true" data-tid="${t.id}" data-act="plan-pick" data-id="${t.id}" tabindex="0" title="Glissez dans une case, ou cliquez puis cliquez la case"><span class="t">${esc(t.titre)}</span><small>${k ? `<span class="kks">${esc(k.code)}</span>` : ''}<span class="who">${esc(assignLabel(t.assign))}</span><span class="when">${when(t)}</span></small></div>`; };
-  const block = (key, title, cls, open = true) => { const l = sec[key]; if (!l.length) return ''; const shown = l.slice(0, 120);
+  const block = (key, title, cls, open = true) => { const l = sec[key]; if (!l || !l.length) return ''; const shown = l.slice(0, 120);
     return `<details class="ps-g ${cls}" ${open ? 'open' : ''}><summary><span>${title}</span><b>${l.length}</b></summary>${shown.map(t => card(t, cls)).join('')}${l.length > shown.length ? `<p class="list-note">${l.length - shown.length} autre(s) : filtrez.</p>` : ''}</details>`; };
   const pk = S.ppick && get('taches', S.ppick);
+  const body = kind === 'petits' ? block('haute', 'Priorité haute', 'late') + block('normale', 'Priorité normale', 'week') + block('basse', 'Priorité basse', 'later', false)
+    : block('late', 'En retard', 'late') + block('week', 'Cette semaine', 'week') + block('later', 'Plus tard', 'later', false) + block('old', 'Anciens retards', 'old', false);
   return `<aside class="pside"><div class="ps-h"><div class="ps-top"><b>À planifier</b><button class="icon-btn" data-act="plan-side" aria-label="Fermer la liste" title="Fermer">×</button></div>
-      <div class="ps-seg" role="tablist"><button role="tab" data-act="plan-psf" data-f="semaine" aria-selected="${S.psf !== 'tout'}">Cette semaine</button><button role="tab" data-act="plan-psf" data-f="tout" aria-selected="${S.psf === 'tout'}">Toutes</button></div>
+      <div class="ps-seg" role="tablist"><button role="tab" data-act="plan-psf" data-f="petits" aria-selected="${kind === 'petits'}">Petits travaux <small>${nP}</small></button><button role="tab" data-act="plan-psf" data-f="rec" aria-selected="${kind === 'rec'}">Récurrentes <small>${nR}</small></button></div>
       <input type="search" data-search="planside" data-pside="1" placeholder="Filtrer : mot, KKS, nom…" value="${esc(S.q.planside || '')}" aria-label="Filtrer les tâches à planifier"></div>
     ${pk ? `<div class="ps-pick">${icon('calendar')}<span>Cliquez la case où placer <b>${esc(pk.titre)}</b></span><button class="link" data-act="plan-pick" data-id="${pk.id}">Annuler</button></div>` : ''}
-    <div class="ps-l">${ts.length ? block('late', 'En retard', 'late') + block('week', 'Cette semaine', 'week') + block('later', 'Plus tard', 'later', false) + block('old', 'Retard de plus d’un an', 'old', false) : '<p class="empty-line" style="padding:12px">Rien à planifier : tout est déjà placé.</p>'}</div>
+    <div class="ps-l">${ts.length ? body : `<p class="empty-line" style="padding:12px">${kind === 'petits' ? 'Aucun petit travail en attente.' : 'Rien à planifier : tout est déjà placé.'}</p>`}</div>
     <p class="hint ps-f">Glissez une tâche dans une case, ou cliquez-la puis cliquez la case. Les cases des personnes concernées s’éclairent.</p></aside>`;
 }
 function planSuggest(tid){
@@ -5426,7 +5473,8 @@ const ACT = {
   'pour-me'(){ const me = meId(); S.pour = me ? 'p:' + me : ''; render(); },
   'name-ints'(d){ S.q.interventions = d.name; S.statut = 'toutes'; S.arch.interventions = false; S.ryear = null; go('interventions'); },
   recaler(d){ const t = get('taches', d.id); if (!t) return; const today = todayISO(); tx(() => { if (t.freq.unite === 'once') t.prochaine = today; else { let n = t.prochaine; while (n < today) n = addFreq(n, t.freq.n, t.freq.unite); t.prochaine = n; } }); render(); toast(`Prochaine fois : ${fmtD(t.prochaine)}`, '', true); },
-  tf(d){ if (S.view !== 'taches'){ S.tf = d.f || ''; S.back = []; go('taches'); return; } S.tf = d.f || ''; S.sel.taches = null; fillList(); fillDetail(); },
+  ttab(d){ S.ttab = d.t; S.tf = ''; S.sel.taches = null; fillList(); fillDetail(); },
+  tf(d){ if (d.f && !String(d.f).startsWith('p-') && d.f !== 'fait') S.ttab = 'rec'; if (S.view !== 'taches'){ S.tf = d.f || ''; S.back = []; go('taches'); return; } S.tf = d.f || ''; S.sel.taches = null; fillList(); fillDetail(); },
   pf(d){ S.lowOnly = d.f === 'low'; S.zeroOnly = d.f === 'zero'; S.plimit = 200; S.sel.pieces = null; fillList(); fillDetail(); },
   pmore(){ S.plimit += 300; fillList(); },
   ploc(){ locDialog(S.ploc || ''); },
@@ -5508,7 +5556,7 @@ const ACT = {
   'labels-here': d => pieceLabelsDialog(contentsOf(d.id).filter(x => x.qte > 0).map(x => x.p.id)),
   'labels-loc': d => locLabelsDialog(String(d.ids || '').split(',').filter(Boolean)),
   'new-int': d => interventionDialog(null, d.kks),
-  'new-tache': d => tacheDialog(null, d.kks),
+  'new-tache': d => newTacheDialog(d.kks),
   'edit-tache': d => tacheDialog(get('taches', d.id)),
   'do-tache': d => interventionDialog(null, null, get('taches', d.id)),
   'plan-done'(d){ const x = db.plan.find(y => y.id === d.id); if (!x) return; const t = x.tacheId ? get('taches', x.tacheId) : null; const who = db.plan.filter(y => y.date === x.date && (t ? y.tacheId === t.id : y.text === x.text) && getPers(y.who)).map(y => y.who);
