@@ -87,7 +87,7 @@ p{margin:0}
   .hero p{display:none}
   .hero h1{font-size:1.5rem}
 }
-.foot{padding:8px 0 28px;font-size:.78rem;color:var(--muted)}
+.foot{display:none}
 .topbar{position:sticky;top:0;z-index:15;background:var(--bg);padding-block:12px}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:16;background:var(--bg)}
 main{min-width:0;padding-block:8px 24px}
@@ -555,8 +555,8 @@ legend .chk input{width:auto;min-height:0}
 .plan-tbl td div{margin:0 0 .6mm}
 .pc-code{float:right;font-family:var(--f-mono);font-size:7pt;font-weight:700}
 .pc-code.abs{text-decoration:underline}
-.mini.pour{max-width:230px;flex:0 1 auto}
-.mini.pour.on{border-color:var(--accent);background:var(--accent-soft);color:var(--ink);font-weight:600}
+.mini.pour{flex:none;max-width:210px;min-height:0;height:31px;padding:2px 28px 2px 12px;border-radius:999px;font-size:.85rem;font-weight:600;color:var(--muted);background-color:var(--sunk);border:1px solid transparent;background-position:right 9px center}
+.mini.pour.on{background-color:var(--accent-soft);border-color:var(--accent-line);color:var(--ink)}
 .who-line{display:block;padding:0 16px 10px;font-size:.85rem;color:var(--muted)}
 .who-line .link{font-size:.85rem}
 .who-line .ico{width:15px;height:15px;vertical-align:-3px;margin-right:4px}
@@ -1100,6 +1100,16 @@ tr.grp.old th{color:var(--muted)}
 .nav .nav-sec{color:#B9D3C2;font-weight:500}
 .nav .nav-sec .ico{width:16px;height:16px}
 @media (max-width:760px){ .nav .nav-sep{display:none !important} }
+@media (max-width:760px){
+  .quick{display:none}
+  .kpis{gap:8px}
+  .kpi{padding:10px 12px;column-gap:10px}
+  .kpi .ki{width:32px;height:32px;border-radius:8px}
+  .kpi .ki .ico{width:17px;height:17px}
+  .kpi .kn{font-size:1.3rem}
+  .kpi .kt{font-size:.76rem;line-height:1.25}
+  .kpi .kt2{display:none}
+}
 .badge{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-size:.72rem;font-weight:700}
 .ps-top{display:flex;align-items:center;justify-content:space-between}
 .ps-seg{display:flex;background:var(--sunk);border-radius:9px;padding:3px;gap:3px}
@@ -3487,7 +3497,7 @@ VIEWS.accueil = {
     <div class="cols">
       <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
       ${(() => { const me = meId(), mine = !!S.pour; const dueAll = db.taches.filter(t => live(t) && t.actif !== false && daysTo(t.prochaine) <= 7 && forWho(t, S.pour)).sort(urgSort), due = dueAll.slice(0, 5);
-        const who = me ? `<span class="who-line">${mine ? `${icon('person')}Filtré pour <b>${esc(pourLabel(S.pour))}</b>${S.pour === 'p:' + me && getPers(me).groupe ? ` et son groupe` : ''} · <button class="link" data-act="pour-all">Voir tout le monde</button>` : `Tout le monde · <button class="link" data-act="pour-me">Seulement mes affaires</button>`} · <button class="link" data-act="me">Changer de nom</button></span>` : `<span class="who-line"><button class="link" data-act="me">${icon('person')}Qui êtes-vous ? Choisissez votre nom pour voir vos tâches</button></span>`;
+        const who = me ? `<span class="who-line">${mine ? `${icon('person')}<b>${esc(persName(getPers(me)))}</b>${S.pour === 'p:' + me && getPers(me).groupe ? ` et ${esc(getPers(me).groupe)}` : ''} · <button class="link" data-act="pour-all">Tout voir</button>` : `${icon('person')}Tout le monde · <button class="link" data-act="pour-me">Mes affaires</button>`}</span>` : `<span class="who-line"><button class="link" data-act="me">${icon('person')}Qui êtes-vous ? Choisissez votre nom pour voir vos tâches</button></span>`;
         const td = me ? db.plan.filter(x => x.who === me && x.date === todayISO()) : [];
         const tdH = td.length ? `<div class="ptoday"><b>${icon('calendar')}Aujourd’hui au planning</b>${td.map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null, done = t && db.interventions.some(i => i.tacheId === t.id && i.date === x.date); return `<div class="ptd ${done ? 'done' : ''}"><button class="pit ${t ? 'task' : ''}" data-act="${t ? 'goto' : 'nav'}" data-view="${t ? 'taches' : 'planning'}" ${t ? `data-id="${t.id}"` : ''}>${t ? icon('repeat') : ''}<span>${esc(t ? t.titre : x.text)}</span>${t && x.text ? `<small>${esc(x.text)}</small>` : ''}</button>${done ? `<span class="ok-tag">${icon('check')}Fait</span>` : `<button class="btn small primary" data-act="plan-done" data-id="${x.id}">${icon('check')}C’est fait</button>`}</div>`; }).join('')}</div>` : '';
         return `<section class="panel"><div class="panel-head"><h2>${mine ? 'Mes tâches' : 'Tâches à faire'}${dueAll.length ? ` <span class="muted" style="font-size:.9rem">${dueAll.length}</span>` : ''}</h2><button class="link" data-act="nav" data-view="taches">${dueAll.length > 5 ? `Voir les ${dueAll.length}` : 'Toutes'}</button></div>${who}${tdH}${due.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${due.map(t => tacheRow(t, false)).join('')}</tbody></table></div>` : '<div style="padding:0 16px 16px"><p class="empty-line">Rien en retard ni dans les 7 prochains jours.</p></div>'}</section>`; })()}
@@ -3519,7 +3529,7 @@ function filteredPieces(){
   return rows.sort((a, b) => idn(a) - idn(b) || coll.compare(a.ref, b.ref));
 }
 VIEWS.pieces = {
-  shell: () => `<header class="page-head"><h1>Pièces</h1><div class="tools">${searchBox('pieces', 'Rechercher une pièce…')}<button class="btn icon-only" data-act="scan" title="Scanner un QR code" aria-label="Scanner un QR code">${icon('scan')}</button><button class="btn" data-act="ploc" title="Chercher les pièces par emplacement">${icon('shelf')}<span class="hide-sm">Emplacement</span></button><button class="btn primary" data-act="new-piece">${icon('plus')}Nouvelle pièce</button>
+  shell: () => `<header class="page-head"><h1>Pièces</h1><div class="tools">${searchBox('pieces', 'Rechercher une pièce…')}<button class="btn icon-only" data-act="scan" title="Scanner un QR code" aria-label="Scanner un QR code">${icon('scan')}</button><button class="btn primary" data-act="new-piece">${icon('plus')}Nouvelle pièce</button>
     ${menu([['labels-list', 'Étiquettes QR de la liste', 'qr', {}], ['toggle-low', S.lowOnly ? 'Afficher toutes les pièces' : 'Pièces sous le stock minimum', 'list', {}], ['xl-pieces', 'Exporter la liste (Excel)', 'excel', {}], '-', ['to-order', 'Liste à commander', 'truck', {}], ['dups', 'Rechercher les doublons', 'merge', {}], ['relink-kks', 'Relier les repères KKS cités dans les notes', 'plant', {}], archItem('pieces'), '-', ['import-pieces', 'Importer depuis CareOffice (fichier)', 'save', {}]])}</div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list(){
@@ -3566,7 +3576,7 @@ VIEWS.pieces = {
         ${noteRows.map(([k, v]) => k ? `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>` : `<dd class="full">${esc(v)}</dd>`).join('')}</dl></section>` : ''}
       ${(() => { const ids = matIndex().usedIn.get(p.id); if (!ids || !ids.size) return ''; const ints = [...ids].map(getInt).filter(Boolean).sort((a, b) => b.date.localeCompare(a.date)), all = S.pAll === p.id;
         return `<section class="pd-sec"><h3>${icon('report')}Utilisée dans les rapports <span class="muted">${ints.length}</span></h3>${intTable(all ? ints : ints.slice(0, 5))}${ints.length > 5 ? `<button class="link" data-act="p-all" data-id="${p.id}">${all ? 'Réduire' : `Voir les ${ints.length} rapports`}</button>` : ''}</section>`; })()}
-      <section class="pd-sec"><h3>${icon('repeat')}Historique <span class="muted">${hist.length || ''}</span></h3>
+      <section class="pd-sec"><h3>${icon('repeat')}Mouvements de stock <span class="muted">${hist.length || ''}</span></h3>
         ${hist.length ? `<div class="pd-hist">${(showAll ? hist : hist.slice(0, 8)).map(h => `<div class="ph"><span class="d">${fmtD(h.date)}</span><span class="q ${h.neutral ? '' : h.qte < 0 ? 'neg' : 'pos'}">${h.neutral ? '' : h.qte > 0 ? '+' : h.qte < 0 ? '−' : ''}${num(Math.abs(h.qte))}</span><span class="m">${esc(h.motif)}${h.who ? ` <span class="muted">· ${esc(h.who)}</span>` : ''}${h.lieu ? `<span class="lw">${esc(h.lieu)}</span>` : ''}</span></div>`).join('')}</div>
           ${hist.length > 8 ? `<button class="link" data-act="hist-all" data-id="${p.id}">${showAll ? 'Réduire' : `Voir les ${hist.length} mouvements`}</button>` : ''}` : '<p class="empty-line">Aucun mouvement enregistré.</p>'}</section>${byLine(p)}`;
   }
@@ -3719,7 +3729,7 @@ function filteredTaches(){
 function pourSelect(){
   const groups = db.listes.groupes.filter(g => db.personnes.some(p => p.groupe === g && p.actif !== false));
   const people = db.personnes.filter(p => p.actif !== false && live(p)).sort(persSort);
-  return `<select class="mini pour ${S.pour ? 'on' : ''}" data-change="pour" aria-label="Pour qui" title="${S.pour ? 'Filtre actif : choisissez « Tout le monde » pour tout voir' : ''}"><option value="">Tout le monde</option><optgroup label="Corps de métier">${groups.map(g => opt('g:' + g, g, S.pour)).join('')}</optgroup><optgroup label="Personne">${people.map(p => opt('p:' + p.id, persName(p) + (p.groupe ? ' · ' + p.groupe : ''), S.pour)).join('')}</optgroup></select>`;
+  return `<select class="mini pour ${S.pour ? 'on' : ''}" data-change="pour" aria-label="Pour qui" title="${S.pour ? 'Filtre actif : choisissez « Tout le monde » pour tout voir' : ''}"><option value="">Tout le monde</option><optgroup label="Corps de métier">${groups.map(g => opt('g:' + g, g, S.pour)).join('')}</optgroup><optgroup label="Personne">${people.map(p => opt('p:' + p.id, persName(p), S.pour)).join('')}</optgroup></select>`;
 }
 function tacheRow(t, withSel = true){
   const k = getKks(t.kksId), run = openRun(t), off = t.actif === false;
@@ -3728,7 +3738,7 @@ function tacheRow(t, withSel = true){
     <td class="num"><span class="trow-r">${off ? '<span class="chip ok">Faite</span>' : run ? '<span class="chip info">En cours</span>' : dueInfo(t).chip}${!off && !run && !t.arch ? `<button class="tick" data-act="do-tache" data-id="${t.id}" title="C’est fait : remplir le rapport" aria-label="Faire la tâche ${esc(t.titre)}">${icon('check')}</button>` : ''}</span></td></tr>`;
 }
 VIEWS.taches = {
-  shell: () => `<header class="page-head"><h1>Tâches</h1><div class="tools">${searchBox('taches', 'Rechercher une tâche…')}${S.arch.taches ? '' : pourSelect()}
+  shell: () => `<header class="page-head"><h1>Tâches</h1><div class="tools">${searchBox('taches', 'Rechercher une tâche…')}
     <button class="btn primary" data-act="new-tache">${icon('plus')}Nouvelle tâche</button>
     ${menu([['print-taches', 'Imprimer la liste de travail', 'printer', {}], ['xl-taches', 'Exporter la liste (Excel)', 'excel', {}], '-', archItem('taches')])}</div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
@@ -3738,7 +3748,7 @@ VIEWS.taches = {
     const cnt = {}; if (!S.arch.taches) for (const t of baseTaches()){ const k = tKey(t); cnt[k] = (cnt[k] || 0) + 1; }
     const afaire = (cnt.retard || 0) + (cnt.vieux || 0) + (cnt.semaine || 0) + (cnt.plus || 0);
     const chip = (f, t, n, tone = '') => f && !n && S.tf !== f ? '' : `<button role="tab" class="ychip ${tone}" data-act="tf" data-f="${f}" aria-selected="${(S.tf || '') === f}">${t} <small>${n || 0}</small></button>`;
-    const chips = S.arch.taches ? '' : `<div class="fchips" role="tablist" aria-label="Quelles tâches">${chip('', 'À faire', afaire)}${chip('retard', 'En retard', cnt.retard, 'bad')}${chip('semaine', 'Cette semaine', cnt.semaine, 'warn')}${chip('plus', 'Plus tard', cnt.plus)}${chip('vieux', 'Retard de plus d’un an', cnt.vieux)}${chip('fait', 'Faites', cnt.fait)}</div>`;
+    const chips = S.arch.taches ? '' : `<div class="fchips" role="tablist" aria-label="Quelles tâches">${pourSelect()}<span class="ysep" aria-hidden="true"></span>${chip('', 'À faire', afaire)}${chip('retard', 'En retard', cnt.retard, 'bad')}${chip('semaine', 'Cette semaine', cnt.semaine, 'warn')}${chip('plus', 'Plus tard', cnt.plus)}${chip('vieux', 'Anciens retards', cnt.vieux)}${chip('fait', 'Faites', cnt.fait)}</div>`;
     if (!rows.length) return chips + (S.arch.taches ? empty('Aucune tâche archivée', '') : empty('Rien à faire', '<p>Aucune tâche pour cette sélection.</p>'));
     const grp = {retard:[], semaine:[], plus:[], vieux:[], fait:[]};
     rows.forEach(t => grp[tKey(t)].push(t));
@@ -3757,11 +3767,11 @@ VIEWS.taches = {
         <div class="pd-qty">${off ? '<span class="l" style="font-size:1rem">Tâche unique, déjà faite</span>' : `<span class="l">Prochaine fois</span><span class="n" style="font-size:1.5rem">${fmtD(t.prochaine)}</span>${di.k === 'plus' ? '' : di.chip}`}</div>
         ${off || t.arch ? '' : run ? `<button class="btn primary" data-act="edit-int" data-id="${run.id}">${icon('report')}Compléter le rapport ${esc(run.num)}</button>` : `<button class="btn primary" data-act="do-tache" data-id="${t.id}">${icon('check')}C’est fait</button>`}
       </div>
-      ${!off && !t.arch && daysTo(t.prochaine) < 0 ? `<p class="recal">${icon('repeat')}<span>En retard depuis le ${fmtD(t.prochaine)}. Si elle a été faite sans rapport, ou n’est plus d’actualité à cette date :</span><button class="btn small" data-act="recaler" data-id="${t.id}">Recaler sur ${t.freq.unite === 'once' ? 'aujourd’hui' : 'la prochaine échéance'}</button></p>` : ''}
-      ${off || t.arch || run ? '' : '<p class="hint" style="margin:4px 0 0">« C’est fait » ouvre le rapport déjà rempli ; à l’enregistrement, la date passe à l’échéance suivante.</p>'}
+      ${!off && !t.arch && daysTo(t.prochaine) < 0 ? `<p class="recal">${icon('repeat')}<span>Déjà faite sans rapport, ou plus d’actualité ?</span><button class="btn small" data-act="recaler" data-id="${t.id}">Recaler sur ${t.freq.unite === 'once' ? 'aujourd’hui' : 'la prochaine échéance'}</button></p>` : ''}
+      ${off || t.arch || run ? '' : ''}
       ${k ? `<section class="pd-sec"><h3>${icon('plant')}Équipement</h3><div class="pd-k">${kksTag(k)}<span class="t">${esc(k.designation)}</span></div></section>` : ''}
       ${t.description ? `<section class="pd-sec"><h3>${icon('list')}Ce qu’il faut faire</h3><p class="pre">${esc(t.description)}</p></section>` : ''}
-      <section class="pd-sec"><h3>${icon('report')}Historique <span class="muted">${done.length || ''}</span></h3>${intTable(done)}</section>${byLine(t)}`;
+      <section class="pd-sec"><h3>${icon('report')}Rapports faits <span class="muted">${done.length || ''}</span></h3>${intTable(done)}</section>${byLine(t)}`;
   }
 };
 function tacheDialog(t, kksId){
@@ -3817,7 +3827,7 @@ function filteredInts(){
   return rows.sort((a, b) => b.date.localeCompare(a.date) || b.num.localeCompare(a.num));
 }
 VIEWS.interventions = {
-  shell: () => `<header class="page-head"><h1>Rapports</h1><div class="tools">${searchBox('interventions', 'Rechercher un rapport…')}${S.arch.interventions ? '' : pourSelect()}
+  shell: () => `<header class="page-head"><h1>Rapports</h1><div class="tools">${searchBox('interventions', 'Rechercher un rapport…')}
 
     <button class="btn primary" data-act="new-int">${icon('plus')}Nouveau rapport</button>${menu([['xl-ints', 'Exporter la liste (Excel)', 'excel', {}], archItem('interventions'), '-', ['import-travaux', 'Importer depuis CareOffice (fichier)', 'save', {}]])}</div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
@@ -3839,7 +3849,7 @@ VIEWS.interventions = {
     const lim = S.rmore === y + norm(S.q.interventions) ? 1e9 : 400, shown = rows.slice(0, lim);
     const groups = []; for (const i of shown){ const k = (i.date || '').slice(0, 7); if (!groups.length || groups[groups.length - 1].k !== k) groups.push({k, list:[]}); groups[groups.length - 1].list.push(i); }
     const mcount = new Map(); for (const i of rows){ const k = (i.date || '').slice(0, 7); mcount.set(k, (mcount.get(k) || 0) + 1); }
-    const stChip = S.arch.interventions ? '' : `<button role="tab" class="ychip warn" data-act="rstat" aria-selected="${openOnly}">En cours <small>${nOpen}</small></button><span class="ysep" aria-hidden="true"></span>`;
+    const stChip = S.arch.interventions ? '' : `${pourSelect()}<span class="ysep" aria-hidden="true"></span><button role="tab" class="ychip warn" data-act="rstat" aria-selected="${openOnly}">En cours <small>${nOpen}</small></button><span class="ysep" aria-hidden="true"></span>`;
     const chips = years.length > 1 || stChip ? `<div class="ychips" role="tablist" aria-label="Filtrer les rapports">${stChip}${openOnly ? '' : `${years.length > 1 ? `<button role="tab" class="ychip" data-act="ryear" data-y="all" aria-selected="${y === 'all'}">Toutes <small>${all.length}</small></button>` : ''}${years.length > 1 ? years.map(x => `<button role="tab" class="ychip" data-act="ryear" data-y="${x}" aria-selected="${y === x}">${x} <small>${yc.get(x)}</small></button>`).join('') : ''}`}${openOnly ? `<button class="ychip" data-act="rstat">Voir tous les rapports</button>` : ''}</div>` : '';
     const row = i => { const k = kInfo(i), d = i.date || '', who = intPers(i).slice(0, 3).map(x => x.nom).join(', ') + (i.intervenants.length > 3 ? ` +${i.intervenants.length - 3}` : '');
       return `<button class="rrow ${S.sel.interventions === i.id ? 'sel' : ''}" data-act="select" data-id="${i.id}"><span class="rday"><b>${+d.slice(8, 10) || ''}</b><small>${MS[+d.slice(5, 7) - 1] || ''}</small></span>
