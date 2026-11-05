@@ -505,7 +505,7 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .wkgrid td > .pc{height:100%;box-sizing:border-box}
 @supports (-moz-appearance:none){ .wkgrid td{height:100%} }
 .wkgrid td.today{background:color-mix(in srgb, var(--accent-soft) 45%, transparent)}
-.pc{position:relative;min-height:46px;padding:5px 6px 6px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.pc{position:relative;min-height:40px;padding:5px 6px 6px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
 .pc:hover{background:var(--sunk)}
 .pc.k-abs{background:repeating-linear-gradient(135deg,var(--bad-soft) 0 6px,transparent 6px 12px)}
 .pc.k-rot{background:var(--steel-soft)}
@@ -1132,8 +1132,9 @@ body.placing .wkgrid .pc{cursor:copy}
 .pinl{display:flex;flex-direction:column;gap:3px;cursor:auto}
 .pinl textarea{width:100%;min-height:0;resize:none;overflow:hidden;font:inherit;font-size:.82rem;line-height:1.3;padding:5px 7px;border-radius:7px;border:1.5px solid var(--accent);background:var(--surface);color:var(--ink);box-shadow:0 0 0 3px var(--accent-soft)}
 .pinl textarea:focus{outline:none}
-.pinl-f{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:.66rem;color:var(--muted);white-space:nowrap}
-.pinl-f .link{font-size:.72rem}
+.pinl{position:relative}
+.pinl-more{all:unset;cursor:pointer;position:absolute;right:4px;bottom:4px;width:20px;height:16px;border-radius:5px;display:grid;place-items:center;font-size:.8rem;line-height:1;color:var(--muted);background:var(--sunk)}
+.pinl-more:hover{color:var(--accent);background:var(--accent-soft)}
 .pinl-w{display:flex;align-items:center;gap:4px;font-size:.7rem;font-weight:600;color:var(--bad)}
 .pinl-w .ico{width:13px;height:13px}
 .pit.editing{display:none}
@@ -3462,7 +3463,7 @@ function weekHTML(){
     const it = items.map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null, done = t && db.interventions.some(v => v.tacheId === t.id && v.date === d);
       return `<button class="pit ${t ? 'task' : ''} ${done ? 'done' : ''}" data-act="${t ? 'goto' : 'nav'}" data-view="${t ? 'taches' : 'planning'}" ${t ? `data-id="${t.id}"` : ''}>${t ? icon(done ? 'check' : 'repeat') : ''}<span>${esc(t ? t.titre : x.text)}</span>${t && x.text ? `<small>${esc(x.text)}</small>` : ''}</button>`; }).join('');
     const abs = pc && pc[1] === 'abs';
-    return `<div class="wd ${d === today ? 'today' : ''} ${d < today ? 'past' : ''}"><span class="wdl">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></span><span class="wdi">${pc ? `<span class="pcode ${'k-' + pc[1]}" title="${esc(pc[0])}">${esc(pr.code)}</span>` : ''}${abs ? `<span class="abs">${esc(pc[0])}</span>` : ''}${it || (abs ? '' : '<span class="muted">—</span>')}</span></div>`; }).join('');
+    return `<div class="wd ${d === today ? 'today' : ''} ${d < today ? 'past' : ''}"><span class="wdl">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></span><span class="wdi">${pc && !isDispo(pr.code) ? `<span class="pcode ${'k-' + pc[1]}" title="${esc(pc[0])}">${esc(pr.code)}</span>` : ''}${abs ? `<span class="abs">${esc(pc[0])}</span>` : ''}${it || (abs ? '' : '<span class="muted">—</span>')}</span></div>`; }).join('');
   return `<section class="panel"><div class="panel-head"><h2>${we ? 'La semaine prochaine' : 'Ma semaine'} <span class="muted" style="font-size:.9rem">sem. ${isoWeek(mon)}</span></h2><button class="link" data-act="nav" data-view="planning">Planning</button></div><div class="week">${rows}</div></section>`;
 }
 VIEWS.accueil = {
@@ -4003,10 +4004,12 @@ function planPeople(withLeave = false){
   planPeople.conge = all.filter(p => enConge(p, mon));
   return all.filter(p => withLeave || !planPeople.conge.includes(p)).sort((a, b) => ((a.groupe === 'Équipe' ? -1 : grpIdx(a.groupe)) - (b.groupe === 'Équipe' ? -1 : grpIdx(b.groupe))) || (ord(a.nom) - ord(b.nom)) || coll.compare(a.nom, b.nom));
 }
+/* Disponible ce jour-là (R, PIQ, EN, PI, CA, PO…) : case blanche, sans code */
+const isDispo = code => !!code && (DISPO.has(code) || ['on', 'piq'].includes((PCODE[code] || [])[1]));
 function planCell(who, iso, p){
-  const items = db.plan.filter(x => x.who === who && x.date === iso), pr = p ? presOf(p, iso) : null, pc = pr && pr.code ? PCODE[pr.code] || [pr.code, 'on'] : null;
+  const items = db.plan.filter(x => x.who === who && x.date === iso), pr = p ? presOf(p, iso) : null, pc = pr && pr.code && !isDispo(pr.code) ? PCODE[pr.code] || [pr.code, 'on'] : null;
   const done = x => x.tacheId && db.interventions.some(i => i.tacheId === x.tacheId && i.date === iso);
-  return `<div class="pc ${pc ? 'k-' + pc[1] : (p && pr ? 'k-none' : '')} ${S.pdrop === who + '|' + iso ? 'drop' : ''}" data-act="plan-add" data-who="${esc(who)}" data-date="${iso}">
+  return `<div class="pc ${pc ? 'k-' + pc[1] : (p && pr && !pr.code ? 'k-none' : '')} ${S.pdrop === who + '|' + iso ? 'drop' : ''}" data-act="plan-add" data-who="${esc(who)}" data-date="${iso}">
     ${pc ? `<span class="pcode" title="${esc(pc[0])}${pr.note ? ' · ' + esc(pr.note) : ''}">${esc(pr.code)}</span>` : ''}
     ${items.map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null, k = t ? getKks(t.kksId) : null;
       return `<button class="pit ${t ? 'task' : ''} ${done(x) ? 'done' : ''}" data-act="plan-edit" data-id="${x.id}" title="${esc(t ? t.titre : x.text)}">${t ? icon(done(x) ? 'check' : 'repeat') : ''}<span>${esc(t ? t.titre : x.text)}</span>${k ? `<small>${esc(k.code)}</small>` : ''}${t && x.text ? `<small>${esc(x.text)}</small>` : ''}${t ? `<span class="pdel" data-act="plan-del" data-id="${x.id}" role="button" aria-label="Retirer du planning" title="Retirer du planning">×</span>` : ''}</button>`; }).join('')}
@@ -4039,7 +4042,7 @@ VIEWS.planning = {
         ${mon !== thisWeek() ? `<button class="btn small" data-act="pweek" data-n="0">Cette semaine</button>` : ''}
         <button class="btn primary" data-act="plan-print" data-f="a3" title="Imprimer la semaine sur une feuille A3 paysage">${icon('printer')}Imprimer A3</button>
         ${menu([['plan-hide', 'Personnes affichées…', 'person', {}]])}</div></header>
-      <div class="ptip-row"><p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez dans une case et tapez le travail à faire : <b>Entrée</b> valide, <b>Tab</b> passe au jour suivant. « Plus… » pour lier une tâche ou remplir plusieurs jours.</p>${planLegend()}</div>
+      <div class="ptip-row"><p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez dans une case et tapez le travail à faire : <b>Entrée</b> valide, <b>Tab</b> passe au jour suivant. Le petit <b>⋯</b> permet de lier une tâche ou de remplir plusieurs jours.</p>${planLegend()}</div>
       <div class="pwrap ${S.pside ? '' : 'noside'}"><div class="wkgrid-wrap"><table class="wkgrid"><thead><tr><th></th>${days.map((d, i) => `<th class="${d === today ? 'today' : ''}">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>${S.pside ? planSideHTML(days, ppl) : ''}</div>
       ${conge.length ? `<p class="hint pconge">${icon('calendar')}Pas disponibles cette semaine (ni R, PIQ, EN, PI ou CA), masqués : ${conge.sort(persSort).map(p => esc(persName(p))).join(', ')}.</p>` : ''}
       <div class="pmobile">${mobile}</div>`;
@@ -4115,7 +4118,7 @@ function planInline(pc, who, date, item, pit){
   if (!pc) return;
   const p = getPers(who), pr = p ? presOf(p, date) : null, pc2 = pr && pr.code ? PCODE[pr.code] : null, abs = pc2 && pc2[1] === 'abs';
   const box = document.createElement('div'); box.className = 'pinl';
-  box.innerHTML = `${abs ? `<span class="pinl-w">${icon('out')}Absent : ${esc(pc2[0])}</span>` : ''}<textarea rows="2" placeholder="Travail à faire…" aria-label="Travail à faire">${esc(item?.text || '')}</textarea><span class="pinl-f"><span>↵ valider · Tab jour suivant · Échap</span><button type="button" class="link" data-more>Plus…</button></span>`;
+  box.innerHTML = `${abs ? `<span class="pinl-w">${icon('out')}Absent : ${esc(pc2[0])}</span>` : ''}<textarea rows="2" placeholder="Travail à faire…" aria-label="Travail à faire">${esc(item?.text || '')}</textarea><button type="button" class="pinl-more" data-more title="Lier une tâche, plusieurs jours, plusieurs personnes" aria-label="Plus d’options">⋯</button>`;
   if (pit){ pit.classList.add('editing'); pit.after(box); } else pc.append(box);
   const ta = box.querySelector('textarea'), fit = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
   ta.addEventListener('input', fit); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); requestAnimationFrame(fit);
