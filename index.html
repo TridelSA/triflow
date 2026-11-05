@@ -491,7 +491,7 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .wkgrid thead th{position:sticky;top:0;z-index:3;background:var(--surface);padding:8px;border-bottom:1px solid var(--line);font-size:.85rem;text-align:left}
 .wkgrid thead th small{display:block;color:var(--muted);font-weight:500;font-family:var(--f-mono);font-size:.75rem}
 .wkgrid thead th.today{color:var(--accent)}
-.wkgrid th:first-child,.wkgrid td:first-child{width:180px}
+.wkgrid th:first-child,.wkgrid td:first-child{width:150px}
 .wkgrid tr.prow2 th.pn{white-space:normal;line-height:1.25}
 .wkgrid th.pn{position:sticky;left:0;z-index:2;background:var(--surface);text-align:left;font-weight:600;font-size:.85rem;padding:6px 10px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wkgrid th.pn small{margin-left:6px;color:var(--muted);font-weight:500;font-size:.72rem}
@@ -505,7 +505,7 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .wkgrid td > .pc{height:100%;box-sizing:border-box}
 @supports (-moz-appearance:none){ .wkgrid td{height:100%} }
 .wkgrid td.today{background:color-mix(in srgb, var(--accent-soft) 45%, transparent)}
-.pc{position:relative;min-height:40px;padding:5px 6px 6px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.pc{position:relative;min-height:38px;padding:3px 4px 4px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
 .pc:hover{background:var(--sunk)}
 .pc.k-abs{background:repeating-linear-gradient(135deg,var(--bad-soft) 0 6px,transparent 6px 12px)}
 .pc.k-rot{background:var(--steel-soft)}
@@ -516,6 +516,11 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .k-rot .pcode{color:var(--steel)}
 .pnote{font-size:.7rem;color:var(--muted);line-height:1.25}
 .pit{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 6px;padding:4px 7px;border-radius:7px;background:var(--plate);color:var(--plate-ink);font-size:.8rem;line-height:1.25;border:1px solid var(--plate-line);max-width:100%}
+.wkgrid .pit,.pmlist .pit{display:block;padding:3px 6px;line-height:1.22;font-size:.79rem;overflow-wrap:anywhere;hyphens:auto}
+.wkgrid .pit span,.pmlist .pit span{display:inline}
+.wkgrid .pit small,.pmlist .pit small{margin-left:5px;white-space:nowrap}
+.wkgrid .pit .pdel,.pmlist .pit .pdel{display:grid}
+.wkgrid .pit.task,.pmlist .pit.task{box-shadow:inset 3px 0 0 var(--accent);padding-left:8px}
 .pit span{overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
 .pit.task{background:var(--accent-soft);color:var(--ink);border-color:var(--accent-line)}
 .pit.done{opacity:.6;text-decoration:line-through}
@@ -1163,7 +1168,7 @@ body.placing .wkgrid .pc{cursor:copy}
 .pwrap.noside{grid-template-columns:minmax(0,1fr)}
 .side-tg.on{background:var(--accent-soft);border-color:var(--accent-line)}
 
-.pit.task{position:relative;padding-right:20px}
+.pit.task{position:relative;padding-right:16px}
 .pit .pdel{all:unset;position:absolute;top:2px;right:3px;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:.85rem;line-height:1;color:var(--muted);cursor:pointer;opacity:0;-webkit-line-clamp:unset;display:grid}
 .pit:hover .pdel,.pit:focus-visible .pdel{opacity:1}
 .pit .pdel:hover{background:var(--bad);color:#fff}
@@ -4024,6 +4029,8 @@ async function loadPresence(year){
 const presOf = (p, iso) => { const P = PLANS[iso.slice(0, 4)]; if (!P) return null; const e = P.byNom.get(String(p.nom || '').toUpperCase()); if (!e) return null; return {code:e.planning?.[iso] || '', note:e.commentaires?.[iso] || ''}; };
 const isoAdd = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
 /* Semaine « en cours » : le week-end, c'est déjà la semaine suivante qu'on prépare */
+/* Le planning s'ouvre sur la semaine suivante (c'est celle qu'on prépare) */
+const planWeek = () => isoAdd(mondayOf(todayISO()), 7);
 const thisWeek = () => { const t = todayISO(), m = mondayOf(t); return (new Date(t + 'T12:00:00').getDay() + 6) % 7 >= 5 ? isoAdd(m, 7) : m; };
 const mondayOf = iso => { const d = new Date(iso + 'T12:00:00'), w = (d.getDay() + 6) % 7; return isoAdd(iso, -w); };
 const isoWeek = iso => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7); const y = new Date(d.getFullYear(), 0, 4); return 1 + Math.round(((d - y) / 864e5 - 3 + (y.getDay() + 6) % 7) / 7); };
@@ -4039,7 +4046,7 @@ function planHide(){
 }
 function planHideDialog(){
   const h = planHide(), ppl = db.personnes.filter(p => live(p) && p.actif !== false).sort(persSort), grps = db.listes.groupes.filter(g => ppl.some(p => p.groupe === g));
-  planPeople(); const auto = new Set((planPeople.conge || []).map(p => p.id)), mon = S.pweek || thisWeek();
+  planPeople(); const auto = new Set((planPeople.conge || []).map(p => p.id)), mon = S.pweek || planWeek();
   const why = p => { const c = [...new Set(Array.from({length:5}, (_, i) => presOf(p, isoAdd(mon, i))?.code).filter(Boolean))]; return c.join(', '); };
   dialog({title:'Qui apparaît dans le planning ?', saveLabel:'Enregistrer', wide:true,
     body:`<p class="hint">Réglage commun à tous les postes. Décochez un groupe entier, ou seulement certaines personnes.<br>Les personnes cochées mais <b>sans R, PIQ, EN, PI ou CA</b> dans la semaine sont masquées automatiquement (indiqué en gris).</p>${grps.map(g => `<fieldset data-g="${esc(g)}"><legend><label class="chk"><input type="checkbox" name="g" value="${esc(g)}"> ${esc(g === 'Équipe' ? 'Équipes de rotation' : g)}</label></legend><div class="pdchk">${ppl.filter(p => p.groupe === g).map(p => `<label class="chk ${auto.has(p.id) ? 'abs' : ''}"><input type="checkbox" name="p" value="${p.id}" ${h.g.has(g) || h.p.has(p.id) ? '' : 'checked'}> ${esc(persName(p))}${auto.has(p.id) ? ` <small>masqué cette semaine${why(p) ? ' (' + esc(why(p)) + ')' : ''}</small>` : ''}</label>`).join('')}</div></fieldset>`).join('')}`,
@@ -4060,7 +4067,7 @@ function enConge(p, mon){
   return !codes.some(c => DISPO.has(c)) && codes.some(Boolean) && !db.plan.some(x => x.who === p.id && x.date >= days[0] && x.date <= isoAdd(mon, 6));
 }
 function planPeople(withLeave = false){
-  const hide = planHide(), mon = S.pweek || thisWeek();
+  const hide = planHide(), mon = S.pweek || planWeek();
   const P = PLANS[mon.slice(0, 4)], ord = n => P?.order.get(String(n).toUpperCase()) ?? 999;
   const all = db.personnes.filter(p => live(p) && p.actif !== false && !hide.g.has(p.groupe || '') && !hide.p.has(p.id));
   planPeople.conge = all.filter(p => enConge(p, mon));
@@ -4074,12 +4081,12 @@ function planCell(who, iso, p){
   return `<div class="pc ${pc ? 'k-' + pc[1] : (p && pr && !pr.code ? 'k-none' : '')} ${S.pdrop === who + '|' + iso ? 'drop' : ''}" data-act="plan-add" data-who="${esc(who)}" data-date="${iso}">
     ${pc ? `<span class="pcode" title="${esc(pc[0])}${pr.note ? ' · ' + esc(pr.note) : ''}">${esc(pr.code)}</span>` : ''}
     ${items.map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null, k = t ? getKks(t.kksId) : null;
-      return `<button class="pit ${t ? 'task' : ''} ${done(x) ? 'done' : ''}" data-act="plan-edit" data-id="${x.id}" title="${esc(t ? t.titre : x.text)}">${t ? icon(done(x) ? 'check' : 'repeat') : ''}<span>${esc(t ? t.titre : x.text)}</span>${k ? `<small>${esc(k.code)}</small>` : ''}${t && x.text ? `<small>${esc(x.text)}</small>` : ''}${t ? `<span class="pdel" data-act="plan-del" data-id="${x.id}" role="button" aria-label="Retirer du planning" title="Retirer du planning">×</span>` : ''}</button>`; }).join('')}
+      return `<button class="pit ${t ? 'task' : ''} ${done(x) ? 'done' : ''}" data-act="plan-edit" data-id="${x.id}" title="${esc(t ? t.titre : x.text)}"><span>${esc(t ? t.titre : x.text)}</span>${k ? `<small>${esc(k.code)}</small>` : ''}${t && x.text ? `<small>${esc(x.text)}</small>` : ''}${t ? `<span class="pdel" data-act="plan-del" data-id="${x.id}" role="button" aria-label="Retirer du planning" title="Retirer du planning">×</span>` : ''}</button>`; }).join('')}
     ${pr && pr.note ? `<span class="pnote">${esc(pr.note)}</span>` : ''}</div>`;
 }
 VIEWS.planning = {
   shell(){
-    const mon = S.pweek || (S.pweek = thisWeek()); loadPresence(mon.slice(0, 4)); if (isoAdd(mon, 6).slice(0, 4) !== mon.slice(0, 4)) loadPresence(isoAdd(mon, 6).slice(0, 4));
+    const mon = S.pweek || (S.pweek = planWeek()); loadPresence(mon.slice(0, 4)); if (isoAdd(mon, 6).slice(0, 4) !== mon.slice(0, 4)) loadPresence(isoAdd(mon, 6).slice(0, 4));
     const nd = S.pwe ? 7 : 5, days = Array.from({length:nd}, (_, i) => isoAdd(mon, i)), today = todayISO();
     const ppl = planPeople(), conge = planPeople.conge, me = meId(), P = PLANS[mon.slice(0, 4)];
     const grps = db.listes.groupes.filter(g => db.personnes.some(p => live(p) && p.actif !== false && p.groupe === g));
@@ -4101,7 +4108,7 @@ VIEWS.planning = {
     return `<header class="page-head"><h1>Planning</h1><div class="tools">
         <div class="pweek"><button class="btn icon-only" data-act="pweek" data-n="-7" aria-label="Semaine précédente">${icon('chev')}</button><div class="pw-l"><b>Semaine ${isoWeek(mon)}</b><span>${range}</span></div><button class="btn icon-only" data-act="pweek" data-n="7" aria-label="Semaine suivante">${icon('chev')}</button></div>
         <button class="btn side-tg ${S.pside ? 'on' : ''}" data-act="plan-side" title="Liste des tâches à glisser dans le planning">${icon('repeat')}Tâches à planifier${(() => { const n = planSideTasks(days, ppl, 'petits').length + planSideTasks(days, ppl, 'rec').filter(t => t.prochaine <= days[days.length - 1]).length; return n ? ` <span class="badge">${n}</span>` : ''; })()}</button>
-        ${mon !== thisWeek() ? `<button class="btn small" data-act="pweek" data-n="0">Cette semaine</button>` : ''}
+        ${mon !== planWeek() ? `<button class="btn small" data-act="pweek" data-n="0">Semaine prochaine</button>` : `<button class="btn small" data-act="pweek" data-n="-7">Cette semaine</button>`}
         <button class="btn primary" data-act="plan-print" data-f="a3" title="Imprimer la semaine sur une feuille A3 paysage">${icon('printer')}Imprimer A3</button>
         ${menu([['plan-hide', 'Personnes affichées…', 'person', {}]])}</div></header>
       <div class="ptip-row"><p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez dans une case et tapez le travail à faire : <b>Entrée</b> valide, <b>Tab</b> passe au jour suivant. Le petit <b>⋯</b> permet de lier une tâche ou de remplir plusieurs jours.</p>${planLegend()}</div>
@@ -5448,7 +5455,7 @@ function exportKksLinks(){
    ===================================================================== */
 const ACT = {
   scan: () => scanDialog(),
-  pweek(d){ const n = +d.n; S.pweek = n ? isoAdd(S.pweek || thisWeek(), n) : thisWeek(); S.pday = null; render(); },
+  pweek(d){ const n = +d.n; S.pweek = n ? isoAdd(S.pweek || planWeek(), n) : planWeek(); S.pday = null; render(); },
   pday(d){ S.pday = +d.i; render(); },
   'plan-pick'(d){ S.ppick = S.ppick === d.id ? null : d.id; render(); },
   'plan-psf'(d){ S.psf = d.f; render(); },
