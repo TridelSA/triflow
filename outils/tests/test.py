@@ -104,6 +104,8 @@ async def main():
         ok(await pg.evaluate("!!document.querySelector('.home-hero h1') && document.querySelectorAll('.home-card').length >= 2 && !document.querySelector('.kpis')"), 'accueil : bandeau du jour, carte À faire et stock')
         ok(await pg.evaluate("/Électricité\\s*ALPHA/.test(document.querySelector('.hh-strip')?.textContent || '')"), 'accueil : présents aujourd’hui par métier')
 
+        await aller("go('accueil')", 'accueil-2', 300)
+        ok(await pg.evaluate("document.querySelectorAll('.home-grid > .home-card').length === 3"), 'accueil : travaux, stock et planning')
         print('Parcours')
         ok(await pg.evaluate("document.querySelectorAll('#nav [data-view=taches]').length === 1 && !document.querySelector('#nav [data-view=interventions]')"), 'une seule entrée « Travaux » dans la navigation')
         await aller("go('taches'); newTacheDialog()", 'dialogue-nouveau-travail', 300)

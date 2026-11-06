@@ -21,6 +21,8 @@ const ACT = {
   'plan-hide': () => planHideDialog(),
   navplus(d, t){ const s2 = $('#navsheet'); s2.hidden = !s2.hidden; t.setAttribute('aria-expanded', String(!s2.hidden)); },
   'to-order': () => orderDialog(),
+  hw(d){ S.hw = d.k; render(); },
+  hday(d){ S.hday = d.d; render(); },
   'plan-print'(d){ const a3 = d.f === 'a3'; document.body.classList.add('land'); document.body.classList.toggle('a3', a3); doPrint(fitSheet(planSheetHTML(), a3 ? 396 : 277, a3 ? 271 : 188)); },
   me: () => meDialog(),
   help: () => helpDialog(),

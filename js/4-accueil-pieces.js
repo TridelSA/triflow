@@ -31,37 +31,42 @@ function homePresence(today){
   return `<span class="hs-l">Présents aujourd’hui</span>${g}`;
 }
 VIEWS.accueil = {
+  /* Accueil orienté atelier : les travaux, le stock et le planning d'abord (la personne ne sert qu'à filtrer) */
   shell(){
-    const today = todayISO(), dt = new Date(today + 'T12:00:00'), me = meId(), P = me && getPers(me), mine = !!S.pour;
-    const dayTxt = `${DAYN[(dt.getDay() + 6) % 7].toLowerCase()} ${dt.getDate()} ${MOIS_L[dt.getMonth()]} · semaine ${isoWeek(today)}`;
+    const today = todayISO(), dt = new Date(today + 'T12:00:00');
     const qa = (act, type, ic, t) => `<button class="hq" data-act="${act}" ${type ? `data-type="${type}"` : ''}>${icon(ic)}<span>${t}</span></button>`;
     const pres = homePresence(today);
-    /* À faire : planning du jour, rapports à terminer, travaux en retard ou de la semaine */
-    const td = me ? db.plan.filter(x => x.who === me && x.date === today) : [];
-    const tdH = td.map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null, done = t && doneOn(t, x.date); return `<div class="ptd ${done ? 'done' : ''}"><button class="pit ${t ? 'task' : ''}" data-act="${t ? 'goto' : 'nav'}" data-view="${t ? 'taches' : 'planning'}" ${t ? `data-id="${t.id}"` : ''}>${t ? icon('check') : ''}<span>${esc(t ? t.titre : x.text)}</span>${t && x.text ? `<small>${esc(x.text)}</small>` : ''}</button>${done ? `<span class="ok-tag">${icon('check')}Fait</span>` : `<button class="btn small primary" data-act="plan-done" data-id="${x.id}">${icon('check')}C’est fait</button>`}</div>`; }).join('');
-    const open = db.interventions.filter(i => live(i) && i.statut !== 'terminee' && intFor(i, S.pour)).sort((a, b) => b.date.localeCompare(a.date));
+    /* --- Travaux --- */
     const mineT = db.taches.filter(t => live(t) && t.actif !== false && forWho(t, S.pour));
-    const urg = mineT.filter(t => ['retard', 'semaine'].includes(tKey(t)) || (isPetit(t) && !t.prochaine && prioOf(t) === 'haute')).sort((a, b) => (a.prochaine || '0').localeCompare(b.prochaine || '0') || petitSort(a, b));
-    const nLate = mineT.filter(t => tKey(t) === 'retard').length;
-    const sub = (t, n, act = '') => `<div class="hc-sub"><span>${t}${n != null ? ` <b>${n}</b>` : ''}</span>${act}</div>`;
-    const who = me ? `<span class="who-line">${mine ? `${icon('person')}<b>${esc(persName(P))}</b>${S.pour === 'p:' + me && P.groupe ? ` et ${esc(P.groupe)}` : ''} · <button class="link" data-act="pour-all">Tout voir</button>` : `${icon('person')}Tout le monde · <button class="link" data-act="pour-me">Mes affaires</button>`}</span>` : `<span class="who-line"><button class="link" data-act="me">${icon('person')}Qui êtes-vous ? Choisissez votre nom</button></span>`;
-    const afaire = `<section class="panel home-card"><div class="panel-head"><h2>${mine ? 'Mon travail' : 'À faire'}</h2><button class="link" data-act="nav" data-view="taches">Tous les travaux</button></div>${who}
-      ${tdH ? sub(`${icon('calendar')}Aujourd’hui au planning`) + `<div class="ptoday">${tdH}</div>` : ''}
-      ${open.length ? sub(`${icon('report')}Rapports à terminer`, open.length, open.length > 4 ? '<button class="link" data-act="wtab" data-w="encours">Tous</button>' : '') + intTable(open.slice(0, 4)) : ''}
-      ${sub(`${icon('list')}En retard et cette semaine`, urg.length, urg.length > 6 ? `<button class="link" data-act="tf" data-f="${nLate ? 'retard' : 'semaine'}">Voir les ${urg.length}</button>` : '')}
-      ${urg.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${urg.slice(0, 6).map(t => tacheRow(t, false)).join('')}</tbody></table></div>` : '<p class="empty-line hc-empty">Rien d’urgent.</p>'}</section>`;
-    const low = db.pieces.filter(p => live(p) && isLow(p)).length, zero = db.pieces.filter(p => live(p) && isOut(p)).length;
-    const stock = `<section class="panel home-card"><div class="panel-head"><h2>Stock</h2><button class="link" data-act="nav" data-view="pieces">Pièces</button></div><div class="hstock">
-      <button class="hs-k ${low ? 'warn' : ''}" data-act="show-low"><b>${num(low)}</b><span>sous le minimum</span></button><button class="hs-k ${zero ? 'bad' : ''}" data-act="show-zero"><b>${num(zero)}</b><span>à zéro</span></button></div></section>`;
+    const grpT = {retard:mineT.filter(t => tKey(t) === 'retard').sort(urgSort), semaine:mineT.filter(t => tKey(t) === 'semaine').sort(urgSort), haute:mineT.filter(t => isPetit(t) && prioOf(t) === 'haute').sort(petitSort)};
+    const hw = S.hw && grpT[S.hw]?.length ? S.hw : ['retard', 'semaine', 'haute'].find(k => grpT[k].length) || 'retard';
+    const open = db.interventions.filter(i => live(i) && i.statut !== 'terminee' && intFor(i, S.pour)).sort((a, b) => b.date.localeCompare(a.date));
+    const tchip = (k, t, tone) => `<button class="ychip ${tone}" data-act="hw" data-k="${k}" aria-selected="${hw === k}">${t} <small>${grpT[k].length}</small></button>`;
+    const travaux = `<section class="panel home-card"><div class="panel-head"><h2>${icon('check')}Travaux</h2><button class="link" data-act="nav" data-view="taches">Tout voir</button></div>
+      <div class="fchips hc-chips">${pourSelect()}<span class="ysep"></span>${tchip('retard', 'En retard', 'bad')}${tchip('semaine', 'Cette semaine', 'warn')}${tchip('haute', 'Priorité haute', 'bad')}</div>
+      ${grpT[hw].length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${grpT[hw].slice(0, 7).map(t => tacheRow(t, false)).join('')}</tbody></table></div>${grpT[hw].length > 7 ? `<p class="list-note"><button class="link" data-act="tf" data-f="${hw === 'haute' ? 'p-haute' : hw}">Voir les ${grpT[hw].length}</button></p>` : ''}` : '<p class="empty-line hc-empty">Rien ici, bravo.</p>'}
+      ${open.length ? `<div class="hc-sub"><span>${icon('report')}Rapports en cours <b>${open.length}</b></span>${open.length > 3 ? '<button class="link" data-act="wtab" data-w="encours">Tous</button>' : ''}</div>${intTable(open.slice(0, 3))}` : ''}</section>`;
+    /* --- Stock --- */
+    const lowL = db.pieces.filter(p => live(p) && isLow(p)).sort((a, b) => (dispo(a) - a.stockMin) - (dispo(b) - b.stockMin)), zero = db.pieces.filter(p => live(p) && isOut(p)).length;
+    const mv = [...db.mouvements].sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 4);
+    const stock = `<section class="panel home-card"><div class="panel-head"><h2>${icon('box')}Stock</h2><button class="link" data-act="nav" data-view="pieces">Pièces</button></div>
+      <div class="hstock"><button class="hs-k ${lowL.length ? 'warn' : ''}" data-act="show-low"><b>${num(lowL.length)}</b><span>sous le minimum</span></button><button class="hs-k" data-act="show-zero"><b>${num(zero)}</b><span>à zéro</span></button></div>
+      ${lowL.length ? `<div class="hc-sub"><span>${icon('box')}À commander</span><button class="link" data-act="to-order">Liste à commander</button></div><ul class="hlist">${lowL.slice(0, 5).map(p => `<li><button data-act="goto" data-view="pieces" data-id="${p.id}"><span class="plate">${esc(p.ref)}</span><span class="t">${esc(p.designation)}</span><span class="q low">${num(dispo(p))}<small>/${num(p.stockMin)}</small></span></button></li>`).join('')}</ul>` : ''}
+      ${mv.length ? `<div class="hc-sub"><span>${icon('move')}Derniers mouvements</span></div><ul class="hlist">${mv.map(m => { const p = getPiece(m.pieceId); return p ? `<li><button data-act="goto" data-view="pieces" data-id="${p.id}"><span class="q ${m.qte < 0 ? 'out' : 'in'}">${m.qte > 0 ? '+' : '−'}${num(Math.abs(m.qte))}</span><span class="t">${esc(p.designation)}</span><small class="w">${esc(m._by ? byWho(m._by) : m.who || '')} · ${fmtD(m.date)}</small></button></li>` : ''; }).join('')}</ul>` : ''}</section>`;
+    /* --- Planning de la semaine (tout le monde) --- */
+    const mon = mondayOf(today), days = Array.from({length:5}, (_, i) => isoAdd(mon, i)), hd = S.hday && days.includes(S.hday) ? S.hday : (days.includes(today) ? today : days[0]);
+    const items = db.plan.filter(x => x.date === hd).map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null, p = getPers(x.who); return {x, t, who:p ? persName(p) : PLAN_ROWS.find(r => r[0] === x.who)?.[1] || ''}; }).sort((a, b) => coll.compare(a.who, b.who));
+    const plan = `<section class="panel home-card"><div class="panel-head"><h2>${icon('calendar')}Planning</h2><button class="link" data-act="nav" data-view="planning">Ouvrir</button></div>
+      <div class="hdays">${days.map((d, i) => `<button data-act="hday" data-d="${d}" aria-selected="${d === hd}" class="${d === today ? 'is-today' : ''}"><b>${DAYN[i].slice(0, 3)}</b><span>${+d.slice(8)}</span>${db.plan.some(x => x.date === d) ? '<i></i>' : ''}</button>`).join('')}</div>
+      ${items.length ? `<ul class="hplan">${items.slice(0, 10).map(({x, t, who}) => `<li><b>${esc(who)}</b><span class="${t ? 'task' : ''}">${esc(t ? t.titre : x.text)}</span>${t && doneOn(t, x.date) ? `<span class="ok-tag">${icon('check')}</span>` : ''}</li>`).join('')}</ul>${items.length > 10 ? `<p class="list-note">${items.length - 10} autre(s) au planning</p>` : ''}` : '<p class="empty-line hc-empty">Rien de prévu ce jour-là.</p>'}</section>`;
     return `${db.meta.demo ? `<div class="notice"><p><strong>Données d'exemple.</strong> Elles sont fictives et servent à essayer l'outil.</p><button class="btn" data-act="clear-demo">Effacer les exemples</button></div>` : ''}
-    <section class="home-hero"><div class="hh-top"><div><p class="hh-date">${dayTxt}</p><h1>${P ? `Bonjour ${esc(P.prenom || persName(P))}` : 'Bonjour'}</h1></div>
+    <section class="home-hero"><div class="hh-top"><div><p class="hh-date">Semaine ${isoWeek(today)}</p><h1>${DAYN[(dt.getDay() + 6) % 7]} ${dt.getDate()} ${MOIS_L[dt.getMonth()]}</h1></div>
       <div class="hh-qa">${qa('scan', '', 'scan', 'Scanner')}${qa('quick-move', 'sortie', 'move', 'Mouvement')}${qa('new-int', '', 'report', 'Rapport')}${qa('new-tache', '', 'check', 'Travail')}</div></div>
       ${pres ? `<div class="hh-strip">${pres}</div>` : ''}</section>
-    <div class="cols home-cols"><div class="hcol">${afaire}</div><div class="hcol">${weekHTML()}${stock}</div></div>`;
+    <div class="home-grid">${travaux}${stock}${plan}</div>`;
   },
   list: () => '', detail: () => ''
 };
-
 /* ---------- Pièces ---------- */
 function filteredPieces(){
   const q = norm(S.q.pieces);
