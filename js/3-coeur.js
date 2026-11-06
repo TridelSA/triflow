@@ -589,8 +589,21 @@ function fabMenu(){
   if (m.dataset.v !== S.view){ m.innerHTML = html; m.dataset.v = S.view; }
   m.hidden = true; $('#fab .fab-btn')?.setAttribute('aria-expanded', 'false');
 }
+/* En-tête façon Planning Tridel : nom de la page sous « TriFlow » et bandeau du jour (date, en retard, cette semaine, à commander) */
+const PAGE_L = {accueil:'Accueil', taches:'Travaux', interventions:'Travaux', pieces:'Pièces', lieux:'Emplacements', planning:'Planning', options:'Options', kks:'Installation'};
+function headBand(){
+  const sub = $('#hsub'); if (sub) sub.textContent = PAGE_L[S.view] || 'Maintenance Tridel';
+  const b = $('#hband'); if (!b) return;
+  const today = todayISO(), dt = new Date(today + 'T12:00:00');
+  const T = db.taches.filter(t => live(t) && t.actif !== false && forWho(t, S.pour)), ret = T.filter(t => tKey(t) === 'retard').length, sem = T.filter(t => tKey(t) === 'semaine').length;
+  const low = db.pieces.filter(p => live(p) && isLow(p)).length;
+  const it = (f, tone, tag, v, l) => `<span class="hb-sep" aria-hidden="true"></span><button class="hb-i ${v ? tone : ''}" data-act="hband" data-f="${f}"><span class="hb-t"><i></i>${tag}</span><b>${v}</b> ${l}</button>`;
+  b.innerHTML = `<span class="hb-i hb-day"><span class="hb-t"><i></i>Aujourd’hui</span>${DAYN[(dt.getDay() + 6) % 7]} ${dt.getDate()} ${MOIS_L[dt.getMonth()]} <span class="muted">· sem. ${isoWeek(today)}</span></span>`
+    + it('retard', 'bad', 'En retard', ret, ret > 1 ? 'travaux' : 'travail') + it('semaine', 'warn', 'Cette semaine', sem, sem > 1 ? 'travaux' : 'travail') + it('low', 'warn', 'À commander', low, low > 1 ? 'pièces' : 'pièce');
+}
 function render(){
   contIdx = null; initPour(); fabMenu();
+  headBand();
   refreshDatalists(); refreshCounts();
   $$('#nav button').forEach(b => b.setAttribute('aria-current', b.dataset.view === S.view || (b.dataset.view === 'taches' && S.view === 'interventions') || (b.dataset.view === 'options' && S.view === 'kks') || (b.classList.contains('nav-plus') && ['kks', 'options'].includes(S.view)) ? 'page' : 'false')); { const ns = $('#navsheet'); if (ns) ns.hidden = true; }
   const bk = S.back[S.back.length - 1], VN = {planning:'le planning', accueil:'l’accueil', pieces:'la pièce', kks:'l’installation', lieux:'les emplacements', interventions:'le rapport', taches:'le travail', options:'les options'};

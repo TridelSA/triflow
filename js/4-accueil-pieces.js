@@ -6,64 +6,36 @@
 const VIEWS = {};
 
 /* ---------- Accueil ---------- */
-/* « Ma semaine » sur l'accueil : présence (Planning Tridel) et travail attribué dans le planning, du lundi au vendredi */
-function weekHTML(){
-  const me = meId(), p = me && getPers(me); if (!p) return '';
-  const today = todayISO(), we = (new Date(today + 'T12:00:00').getDay() + 6) % 7 >= 5, mon = isoAdd(mondayOf(today), we ? 7 : 0), days = Array.from({length:5}, (_, i) => isoAdd(mon, i));
-  if (!PLANS[mon.slice(0, 4)]) loadPresence(mon.slice(0, 4));
-  const rows = days.map((d, i) => { const items = db.plan.filter(x => x.who === me && x.date === d), pr = presOf(p, d), pc = pr && pr.code ? PCODE[pr.code] || [pr.code, 'on'] : null;
-    const it = items.map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null, done = t && doneOn(t, d);
-      return `<button class="pit ${t ? 'task' : ''} ${done ? 'done' : ''}" data-act="${t ? 'goto' : 'nav'}" data-view="${t ? 'taches' : 'planning'}" ${t ? `data-id="${t.id}"` : ''}>${t ? icon(done ? 'check' : 'repeat') : ''}<span>${esc(t ? t.titre : x.text)}</span>${t && x.text ? `<small>${esc(x.text)}</small>` : ''}</button>`; }).join('');
-    const abs = pc && pc[1] === 'abs';
-    return `<div class="wd ${d === today ? 'today' : ''} ${d < today ? 'past' : ''}"><span class="wdl">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></span><span class="wdi">${pc && !isDispo(pr.code) ? `<span class="pcode ${'k-' + pc[1]}" title="${esc(pc[0])}">${esc(pr.code)}</span>` : ''}${abs ? `<span class="abs">${esc(pc[0])}</span>` : ''}${it || (abs ? '' : '<span class="muted">—</span>')}</span></div>`; }).join('');
-  return `<section class="panel home-card"><div class="panel-head"><h2>${we ? 'La semaine prochaine' : 'Ma semaine'} <span class="muted" style="font-size:.9rem">sem. ${isoWeek(mon)}</span></h2><button class="link" data-act="nav" data-view="planning">Planning</button></div><div class="week">${rows}</div></section>`;
-}
-/* Accueil, dans l'esprit du Planning Tridel : un bandeau « aujourd'hui » (date, présents par métier),
-   puis une seule carte « À faire » (planning du jour, rapports à terminer, travaux urgents), ma semaine et le stock. */
+/* Accueil « par métier » : une carte par équipe (présents aujourd'hui, en retard / cette semaine / en cours,
+   les travaux les plus urgents avec « C'est fait »), puis une ligne pour le stock. */
 const MOIS_L = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
-function homePresence(today){
-  const P = PLANS[today.slice(0, 4)]; if (!P){ loadPresence(today.slice(0, 4)); return ''; }
-  if (P.loading) return '<span class="hs-g muted">Présences : chargement…</span>';
-  if (!P.byNom.size) return '';
-  const ppl = db.personnes.filter(p => live(p) && p.actif !== false);
-  const g = METIERS.map(([k, lbl]) => { const here = ppl.filter(p => metOf(p.groupe) === k && isDispo(presOf(p, today)?.code)).sort(persSort);
-    return `<span class="hs-g">${mdot(k)}<b>${lbl}</b>${here.length ? esc(here.map(p => p.nom).join(', ')) : '<span class="muted">personne</span>'}</span>`; }).join('');
-  return `<span class="hs-l">Présents aujourd’hui</span>${g}`;
-}
+const intMets = i => { const s = new Set(intPers(i).map(x => metOf(x.groupe)).filter(Boolean)); const t = i.tacheId && get('taches', i.tacheId); if (!s.size && t && tMet(t)) s.add(tMet(t)); return s; };
 VIEWS.accueil = {
-  /* Accueil orienté atelier : les travaux, le stock et le planning d'abord (la personne ne sert qu'à filtrer) */
   shell(){
-    const today = todayISO(), dt = new Date(today + 'T12:00:00');
-    const qa = (act, type, ic, t) => `<button class="hq" data-act="${act}" ${type ? `data-type="${type}"` : ''}>${icon(ic)}<span>${t}</span></button>`;
-    const pres = homePresence(today);
-    /* --- Travaux --- */
-    const mineT = db.taches.filter(t => live(t) && t.actif !== false && forWho(t, S.pour));
-    const grpT = {retard:mineT.filter(t => tKey(t) === 'retard').sort(urgSort), semaine:mineT.filter(t => tKey(t) === 'semaine').sort(urgSort), haute:mineT.filter(t => isPetit(t) && prioOf(t) === 'haute').sort(petitSort)};
-    const hw = S.hw && grpT[S.hw]?.length ? S.hw : ['retard', 'semaine', 'haute'].find(k => grpT[k].length) || 'retard';
-    const open = db.interventions.filter(i => live(i) && i.statut !== 'terminee' && intFor(i, S.pour)).sort((a, b) => b.date.localeCompare(a.date));
-    const tchip = (k, t, tone) => `<button class="ychip ${tone}" data-act="hw" data-k="${k}" aria-selected="${hw === k}">${t} <small>${grpT[k].length}</small></button>`;
-    const travaux = `<section class="panel home-card"><div class="panel-head"><h2>${icon('check')}Travaux</h2><button class="link" data-act="nav" data-view="taches">Tout voir</button></div>
-      <div class="fchips hc-chips">${pourSelect()}<span class="ysep"></span>${tchip('retard', 'En retard', 'bad')}${tchip('semaine', 'Cette semaine', 'warn')}${tchip('haute', 'Priorité haute', 'bad')}</div>
-      ${grpT[hw].length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${grpT[hw].slice(0, 7).map(t => tacheRow(t, false)).join('')}</tbody></table></div>${grpT[hw].length > 7 ? `<p class="list-note"><button class="link" data-act="tf" data-f="${hw === 'haute' ? 'p-haute' : hw}">Voir les ${grpT[hw].length}</button></p>` : ''}` : '<p class="empty-line hc-empty">Rien ici, bravo.</p>'}
-      ${open.length ? `<div class="hc-sub"><span>${icon('report')}Rapports en cours <b>${open.length}</b></span>${open.length > 3 ? '<button class="link" data-act="wtab" data-w="encours">Tous</button>' : ''}</div>${intTable(open.slice(0, 3))}` : ''}</section>`;
-    /* --- Stock --- */
-    const lowL = db.pieces.filter(p => live(p) && isLow(p)).sort((a, b) => (dispo(a) - a.stockMin) - (dispo(b) - b.stockMin)), zero = db.pieces.filter(p => live(p) && isOut(p)).length;
-    const mv = [...db.mouvements].sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 4);
-    const stock = `<section class="panel home-card"><div class="panel-head"><h2>${icon('box')}Stock</h2><button class="link" data-act="nav" data-view="pieces">Pièces</button></div>
-      <div class="hstock"><button class="hs-k ${lowL.length ? 'warn' : ''}" data-act="show-low"><b>${num(lowL.length)}</b><span>sous le minimum</span></button><button class="hs-k" data-act="show-zero"><b>${num(zero)}</b><span>à zéro</span></button></div>
-      ${lowL.length ? `<div class="hc-sub"><span>${icon('box')}À commander</span><button class="link" data-act="to-order">Liste à commander</button></div><ul class="hlist">${lowL.slice(0, 5).map(p => `<li><button data-act="goto" data-view="pieces" data-id="${p.id}"><span class="plate">${esc(p.ref)}</span><span class="t">${esc(p.designation)}</span><span class="q low">${num(dispo(p))}<small>/${num(p.stockMin)}</small></span></button></li>`).join('')}</ul>` : ''}
-      ${mv.length ? `<div class="hc-sub"><span>${icon('move')}Derniers mouvements</span></div><ul class="hlist">${mv.map(m => { const p = getPiece(m.pieceId); return p ? `<li><button data-act="goto" data-view="pieces" data-id="${p.id}"><span class="q ${m.qte < 0 ? 'out' : 'in'}">${m.qte > 0 ? '+' : '−'}${num(Math.abs(m.qte))}</span><span class="t">${esc(p.designation)}</span><small class="w">${esc(m._by ? byWho(m._by) : m.who || '')} · ${fmtD(m.date)}</small></button></li>` : ''; }).join('')}</ul>` : ''}</section>`;
-    /* --- Planning de la semaine (tout le monde) --- */
-    const mon = mondayOf(today), days = Array.from({length:5}, (_, i) => isoAdd(mon, i)), hd = S.hday && days.includes(S.hday) ? S.hday : (days.includes(today) ? today : days[0]);
-    const items = db.plan.filter(x => x.date === hd).map(x => { const t = x.tacheId ? get('taches', x.tacheId) : null, p = getPers(x.who); return {x, t, who:p ? persName(p) : PLAN_ROWS.find(r => r[0] === x.who)?.[1] || ''}; }).sort((a, b) => coll.compare(a.who, b.who));
-    const plan = `<section class="panel home-card"><div class="panel-head"><h2>${icon('calendar')}Planning</h2><button class="link" data-act="nav" data-view="planning">Ouvrir</button></div>
-      <div class="hdays">${days.map((d, i) => `<button data-act="hday" data-d="${d}" aria-selected="${d === hd}" class="${d === today ? 'is-today' : ''}"><b>${DAYN[i].slice(0, 3)}</b><span>${+d.slice(8)}</span>${db.plan.some(x => x.date === d) ? '<i></i>' : ''}</button>`).join('')}</div>
-      ${items.length ? `<ul class="hplan">${items.slice(0, 10).map(({x, t, who}) => `<li><b>${esc(who)}</b><span class="${t ? 'task' : ''}">${esc(t ? t.titre : x.text)}</span>${t && doneOn(t, x.date) ? `<span class="ok-tag">${icon('check')}</span>` : ''}</li>`).join('')}</ul>${items.length > 10 ? `<p class="list-note">${items.length - 10} autre(s) au planning</p>` : ''}` : '<p class="empty-line hc-empty">Rien de prévu ce jour-là.</p>'}</section>`;
+    const today = todayISO(), Y = today.slice(0, 4), P = PLANS[Y]; if (!P) loadPresence(Y);
+    const presOk = P && !P.loading && P.byNom.size;
+    const ppl = db.personnes.filter(p => live(p) && p.actif !== false);
+    const T = db.taches.filter(t => live(t) && t.actif !== false && !openRun(t));
+    const O = db.interventions.filter(i => live(i) && i.statut !== 'terminee');
+    const qa = (act, type, ic, t, cls = '') => `<button class="hq ${cls}" data-act="${act}" ${type ? `data-type="${type}"` : ''}>${icon(ic)}<span>${t}</span></button>`;
+    const urgent = list => { const ret = list.filter(t => tKey(t) === 'retard').sort(urgSort), sem = list.filter(t => tKey(t) === 'semaine').sort(urgSort), hau = list.filter(t => isPetit(t) && prioOf(t) === 'haute' && !['retard', 'semaine'].includes(tKey(t))).sort(petitSort); return {ret, sem, hau}; };
+    const line = ([t, tone]) => { const k = getKks(t.kksId); return `<li class="${tone}"><button class="ml" data-act="goto" data-view="taches" data-id="${t.id}"><i class="md" aria-hidden="true"></i><span class="t">${esc(t.titre)}</span>${k ? `<span class="kk">${esc(k.code)}</span>` : ''}</button><span class="mdue">${dueInfo(t).chip}</span><button class="tick" data-act="do-tache" data-id="${t.id}" title="C’est fait" aria-label="C’est fait : ${esc(t.titre)}">${icon('check')}</button></li>`; };
+    const card = ([k, lbl]) => {
+      const {ret, sem, hau} = urgent(T.filter(t => tMet(t) === k)), enc = O.filter(i => intMets(i).has(k));
+      const here = presOk ? ppl.filter(p => metOf(p.groupe) === k && isDispo(presOf(p, today)?.code)).sort(persSort) : null;
+      const top = [...ret.map(t => [t, 'bad']), ...sem.map(t => [t, 'warn']), ...hau.map(t => [t, 'hi'])];
+      const n = (v, l, tone, f) => `<button class="mn ${v ? tone : ''}" data-act="hmet" data-k="${k}" data-f="${f}"><b>${v}</b><span>${l}</span></button>`;
+      return `<section class="met-card m-${k}"><header><button class="mh" data-act="hmet" data-k="${k}" data-f="">${mdot(k)}<h2>${lbl}</h2></button>${here ? `<span class="mp">${here.length ? `<span class="muted">Présents</span> ${esc(here.map(p => p.nom).join(', '))}` : '<span class="muted">Personne aujourd’hui</span>'}</span>` : ''}</header>
+        <div class="mnums">${n(ret.length, 'en retard', 'bad', 'retard')}${n(sem.length, 'cette semaine', 'warn', 'semaine')}${n(enc.length, 'en cours', 'info', 'encours')}</div>
+        ${top.length ? `<ul class="mlist">${top.slice(0, 4).map(line).join('')}</ul>${top.length > 4 ? `<button class="link mmore" data-act="hmet" data-k="${k}" data-f="">+ ${top.length - 4} autre${top.length > 5 ? 's' : ''}</button>` : ''}` : '<p class="mempty">Rien d’urgent.</p>'}</section>`;
+    };
+    const sans = urgent(T.filter(t => !tMet(t))), nSans = sans.ret.length + sans.sem.length + sans.hau.length;
+    const lowN = db.pieces.filter(p => live(p) && isLow(p)).length, zero = db.pieces.filter(p => live(p) && isOut(p)).length;
     return `${db.meta.demo ? `<div class="notice"><p><strong>Données d'exemple.</strong> Elles sont fictives et servent à essayer l'outil.</p><button class="btn" data-act="clear-demo">Effacer les exemples</button></div>` : ''}
-    <section class="home-hero"><div class="hh-top"><div><p class="hh-date">Semaine ${isoWeek(today)}</p><h1>${DAYN[(dt.getDay() + 6) % 7]} ${dt.getDate()} ${MOIS_L[dt.getMonth()]}</h1></div>
-      <div class="hh-qa">${qa('scan', '', 'scan', 'Scanner')}${qa('quick-move', 'sortie', 'move', 'Mouvement')}${qa('new-int', '', 'report', 'Rapport')}${qa('new-tache', '', 'check', 'Travail')}</div></div>
-      ${pres ? `<div class="hh-strip">${pres}</div>` : ''}</section>
-    <div class="home-grid">${travaux}${stock}${plan}</div>`;
+    <div class="home-top"><h2>Travaux par équipe</h2><div class="hh-qa">${qa('new-int', '', 'report', 'Rapport', 'p')}${qa('new-tache', '', 'check', 'Travail')}${qa('quick-move', 'sortie', 'move', 'Mouvement')}${qa('scan', '', 'scan', 'Scanner')}</div></div>
+    <div class="met-grid">${METIERS.map(card).join('')}</div>
+    ${nSans ? `<p class="home-line">${icon('check')}<span><b>${nSans}</b> travail${nSans > 1 ? 'x' : ''} urgent${nSans > 1 ? 's' : ''} sans équipe</span><button class="link" data-act="tf" data-f="">Voir</button></p>` : ''}
+    <p class="home-line">${icon('box')}<span>Stock : ${lowN ? `<b class="warn">${num(lowN)} pièce${lowN > 1 ? 's' : ''} sous le minimum</b>` : 'rien à commander'}${zero ? ` · ${num(zero)} à zéro` : ''}</span>${lowN ? '<button class="link" data-act="to-order">Liste à commander</button>' : '<button class="link" data-act="nav" data-view="pieces">Pièces</button>'}</p>`;
   },
   list: () => '', detail: () => ''
 };
