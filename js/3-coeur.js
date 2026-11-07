@@ -1833,8 +1833,10 @@ const statutChip = s => {
   const [t, c] = STATUTS[s] || [s, 'off'];
   return `<span class="chip ${c}">${t}</span>`;
 };
-const empty = (title, text) => `<div class="empty"><strong>${title}</strong>${text || ''}</div>`;
-const placeholder = (ic, text) => `<div class="placeholder">${icon(ic)}<p>${text}</p></div>`;
+/* Petite usine dessinée (même esprit que le bandeau) pour les pages vides */
+const EMPTY_ART = `<svg class="empty-art" viewBox="0 0 160 70" aria-hidden="true"><path class="ea-ground" d="M6 62h148"/><rect class="ea-b2" x="18" y="34" width="38" height="28" rx="3"/><rect class="ea-b1" x="52" y="24" width="56" height="38" rx="3"/><rect class="ea-chim" x="114" y="8" width="9" height="54" rx="2"/><path class="ea-band" d="M114 16h9M114 24h9"/><rect class="ea-b2" x="123" y="42" width="24" height="20" rx="3"/><path class="ea-win" d="M60 34h8M74 34h8M88 34h8M60 44h8M74 44h8M88 44h8M26 42h6M38 42h6"/><path class="ea-smoke" d="M118 6c-3-3 2-5 0-8M124 4c-2-3 3-4 1-7"/></svg>`;
+const empty = (title, text) => `<div class="empty">${EMPTY_ART}<strong>${title}</strong>${text || ''}</div>`;
+const placeholder = (ic, text) => `<div class="placeholder">${EMPTY_ART}<p>${text}</p></div>`;
 const tabs = (list, cur) =>
   `<div class="tabs" role="tablist">${list.map(([k, label, n]) => `<button role="tab" aria-selected="${k === cur}" data-act="tab" data-tab="${k}">${label}${n != null ? `<span class="n">${n}</span>` : ''}</button>`).join('')}</div>`;
 const searchBox = (key, ph) =>
