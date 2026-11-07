@@ -604,7 +604,7 @@ function headBand(){
 }
 function render(){
   contIdx = null; initPour(); fabMenu();
-  headBand();
+  headBand(); document.body.dataset.view = S.view;
   refreshDatalists(); refreshCounts();
   $$('#nav button').forEach(b => b.setAttribute('aria-current', b.dataset.view === S.view || (b.dataset.view === 'taches' && S.view === 'interventions') || (b.dataset.view === 'options' && S.view === 'kks') || (b.classList.contains('nav-plus') && ['kks', 'options'].includes(S.view)) ? 'page' : 'false')); { const ns = $('#navsheet'); if (ns) ns.hidden = true; }
   const bk = S.back[S.back.length - 1], VN = {planning:'le planning', accueil:'l’accueil', pieces:'la pièce', kks:'l’installation', lieux:'les emplacements', interventions:'le rapport', taches:'le travail', options:'les options'};

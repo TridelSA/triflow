@@ -1247,3 +1247,20 @@ dialog.qm footer .btn{flex:1;justify-content:center;min-height:48px;font-size:1r
 .pc-row.bad{background:var(--bad-soft)}.pc-row.bad .pc-i{color:var(--bad)}
 .pc-row.warn{background:var(--warn-soft)}.pc-row.warn .pc-i{color:var(--warn)}
 .plan-ready{align-self:center}
+
+/* ---------- En-tête fin hors accueil : plus de place pour le travail ---------- */
+body:not([data-view=accueil]) .hero{min-height:56px;padding:8px 16px}
+body:not([data-view=accueil]) .hero-art svg{opacity:.35}
+body:not([data-view=accueil]) .logo{width:36px;height:36px;border-radius:10px}
+body:not([data-view=accueil]) .hero h1{font-size:1.15rem}
+body:not([data-view=accueil]) .hero p{margin-top:0;font-size:.75rem}
+body:not([data-view=accueil]) .hero-side{flex-direction:row-reverse;align-items:center}
+body:not([data-view=accueil]) .hband{padding-top:7px;padding-bottom:8px;margin-bottom:14px}
+@media (max-width:760px){
+  body:not([data-view=accueil]) .hero{min-height:0;padding:8px 12px}
+  body:not([data-view=accueil]) .hero-art{display:none}
+  body:not([data-view=accueil]) .logo{width:30px;height:30px;border-radius:8px}
+  body:not([data-view=accueil]) .hero h1{font-size:1.05rem}
+  body:not([data-view=accueil]) .hero p{display:none}
+  body:not([data-view=accueil]) .hband{margin-bottom:10px}
+}
