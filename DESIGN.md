@@ -25,6 +25,19 @@ colors:
   hero-c: "#3C8A48"
   band-top: "#FCEFE3"
   today: "#B85A12"
+  # thème sombre (automatique)
+  bg-dark: "#0F1512"
+  surface-dark: "#18211C"
+  sunk-dark: "#131B16"
+  ink-dark: "#E7EEE9"
+  muted-dark: "#8A9B91"
+  line-dark: "#26332B"
+  accent-dark: "#2AA468"
+  # bouton « ? » posé sur le bandeau
+  hero-glass: "rgba(8, 28, 16, 0.55)"
+  # feuilles imprimées (rapport, étiquettes, planning A3)
+  print-ink: "#000000"
+  print-muted: "#555555"
 typography:
   display:
     fontFamily: "Space Grotesk, Segoe UI, system-ui, sans-serif"
@@ -50,6 +63,7 @@ rounded:
   md: "10px"
   lg: "14px"
   xl: "20px"
+  xl-phone: "16px"
   pill: "999px"
 spacing:
   gutter-phone: "12px"
