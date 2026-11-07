@@ -1309,3 +1309,17 @@ b.m-bump,small.m-bump,strong.m-bump{display:inline-block}
 .bt-h h2{font-size:var(--t-sm);letter-spacing:.08em}
 .md-h h2{font-size:var(--t-xl)}
 @media (max-width:760px){ h1{font-size:1.55rem} .page-head h1{font-size:1.55rem} .md-h h2{font-size:1.3rem} .bt-n b{font-size:2.1rem} }
+
+/* ---------- Gestes au doigt ---------- */
+@media (pointer:coarse){
+  #list tr:has([data-act="do-tache"]),.bt-rows li:has([data-act="do-tache"]){touch-action:pan-y}
+  .pmlist{touch-action:pan-y}
+  dialog.dlg > form > header{touch-action:none}
+}
+li.sw-on,tr.sw-on td{background:var(--accent-soft)}
+li.sw-go,tr.sw-go td{background:color-mix(in srgb,var(--accent) 22%,var(--surface))}
+.sw-go .tick{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+@media (max-width:760px){
+  dialog.dlg > form > header{position:relative;padding-top:18px}
+  dialog.dlg > form > header::before{content:'';position:absolute;top:7px;left:50%;width:38px;height:4px;margin-left:-19px;border-radius:999px;background:var(--line)}
+}

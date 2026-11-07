@@ -171,6 +171,13 @@ async def main():
 
         print('Pages (téléphone)')
         await pg.set_viewport_size({'width': 390, 'height': 844})
+        await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close()); S.sel.taches=null; go('taches')"); await pg.wait_for_timeout(300)
+        await pg.evaluate("""(() => { const r = document.querySelector('#list [data-act=do-tache][data-id=t1]').closest('tr, li'), b = r.getBoundingClientRect(), y = b.top + b.height / 2;
+          const ev = (t, x, el) => (el || document).dispatchEvent(new PointerEvent(t, {pointerType:'touch', clientX:x, clientY:y, bubbles:true, isPrimary:true}));
+          ev('pointerdown', 40, r.querySelector('td, span, b') || r); ev('pointermove', 80); ev('pointermove', 200); ev('pointerup', 200); })()""")
+        await pg.wait_for_timeout(500)
+        ok(await pg.evaluate("document.querySelectorAll('dialog[open]').length === 1 && /C.est fait|rapport/.test(document.querySelector('dialog[open] h2').textContent)"), 'glisser un travail vers la droite : « C’est fait »')
+        await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close())")
         for js, nom in [("go('accueil')", 'accueil'), ("S.sel.pieces=null; go('pieces')", 'pieces'), ("S.sel.taches=null; go('taches')", 'travaux'), ("S.sel.interventions=null; S.statut='terminee'; go('interventions')", 'travaux-fait'),
                         ("go('interventions','i1')", 'rapport'), ("go('planning')", 'planning'), ("go('accueil'); quickMove(getPiece('p1'))", 'sortie-rapide')]:
             await aller(js, 'tel-' + nom)

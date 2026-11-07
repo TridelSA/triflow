@@ -1012,3 +1012,97 @@ if (CLOUD.cfg().url) {
   syncPlanning();
   setTimeout(maybeWelcome, 400);
 }
+
+/* ---------- Gestes au doigt (téléphone) ----------
+   - glisser une ligne de travail vers la droite : « C'est fait »
+   - tirer une fenêtre vers le bas : la fermer
+   - glisser le planning à gauche / à droite : jour suivant / précédent */
+(() => {
+  let g = null;
+  const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.addEventListener(
+    'pointerdown',
+    e => {
+      if (e.pointerType !== 'touch' || e.button > 0) return;
+      const tick = e.target.closest('input, textarea, select, a, .tick') ? null : e.target.closest('tr, li');
+      const row = tick && tick.querySelector('[data-act="do-tache"]') ? tick : null;
+      const dlg = e.target.closest('dialog.dlg > form > header');
+      const plan = !row && !dlg && e.target.closest('.pmlist') && !e.target.closest('textarea, input, .pinl');
+      if (!row && !dlg && !plan) return;
+      g = {x: e.clientX, y: e.clientY, row, dlg: dlg && dlg.closest('dialog'), plan, dir: null, dx: 0, dy: 0};
+    },
+    {passive: true}
+  );
+  document.addEventListener(
+    'pointermove',
+    e => {
+      if (!g) return;
+      g.dx = e.clientX - g.x;
+      g.dy = e.clientY - g.y;
+      if (!g.dir) {
+        if (Math.abs(g.dx) < 10 && Math.abs(g.dy) < 10) return;
+        g.dir = Math.abs(g.dx) > Math.abs(g.dy) ? 'h' : 'v';
+      }
+      if (g.row && g.dir === 'h' && g.dx > 0) {
+        g.row.classList.add('sw-on');
+        g.row.style.transform = `translateX(${Math.min(g.dx, 160)}px)`;
+        g.row.classList.toggle('sw-go', g.dx > 90);
+      } else if (g.dlg && g.dir === 'v' && g.dy > 0) {
+        g.dlg.style.transition = 'none';
+        g.dlg.style.transform = `translateY(${g.dy}px)`;
+      }
+    },
+    {passive: true}
+  );
+  const end = () => {
+    if (!g) return;
+    const {row, dlg, plan, dir, dx, dy} = g;
+    g = null;
+    if (row) {
+      row.style.transition = reduce() ? 'none' : 'transform .2s cubic-bezier(.23,1,.32,1)';
+      if (dir === 'h' && dx > 90) {
+        const id = row.querySelector('[data-act="do-tache"]').dataset.id;
+        try {
+          navigator.vibrate?.(15);
+        } catch (x) {}
+        row.style.transform = '';
+        setTimeout(() => {
+          row.classList.remove('sw-on', 'sw-go');
+          row.style.transition = '';
+          doTache(get('taches', id));
+        }, 120);
+      } else {
+        row.style.transform = '';
+        setTimeout(() => {
+          row.classList.remove('sw-on', 'sw-go');
+          row.style.transition = '';
+        }, 220);
+      }
+    }
+    if (dlg) {
+      dlg.style.transition = reduce() ? 'none' : 'transform .22s cubic-bezier(.32,.72,0,1)';
+      if (dir === 'v' && dy > 110) {
+        dlg.style.transform = 'translateY(100%)';
+        setTimeout(() => dlg.close(), reduce() ? 0 : 200);
+      } else dlg.style.transform = '';
+    }
+    if (plan && dir === 'h' && Math.abs(dx) > 70) {
+      const nd = S.pwe ? 7 : 5,
+        cur = $('.pday.on') ? [...$$('.pday')].indexOf($('.pday.on')) : 0,
+        n = Math.max(0, Math.min(nd - 1, cur + (dx < 0 ? 1 : -1)));
+      if (n !== cur) {
+        S.pday = n;
+        render();
+      }
+    }
+  };
+  document.addEventListener('pointerup', end);
+  document.addEventListener('pointercancel', () => {
+    if (g?.row) {
+      g.row.style.transform = '';
+      g.row.classList.remove('sw-on', 'sw-go');
+    }
+    if (g?.dlg) g.dlg.style.transform = '';
+    g = null;
+  });
+})();
