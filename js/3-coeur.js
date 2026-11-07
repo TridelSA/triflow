@@ -738,10 +738,10 @@ const HELP = [
     'report',
     'Faire un rapport',
     [
-      'Appuyez sur <b>+</b> (téléphone) ou <b>Nouveau rapport</b>.',
+      'Dans <b>Travaux</b>, appuyez sur <b>Nouveau rapport</b> (onglet « En cours »), ou cochez ✓ sur un travail.',
       'Remplissez <b>Quoi ?</b>, <b>Où ?</b> (le KKS) et <b>Ce qui a été fait</b> : le bouton micro permet de dicter.',
       'Intervenants : vous êtes déjà dedans ; tapez le nom d’un collègue ou d’une entreprise pour l’ajouter.',
-      'Pièces utilisées, durée, type : dans « Plus de détails ». <b>Enregistrer</b>.'
+      'Pièces utilisées, type : dans « Plus de détails ». <b>Enregistrer</b>.'
     ]
   ],
   [
@@ -767,7 +767,7 @@ const HELP = [
     'scan',
     'Trouver une pièce',
     [
-      '<b>Scanner un QR</b> (accueil ou bouton à côté de la recherche) ouvre directement la fiche.',
+      '<b>Scanner</b> (au centre en bas sur téléphone, ou à côté de la recherche sur ordinateur) : une pièce scannée ouvre la fenêtre Sortir / Entrer.',
       'Sinon, tapez un mot, un ID, une référence ou un KKS dans la recherche des Pièces.',
       'La fiche indique où elle est rangée, sur quels équipements elle va et dans quels rapports elle a servi.'
     ]
@@ -840,7 +840,7 @@ function maybeWelcome() {
     body: `<ol class="welcome">
     ${first}
     <li><b>Votre semaine</b> est sur l’accueil : ce que le planning vous a attribué, jour par jour.</li>
-    <li><b>C’est fait ?</b> Dans <b>Travaux</b>, cochez ✓ : TriFlow demande s’il faut un rapport. Pour un rapport, une sortie de stock ou un scan : le bouton <b>+</b> en bas à droite sur téléphone, ou les raccourcis de l’accueil.</li>
+    <li><b>C’est fait ?</b> Dans <b>Travaux</b>, cochez ✓ : TriFlow demande s’il faut un rapport. Pour sortir une pièce : le bouton <b>Scanner</b> (au centre en bas sur téléphone) ou la fiche de la pièce.</li>
     <li><b>Perdu ?</b> Le bouton <b>?</b> en haut ouvre l’aide, en quelques lignes.</li></ol>`,
     onSave() {},
     onOpen(f, dd) {

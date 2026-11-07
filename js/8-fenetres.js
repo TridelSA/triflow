@@ -71,12 +71,34 @@ function dialog({title, body, onSave, saveLabel = 'Enregistrer', wide = false, d
       }
     };
   }
+  /* Téléphone : la page derrière ne bouge plus pendant qu'une fenêtre est ouverte, et le clavier ne s'ouvre pas tout seul */
+  const phone = matchMedia('(max-width: 760px)').matches;
+  if (phone) scrollLock(true);
+  d.addEventListener('close', () => phone && scrollLock(false));
   d.showModal();
   onOpen && onOpen(f, d);
   const first = $('input:not([disabled]):not([type=hidden]):not([type=radio]),select,textarea', $('.dlg-body', d));
-  first && first.focus();
+  if (first && !phone) first.focus({preventScroll: true});
+  else if (phone) {
+    d.setAttribute('tabindex', '-1');
+    d.focus({preventScroll: true});
+  }
   return d;
 }
+function scrollLock(on) {
+  const b = document.body;
+  if (on) {
+    if (scrollLock.n++) return;
+    scrollLock.y = scrollY;
+    Object.assign(b.style, {position: 'fixed', top: -scrollLock.y + 'px', left: '0', right: '0'});
+  } else {
+    if (--scrollLock.n > 0) return;
+    scrollLock.n = 0;
+    Object.assign(b.style, {position: '', top: '', left: '', right: ''});
+    scrollTo(0, scrollLock.y || 0);
+  }
+}
+scrollLock.n = 0;
 const val = (f, n) => {
   const el = f.elements[n];
   if (!el) return '';
@@ -295,7 +317,7 @@ function quickMove(p) {
       };
       foot.querySelector('.primary').before(inB);
       foot.querySelector('.primary').classList.add('qm-out');
-      setTimeout(() => f.elements.qte.select(), 50);
+      if (!matchMedia('(max-width: 760px)').matches) setTimeout(() => f.elements.qte.select(), 50);
     },
     onSave(f) {
       return run(f, -1);
@@ -377,7 +399,7 @@ function moveDialog(p0, type = 'sortie') {
       f.addEventListener('change', upd);
       f.addEventListener('input', upd);
       upd();
-      if (p0) setTimeout(() => f.elements.qte.focus(), 0);
+      if (p0 && !matchMedia('(max-width: 760px)').matches) setTimeout(() => f.elements.qte.focus(), 0);
     },
     onSave(f) {
       const p = p0 || findPiece(val(f, 'piece'));

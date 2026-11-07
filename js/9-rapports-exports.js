@@ -142,8 +142,8 @@ function interventionDialog(it, kksId, tache, opts = {}) {
         <input data-padd placeholder="Tapez un nom : personne ou entreprise externe…" aria-label="Ajouter un intervenant" autocomplete="off">`
           : '<p class="hint">Aucune personne enregistrée.</p>'
       }</fieldset>
-      <details class="more" ${!isNew && (v.constat || v.duree || v.pieces.length) ? 'open' : ''}><summary>${icon('chev')}Plus de détails <span class="muted">type, durée, constat, pièces utilisées</span></summary>
-      <div class="grid2"><label>Type<select name="type">${optList(db.listes.types, v.type)}</select></label><label>Durée (heures)<input name="duree" type="number" min="0" step="0.25" value="${esc(v.duree)}"></label></div>
+      <details class="more" ${!isNew && (v.constat || v.pieces.length) ? 'open' : ''}><summary>${icon('chev')}Plus de détails <span class="muted">type, constat, pièces utilisées</span></summary>
+      <label>Type<select name="type">${optList(db.listes.types, v.type)}</select></label>
       <label>Constat / demande<span class="dict-wrap"><textarea name="constat" rows="3">${esc(v.constat)}</textarea>${HAS_DICT ? `<button type="button" class="dict" data-dict="constat" title="Dicter" aria-label="Dicter le texte">${icon('mic')}</button>` : ''}</span></label>
       <fieldset><legend>Photos</legend><div data-phwrap>${photoStrip(v.photos || [], {}, true)}</div></fieldset>
       <fieldset><legend>Pièces consommées</legend><div class="plines"></div><div class="tools"><button type="button" class="btn ghost small" data-addline>${icon('plus')}Ajouter une pièce</button></div><p class="hint">Les quantités sont retirées du stock à l’enregistrement ; modifier ou supprimer une ligne remet la différence en stock.</p></fieldset></details>`,
@@ -358,8 +358,6 @@ function interventionDialog(it, kksId, tache, opts = {}) {
         kk = findKks(val(f, 'kks'));
         if (!kk) throw new Error('Repère KKS inconnu : choisissez-le dans la liste, ou ajoutez-le dans Options › Repères KKS.');
       }
-      const duree = val(f, 'duree');
-      if (duree && !(+duree >= 0)) throw new Error('Durée invalide.');
       const merged = new Map();
       for (const row of $$('.pline', d)) {
         const inp = $('.pl-piece', row),
@@ -403,7 +401,7 @@ function interventionDialog(it, kksId, tache, opts = {}) {
         kksId: kk ? kk.id : '',
         constat: val(f, 'constat'),
         travaux: val(f, 'travaux'),
-        duree: duree ? +duree : '',
+        duree: it?.duree || '',
         intervenants: [...d._pers],
         snap: Object.fromEntries([...d._pers].map(id => [id, persSnapFor(id)])),
         pieces: lines,
@@ -500,7 +498,7 @@ function reportHTML(i) {
       <tr><th>Équipement</th><td colspan="3">${k ? `<span class="mono">${esc(k.code)}</span> — ${esc(k.designation)} <span style="color:#555">${k.aic ? `AIC ${esc(k.aic)} · ` : ''}${esc(sysLabel(k.code))}</span>` : '—'}</td></tr>
       ${T ? `<tr><th>Tâche</th><td colspan="3">${esc(T.titre)} <span style="color:#555">· ${esc(T.freq)}</span></td></tr>` : ''}
       <tr><th>Intervenants</th><td colspan="3">${esc(intPers(i).map(snapLabel).join(', ')) || '—'}</td></tr>
-      <tr><th>Durée</th><td>${i.duree ? num(i.duree) + ' h' : ''}</td><th>Date</th><td>${fmtD(i.date)}</td></tr></table>
+      <tr><th>Date</th><td colspan="3">${fmtD(i.date)}</td></tr></table>
     <h2>Constat / demande</h2><div class="rpt-box">${esc(i.constat)}</div>
     <h2>Travaux réalisés</h2><div class="rpt-box tall">${esc(i.travaux)}</div>
     <h2>Pièces consommées</h2>${
@@ -889,7 +887,6 @@ function xlInts() {
         'Repère KKS',
         'Équipement',
         'Intervenants',
-        'Durée (h)',
         'Constat',
         'Travaux',
         'Pièces consommées'
@@ -906,7 +903,6 @@ function xlInts() {
       k ? k.code : '',
       k ? k.designation : '',
       intPers(i).map(persName).join(', '),
-      i.duree ? +i.duree : '',
       i.constat || '',
       i.travaux || '',
       i.pieces
