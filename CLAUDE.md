@@ -43,6 +43,11 @@ Pas d'outil de compilation : `index.html` (squelette) charge `css/triflow.css` p
 - Messages : `toast(texte, 'bad'?, true /* bouton Annuler */)`.
 - Icônes : `icon('nom')` (liste dans `const ICONS`).
 
+## Skills de design (dans `.claude/skills/`)
+- **impeccable** (Paul Bakaus, Apache 2.0) : concevoir, auditer, peaufiner l'interface. Lancer d'abord `.claude/skills/impeccable/scripts/impeccable context --target index.html`. TriFlow est en mode **Operate** (outil de travail : lisibilité et précision avant l'effet). Contexte produit dans `PRODUCT.md`, choix visuels dans `DESIGN.md`. Après une modification d'affichage : `impeccable detect --json css/triflow.css js/<fichier>.js`.
+- **emil-design-eng** (Emil Kowalski, MIT) : finitions (retour au clic, animations courtes, états de survol et de focus).
+- Ne pas les modifier : pour les mettre à jour, recopier depuis github.com/pbakaus/impeccable et github.com/emilkowalski/skills.
+
 ## Données (Supabase, une seule table `docs`)
 Chaque fiche = `(collection, id, data jsonb, rev)`. Collections : `pieces`, `salles`, `lieux`, `kks`, `taches`, `interventions`, `mouvements`, `histo` (stock repris de CareOffice), `personnes`, `plan`, `journal` (non chargé au démarrage), `config` (id `main` : `listes`, `reglages`).
 - **Tâches** (appelées « travaux » dans l’interface) : `kind:'petit'` (une seule fois, `prio` haute/normale/basse, date facultative) ou récurrente (`freq`, `prochaine`). `isPetit(t)` inclut aussi les anciennes tâches « une seule fois ». `rapport` : vide = demander, `'oui'` = toujours, `'non'` = jamais. `faits` : `[{date, who}]` = fait sans rapport (affiché dans l’onglet « Fait »).
