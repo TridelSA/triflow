@@ -1264,3 +1264,20 @@ body:not([data-view=accueil]) .hband{padding-top:7px;padding-bottom:8px;margin-b
   body:not([data-view=accueil]) .hero p{display:none}
   body:not([data-view=accueil]) .hband{margin-bottom:10px}
 }
+
+/* ---------- Mouvements qui guident (courts, désactivés si « réduire les animations ») ---------- */
+.m-in{animation:m-in .22s var(--ease-out,ease-out)}
+@keyframes m-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.m-bump{animation:m-bump .3s var(--ease-out,ease-out)}
+@keyframes m-bump{40%{transform:scale(1.12)}100%{transform:none}}
+b.m-bump,small.m-bump,strong.m-bump{display:inline-block}
+.ttabs.slide{position:relative}
+.ttabs.slide > button{border-bottom-color:transparent}
+.ttabs.slide::after{content:'';position:absolute;left:0;bottom:-1px;height:2px;width:calc(100% / var(--n,3));background:var(--accent);border-radius:2px;
+  transform:translateX(calc(var(--i,0) * 100%));transition:transform .25s var(--ease-out,ease-out)}
+.ttabs > button{transition:color .15s}
+/* Chargement */
+.sk{display:block;border-radius:8px;background:linear-gradient(90deg,var(--sunk) 25%,var(--line) 50%,var(--sunk) 75%);background-size:300% 100%;animation:sk 1.3s linear infinite}
+.sk-card{gap:12px}
+@keyframes sk{from{background-position:100% 0}to{background-position:-100% 0}}
+@media (prefers-reduced-motion:reduce){ .m-in,.m-bump,.sk{animation:none} .ttabs.slide::after{transition:none} }

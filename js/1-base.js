@@ -18,6 +18,82 @@ const KEY = 'gmao-tridel-v1';
 const coll = new Intl.Collator('fr', {numeric: true, sensitivity: 'base'});
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+/* Mise à jour ciblée : compare l'ancien et le nouveau HTML et ne change que ce qui diffère.
+   La page ne « saute » plus : défilement, focus et saisie en cours sont conservés.
+   skip : sélecteur des blocs dont on garde le contenu (remplis ensuite par fillList / fillDetail). */
+const MORPH = {anim: false};
+function morph(el, html, skip) {
+  const t = document.createElement('template');
+  t.innerHTML = html;
+  morphKids(el, t.content, skip);
+}
+function morphKids(a, b, skip) {
+  const an = [...a.childNodes],
+    bn = [...b.childNodes];
+  const key = n => (n.nodeType === 1 ? n.getAttribute('data-id') || n.id || '' : '');
+  let i = 0;
+  for (; i < bn.length; i++) {
+    const nb = bn[i];
+    let na = an[i];
+    /* liste avec identifiants : retrouver l'élément correspondant plus loin */
+    const k = key(nb);
+    if (k && na && key(na) !== k) {
+      const found = an.find((x, j) => j > i && key(x) === k && x.nodeName === nb.nodeName);
+      if (found) {
+        a.insertBefore(found, na);
+        an.splice(an.indexOf(found), 1);
+        an.splice(i, 0, found);
+        na = found;
+      }
+    }
+    if (!na) {
+      a.appendChild(nb.cloneNode(true));
+      if (MORPH.anim && nb.nodeType === 1) a.lastChild.classList.add('m-in');
+      continue;
+    }
+    if (na.nodeType !== nb.nodeType || na.nodeName !== nb.nodeName || (k && key(na) !== k)) {
+      const c = nb.cloneNode(true);
+      a.replaceChild(c, na);
+      an[i] = c;
+      if (MORPH.anim && c.nodeType === 1 && k) c.classList.add('m-in');
+      continue;
+    }
+    if (na.nodeType === 3 || na.nodeType === 8) {
+      if (na.nodeValue !== nb.nodeValue) {
+        na.nodeValue = nb.nodeValue;
+        const p = na.parentElement;
+        if (MORPH.anim && p && p.matches('b, .badge, small, strong')) {
+          p.classList.remove('m-bump');
+          void p.offsetWidth;
+          p.classList.add('m-bump');
+        }
+      }
+      continue;
+    }
+    morphEl(na, nb, skip);
+  }
+  for (let j = an.length - 1; j >= i; j--) an[j].remove();
+}
+function morphEl(a, b, skip) {
+  for (const {name, value} of [...b.attributes]) if (a.getAttribute(name) !== value) a.setAttribute(name, value);
+  for (const {name} of [...a.attributes]) if (!b.hasAttribute(name)) a.removeAttribute(name);
+  const tag = a.nodeName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') {
+    if (document.activeElement !== a) {
+      if (a.type === 'checkbox' || a.type === 'radio') a.checked = b.hasAttribute('checked');
+      else a.value = tag === 'TEXTAREA' ? b.textContent : b.getAttribute('value') || '';
+    }
+    if (tag === 'TEXTAREA') return;
+  }
+  if (skip && a.matches(skip)) return;
+  morphKids(a, b, skip);
+  if (tag === 'SELECT' && document.activeElement !== a) {
+    const o = [...b.options].findIndex(x => x.hasAttribute('selected'));
+    a.selectedIndex = o >= 0 ? o : 0;
+  }
+  if (tag === 'DETAILS') a.open = b.hasAttribute('open');
+}
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]);
 const norm = s =>
   String(s ?? '')

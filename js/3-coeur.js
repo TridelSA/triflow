@@ -410,6 +410,14 @@ function showGate(html) {
   g.innerHTML = `<div class="gate-card"><h1>TriFlow</h1>${html}</div>`;
   g.hidden = false;
 }
+/* Chargement : la page prend déjà sa forme (blocs gris) au lieu d'un écran vide */
+function showSkeleton() {
+  hideGate();
+  const b = (w, h = 14) => `<i class="sk" style="width:${w};height:${h}px"></i>`;
+  const card = n => `<div class="btile sk-card">${b('40%', 18)}${b('22%', 40)}${Array.from({length: n}, () => b('100%', 34)).join('')}</div>`;
+  $('#main').innerHTML = `<div class="bento" aria-busy="true" aria-label="Chargement">${card(4)}${card(1)}${card(1)}${card(2)}${card(1)}</div>`;
+  $('#main').dataset.view = '';
+}
 function hideGate() {
   const g = $('#gate');
   if (g) g.hidden = true;
@@ -455,7 +463,7 @@ async function bootCloud() {
   startCloud();
 }
 async function startCloud() {
-  showGate('<p class="muted">Chargement des données…</p>');
+  showSkeleton();
   try {
     const {data: ss} = await CLOUD.sb.auth.getSession();
     CLOUD.user = ss?.session?.user || null;
@@ -1696,11 +1704,27 @@ function render() {
     : '';
   const gw = $('.wkgrid-wrap'),
     gs = gw && S.view === 'planning' ? [gw.scrollTop, gw.scrollLeft] : null;
-  $('#main').innerHTML =
+  const main = $('#main'),
+    same = main.dataset.view === S.view;
+  main.dataset.view = S.view;
+  const html =
     (bk ? `<button class="btn small back-nav" data-act="nav-back">${icon('chev')}Retour à ${esc(bl)}</button>` : '') +
     VIEWS[S.view].shell().replace('</header>', '</header>' + am);
+  /* même page : mise à jour ciblée (et petits mouvements) ; autre page : on repart de zéro */
+  MORPH.anim = same && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (same) morph(main, html, '#list, #detail');
+  else main.innerHTML = html;
   fillList();
   fillDetail();
+  MORPH.anim = false;
+  /* onglets : le trait vert glisse vers l'onglet choisi */
+  $$('.ttabs').forEach(t => {
+    const bs = [...t.querySelectorAll(':scope > button')],
+      i = bs.findIndex(b => b.getAttribute('aria-selected') === 'true');
+    t.style.setProperty('--n', bs.length);
+    t.style.setProperty('--i', Math.max(0, i));
+    t.classList.toggle('slide', i >= 0);
+  });
   document.body.classList.toggle('placing', S.view === 'planning' && !!S.ppick);
   if (S.view === 'planning') planSuggest(S.ppick);
   if (!$('#detail') && $('[data-jrn]')) jrnRefresh();
@@ -1729,7 +1753,7 @@ function fillList() {
   contIdx = null;
   const el = $('#list');
   if (el) {
-    el.innerHTML = VIEWS[S.view].list();
+    morph(el, VIEWS[S.view].list());
     if (AUTOIO) $$('[data-autoload]', el).forEach(b => AUTOIO.observe(b));
   }
 }
@@ -1756,10 +1780,11 @@ function fillDetail() {
   autoSel();
   const el = $('#detail');
   if (el) {
-    el.innerHTML = VIEWS[S.view].detail();
     const sid = S.sel[S.view];
-    if (['pieces', 'taches', 'interventions', 'kks'].includes(S.view) && sid && !el.querySelector('.placeholder'))
-      el.insertAdjacentHTML('beforeend', jrnBlock(String(sid).replace(/^t:/, '')));
+    let h = VIEWS[S.view].detail();
+    if (['pieces', 'taches', 'interventions', 'kks'].includes(S.view) && sid && !/class="placeholder/.test(h))
+      h += jrnBlock(String(sid).replace(/^t:/, ''));
+    morph(el, h, '[data-jrn]');
   }
   if ($('[data-jrn]')) jrnRefresh();
   $('#main .split')?.classList.toggle(
