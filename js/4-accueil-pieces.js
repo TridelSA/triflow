@@ -6,6 +6,8 @@
 const VIEWS = {};
 
 /* ---------- Accueil ---------- */
+/* « BONNANT » → « Bonnant » pour le bonjour */
+const niceName = n => String(n || '').toLowerCase().replace(/(^|[\s'-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
 /* Accueil « une carte par page » : chaque carte résume une page (Travaux, Pièces, Planning, Rapports, Options) et y emmène. */
 const MOIS_L = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 VIEWS.accueil = {
@@ -117,13 +119,52 @@ VIEWS.accueil = {
           ? `<button class="md-it task" data-act="goto" data-view="taches" data-id="${t.id}">${mdot(tMet(t))}${esc(t.titre)}</button>`
           : `<span class="md-it">${esc(x.text)}</span>`;
       };
-      myday = `<section class="myday"><div class="md-h"><div><p class="md-k">Ma journée</p><h2>Bonjour ${esc(mp.prenom || persName(mp))}</h2></div><button class="md-scan" data-act="scan">${icon('scan')}<span>Scanner une pièce</span></button></div>
+      myday = `<section class="myday"><div class="md-h"><div><p class="md-k">Ma journée</p><h2>Bonjour ${esc(mp.prenom || niceName(mp.nom || persName(mp)))}</h2></div><button class="md-scan" data-act="scan">${icon('scan')}<span>Scanner une pièce</span></button></div>
         <div class="md-plan"><span class="md-l">${icon('calendar')}Au planning</span>${absent ? '<span class="md-it abs">Pas au planning aujourd’hui</span>' : items.length ? items.map(it).join('') : '<span class="muted">Rien de noté pour aujourd’hui.</span>'}</div>
         ${mrows.length ? `<ul class="bt-rows">${mrows.slice(0, 5).join('')}</ul>${mrows.length > 5 ? `<button class="link" data-act="pour-set-go" data-v="p:${me}">Voir mes ${mrows.length} travaux</button>` : ''}` : '<p class="bt-empty">Aucun travail urgent pour vous. </p>'}</section>
         <h2 class="ov-h">Vue d’ensemble</h2>`;
     }
+    /* Téléphone : « Ma journée » épurée (le reste est dans la barre du bas) */
+    const mhome = (() => {
+      const all = me ? T.filter(t => forWho(t, 'p:' + me)) : T;
+      const r = all.filter(t => tKey(t) === 'retard').sort(urgSort),
+        w = all.filter(t => tKey(t) === 'semaine').sort(urgSort),
+        h = all.filter(t => isPetit(t) && prioOf(t) === 'haute' && !['retard', 'semaine'].includes(tKey(t))).sort(petitSort);
+      const sub = (t, tone) => {
+        const k = getKks(t.kksId),
+          d = tone === 'bad' ? lateLbl(-daysTo(t.prochaine)) + ' de retard' : tone === 'warn' ? DAYN[(new Date(t.prochaine + 'T12:00:00').getDay() + 6) % 7].toLowerCase() : 'Haute priorité';
+        return (k ? `<span class="kk">${esc(k.code)}</span> · ` : '') + esc(d);
+      };
+      const row = (t, tone) =>
+        `<li class="mh-r ${tone}"><button class="mh-l" data-act="goto" data-view="taches" data-id="${t.id}"><i class="mh-d"></i><span><b>${esc(t.titre)}</b><small>${sub(t, tone)}</small></span></button><button class="tick" data-act="do-tache" data-id="${t.id}" aria-label="C’est fait : ${esc(t.titre)}">${icon('check')}</button></li>`;
+      const reps = O.filter(i => !me || (i.intervenants || []).includes(me)).slice(0, 3);
+      const rrow = i =>
+        `<li class="mh-r info"><button class="mh-l" data-act="goto" data-view="interventions" data-id="${i.id}"><i class="mh-d"></i><span><b>${esc(i.titre || 'Rapport sans titre')}</b><small>Rapport en cours · ${esc(i.num)}</small></span></button><span class="mh-go">${icon('chev')}</span></li>`;
+      const rows = [...r.map(t => row(t, 'bad')), ...w.map(t => row(t, 'warn')), ...h.map(t => row(t, 'hi'))];
+      const items = me ? db.plan.filter(x => x.who === me && x.date === today) : [],
+        pr = mp && presOk ? presOf(mp, today) : null,
+        absent = pr && pr.code && !isDispo(pr.code);
+      const it = x => {
+        const t = x.tacheId && get('taches', x.tacheId);
+        return t
+          ? `<button class="md-it task" data-act="goto" data-view="taches" data-id="${t.id}">${mdot(tMet(t))}${esc(t.titre)}</button>`
+          : `<span class="md-it">${esc(x.text)}</span>`;
+      };
+      const dt = new Date(today + 'T12:00:00'),
+        ini = mp ? ((mp.prenom || '')[0] || '') + ((mp.nom || '')[0] || '') : '';
+      return `<div class="mhome">
+        <div class="mh-top"><img class="mh-logo" src="icon-192.png" alt="TriFlow" width="34" height="34"><button class="mh-av" data-act="navplus" aria-label="Plus">${esc(ini.toUpperCase() || '…')}</button></div>
+        <h1 class="mh-h">Bonjour${mp ? ' ' + esc(mp.prenom || niceName(mp.nom || persName(mp))) : ''}</h1>
+        <p class="mh-date">${DAYN[(dt.getDay() + 6) % 7]} ${dt.getDate()} ${MOIS_L[dt.getMonth()]} · semaine ${isoWeek(today)}</p>
+        ${mp ? `<section class="mh-card"><p class="mh-lbl">Au planning aujourd’hui</p><div class="md-plan">${absent ? '<span class="md-it abs">Pas au planning aujourd’hui</span>' : items.length ? items.map(it).join('') : '<span class="muted">Rien de noté pour aujourd’hui.</span>'}</div></section>` : ''}
+        <p class="mh-lbl">${me ? 'Mes travaux' : 'Travaux urgents'}</p>
+        ${rows.length || reps.length ? `<ul class="mh-card mh-list">${rows.slice(0, 6).join('')}${reps.map(rrow).join('')}</ul>${rows.length > 6 ? `<button class="mh-more" data-act="pour-set-go" data-v="${me ? 'p:' + me : ''}">Voir les ${rows.length} travaux ›</button>` : ''}` : `<div class="mh-card mh-ok">${icon('check')}<span>Rien d’urgent${me ? ' pour vous' : ''}.</span></div>`}
+        <p class="mh-lbl">Stock</p>
+        <button class="mh-card mh-stock" data-act="${low.length ? 'to-order' : 'nav'}" data-view="pieces"><span>${low.length ? `<b class="warn">${low.length}</b> ${plural(low.length, 'pièce à commander', 'pièces à commander')}` : 'Rien à commander'}</span><span class="mh-v">Voir ›</span></button>
+      </div>`;
+    })();
     return `${db.meta.demo ? `<div class="notice"><p><strong>Données d'exemple.</strong> Elles sont fictives et servent à essayer l'outil.</p><button class="btn" data-act="clear-demo">Effacer les exemples</button></div>` : ''}
-    ${myday}<div class="bento ${canDel() ? 'cadre' : ''}">${travaux}${pieces}${planning}${rapports}${options}</div>`;
+    ${mhome}${myday}<div class="bento ${canDel() ? 'cadre' : ''}">${travaux}${pieces}${planning}${rapports}${options}</div>`;
   },
   list: () => '',
   detail: () => ''

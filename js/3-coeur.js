@@ -1715,7 +1715,7 @@ function render() {
       b.dataset.view === S.view ||
         (b.dataset.view === 'taches' && S.view === 'interventions') ||
         (b.dataset.view === 'options' && S.view === 'kks') ||
-        (b.classList.contains('nav-plus') && ['kks', 'options'].includes(S.view))
+        (b.classList.contains('nav-plus') && ['kks', 'options', 'planning', 'lieux'].includes(S.view))
         ? 'page'
         : 'false'
     )

@@ -7,7 +7,7 @@ Le demandeur est **Thomas Bonnant**, responsable informatique. Il décrit ses be
 ## Le mot d'ordre : « facile »
 - Interface en **français**, pour des techniciens d'atelier : peu de texte, des mots simples, des actions évidentes.
 - Préférer **simplifier** plutôt qu'ajouter. Pas de doublon d'accès à une même fonction. Un seul style de filtre : les **pastilles** (`.ychip` / `.fchips`).
-- Toujours penser **ordinateur et téléphone** (≤ 760 px : barre de navigation en bas, bouton rond « + »).
+- Toujours penser **ordinateur et téléphone**. Téléphone (≤ 760 px) = style appli : pas de bandeau, barre du bas « Ma journée · Travaux · [Scanner] · Pièces · Plus » (Plus = Planning, Options, Aide), accueil `.mhome` (dans `VIEWS.accueil`), pas d'impression.
 - Rien n'est supprimé par défaut : on **archive** (champ `arch`). La suppression définitive est réservée aux **cadres** (`canDel()`).
 
 ## Où est le code
