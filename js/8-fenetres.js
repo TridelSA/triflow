@@ -96,6 +96,48 @@ function pieceDialog(p, kksId){
     }
   });
 }
+/* Sortie / entrée rapide (après un scan ou depuis la fiche) : emplacement, quantité − / +, et « Pour quel rapport ? ».
+   Une sortie liée à un rapport est ajoutée à ses « Pièces consommées » : une seule façon de sortir une pièce. */
+function rapportsPourPieces(){
+  const today = todayISO(), me = meId();
+  return db.interventions.filter(i => live(i) && (i.statut !== 'terminee' || i.date === today))
+    .sort((a, b) => ((b.intervenants || []).includes(me) - (a.intervenants || []).includes(me)) || (b.date || '').localeCompare(a.date || ''));
+}
+function linkPieceToReport(i, p, lieuId, q){
+  const l = i.pieces.find(x => x.pieceId === p.id && x.lieuId === lieuId);
+  if (l) l.qte = round(l.qte + q); else if (q > 0) i.pieces.push({pieceId:p.id, lieuId, qte:q});
+  i.pieces = i.pieces.filter(x => x.qte > 0);
+}
+function quickMove(p){
+  const places = sortedStock(p).filter(x => !isStatut(getLieu(x.lieuId))), mp = mainPlace(p), reps = rapportsPourPieces().slice(0, 30);
+  const place = s => { const l = getLieu(s.lieuId); return `<label class="qm-loc"><input type="radio" name="lieu" value="${l.id}" ${mp && mp.id === l.id ? 'checked' : ''}><span><b>${esc(lieuCode(l))}</b><small>${num(s.qte)} ${esc(p.unite)}</small></span></label>`; };
+  const d = dialog({title: esc(p.designation), saveLabel:'− Sortir', body:`<p class="qm-ref"><span class="ref">${esc(p.ref)}</span> · ${num(dispo(p))} ${esc(p.unite)} en magasin</p>
+      ${places.length ? `<fieldset class="qm-locs"><legend>Où ?</legend>${places.map(place).join('')}</fieldset>` : `<label>Emplacement<input name="lieuTxt" list="dl-lieux" autocomplete="off" placeholder="ex. E1.11 C45 A"></label>`}
+      <div class="qm-step" role="group" aria-label="Quantité"><button type="button" class="btn" data-q="-1" aria-label="Un de moins">−</button><input name="qte" type="number" inputmode="decimal" min="0" step="any" value="1" aria-label="Quantité"><button type="button" class="btn" data-q="1" aria-label="Un de plus">+</button></div>
+      ${reps.length ? `<label>Pour quel rapport ? <span class="muted">(facultatif)</span><select name="rap"><option value="">Aucun</option>${reps.map(i => `<option value="${i.id}">${esc(i.num)} · ${esc(i.titre || 'Sans titre')}${i.statut !== 'terminee' ? ' (en cours)' : ''}</option>`).join('')}</select></label>` : ''}
+      <button type="button" class="link qm-fiche" data-fiche>Voir la fiche de la pièce</button>`,
+    onOpen(f, dd){
+      $$('[data-q]', dd).forEach(b => b.onclick = () => { const v = Math.max(0, round((+f.elements.qte.value || 0) + +b.dataset.q)); f.elements.qte.value = v; });
+      $('[data-fiche]', dd).onclick = () => { dd.close(); go('pieces', p.id); };
+      dd.classList.add('qm');
+      const foot = $('footer', dd), inB = document.createElement('button'); inB.type = 'button'; inB.className = 'btn qm-in'; inB.textContent = '+ Entrer';
+      inB.onclick = () => { try { if (run(f, 1) !== false) dd.close(); } catch(x){ const e = $('.dlg-err', dd); e.textContent = x.message; e.hidden = false; } };
+      foot.querySelector('.primary').before(inB); foot.querySelector('.primary').classList.add('qm-out');
+      setTimeout(() => f.elements.qte.select(), 50);
+    },
+    onSave(f){ return run(f, -1); }});
+  function run(f, sign){
+    const l = f.elements.lieuTxt ? findLieu(val(f, 'lieuTxt')) : getLieu(val(f, 'lieu'));
+    if (!l) throw new Error('Choisissez l’emplacement.');
+    const q = +val(f, 'qte'); if (!(q > 0)) throw new Error('Indiquez une quantité.');
+    if (sign < 0 && q > stockAt(p, l.id)) throw new Error(`Il n’y en a que ${num(stockAt(p, l.id))} en ${lieuCode(l)}.`);
+    const i = f.elements.rap && val(f, 'rap') ? getInt(val(f, 'rap')) : null;
+    tx(() => { addStock(p, l.id, sign * q, i ? (sign < 0 ? 'Sortie intervention' : 'Retour intervention') : (sign < 0 ? 'Sortie' : 'Entrée'), i ? i.num : '');
+      if (i) linkPieceToReport(i, p, l.id, -sign * q); });
+    render(); toast(`${p.ref} : ${sign < 0 ? '−' : '+'}${num(q)} ${p.unite}${i ? ' · ' + i.num : ''} · reste ${num(dispo(p))}`, '', true);
+  }
+  return d;
+}
 function moveDialog(p0, type = 'sortie'){
   const MV = {sortie:['Sortir', 'out', 'Prélever pour un travail', 'Sortir du stock'], entree:['Entrer', 'in', 'Réception, retour', 'Entrer en stock'], transfert:['Déplacer', 'move', 'Changer d’emplacement', 'Déplacer'], inventaire:['Inventaire', 'list', 'Corriger la quantité', 'Enregistrer l’inventaire']};
   dialog({
@@ -104,6 +146,7 @@ function moveDialog(p0, type = 'sortie'){
       <fieldset class="mvtypes" aria-label="Que voulez-vous faire ?">${Object.entries(MV).map(([v, [t, ic, h]]) => `<label class="mvt"><input type="radio" name="type" value="${v}" ${v === type ? 'checked' : ''}><span class="qi">${icon(ic)}</span><strong>${t}</strong><small>${h}</small></label>`).join('')}</fieldset>
       <div class="grid2"><label><span data-lbl-lieu>Emplacement</span><input name="lieu" list="dl-lieux" autocomplete="off" placeholder="ex. E1.11 C45 A"></label><label data-dest hidden>Vers l’emplacement<input name="dest" list="dl-lieux" autocomplete="off"></label></div>
       <div class="grid2"><label><span data-lbl-qte>Quantité</span><input name="qte" type="number" min="0" step="any" required></label><label>Motif<input name="motif" placeholder="ex. bon de livraison, travail sur…"></label></div>
+      <label data-rapw>Pour quel rapport ? <span class="muted">(facultatif)</span><select name="rap"><option value="">Aucun</option>${rapportsPourPieces().slice(0, 30).map(i => `<option value="${i.id}">${esc(i.num)} · ${esc(i.titre || 'Sans titre')}</option>`).join('')}</select></label>
       <p class="hint" data-dispo></p>`,
     onOpen(f, d){
       const P = () => p0 || findPiece(val(f, 'piece'));
@@ -111,6 +154,7 @@ function moveDialog(p0, type = 'sortie'){
       const upd = () => {
         const t = val(f, 'type'), p = P();
         $('[data-dest]', d).hidden = t !== 'transfert';
+        $('[data-rapw]', d).hidden = t !== 'sortie' || !rapportsPourPieces().length;
         $('[data-lbl-lieu]', d).textContent = t === 'transfert' ? 'Depuis l’emplacement' : 'Emplacement';
         $('[data-lbl-qte]', d).textContent = t === 'inventaire' ? 'Quantité comptée' : 'Quantité';
         $('button[type=submit]', d).textContent = MV[t][3];
@@ -129,7 +173,7 @@ function moveDialog(p0, type = 'sortie'){
       if (t !== 'inventaire' && q <= 0) throw new Error('La quantité doit être supérieure à zéro.');
       tx(() => {
         if (t === 'entree') addStock(p, l.id, q, motif || 'Entrée');
-        else if (t === 'sortie') addStock(p, l.id, -q, motif || 'Sortie');
+        else if (t === 'sortie'){ const ri = val(f, 'rap') ? getInt(val(f, 'rap')) : null; addStock(p, l.id, -q, motif || (ri ? 'Sortie intervention' : 'Sortie'), ri ? ri.num : ''); if (ri) linkPieceToReport(ri, p, l.id, q); }
         else if (t === 'transfert'){
           const d2 = findLieu(val(f, 'dest')); if (!d2) throw new Error('Choisissez l’emplacement de destination.');
           if (d2 === l) throw new Error('Les deux emplacements sont identiques.');

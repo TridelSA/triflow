@@ -865,7 +865,6 @@ tr.grp.old th{color:var(--muted)}
   .fab{bottom:calc(84px + env(safe-area-inset-bottom,0px)) !important}
   #toast{bottom:calc(156px + env(safe-area-inset-bottom,0px)) !important}
   .pd-mbar{bottom:calc(74px + env(safe-area-inset-bottom,0px)) !important}
-  .page-head .tools > .btn.primary[data-act=new-piece],.page-head .tools > .btn.primary[data-act=new-tache],.page-head .tools > .btn.primary[data-act=new-int]{display:none}
   .page-head .tools > .search{flex:1 1 200px}
   .mdue{display:block;margin-top:5px}
   .trow-r > .chip{display:none}
@@ -1187,3 +1186,64 @@ dialog.dlg[open]{animation:dlg-in .2s var(--ease-out)}
   dialog.dlg footer{padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
 }
 @media (prefers-reduced-motion:reduce){ dialog.dlg[open],.pc.flash{animation:none} .done-out{transition:opacity .2s;transform:none} }
+
+/* ---------- Téléphone : « Ma journée » et le scan au centre ---------- */
+.myday{background:linear-gradient(165deg,var(--accent-soft),var(--surface) 55%);border:1px solid var(--line);border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:12px;margin-bottom:18px;box-shadow:0 14px 30px -16px rgba(16,31,54,.18)}
+.md-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.md-k{margin:0;font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.md-h h2{margin:2px 0 0;font-size:1.35rem}
+.md-scan{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:14px;background:var(--accent);color:var(--accent-ink);font-weight:700;box-shadow:0 6px 16px -6px rgba(31,122,77,.6);transition:transform .12s var(--ease-out,ease-out)}
+.md-scan .ico{width:22px;height:22px}
+.md-scan:active{transform:scale(.97)}
+.md-scan:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.md-plan{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:.88rem}
+.md-l{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;margin-right:4px}
+.md-l .ico{width:15px;height:15px}
+.md-it{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:600}
+button.md-it{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:600}
+.md-it.abs{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+.ov-h{margin:6px 2px 12px;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+/* Bouton rond = Scanner */
+.fab-btn{display:grid;place-items:center;font-size:0;line-height:1}
+.fab-btn .ico{width:26px;height:26px}
+/* Fenêtre de sortie rapide */
+.qm-ref{margin:0 0 10px;color:var(--muted);font-size:.88rem}
+.qm-locs{display:flex;flex-wrap:wrap;gap:8px;border:0;padding:0;margin:0 0 12px}
+.qm-locs legend{font-weight:600;margin-bottom:6px;padding:0}
+.qm-loc{display:block;cursor:pointer}
+.qm-loc input{position:absolute;opacity:0;pointer-events:none}
+.qm-loc span{display:flex;flex-direction:column;padding:8px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);min-width:84px}
+.qm-loc b{font-family:var(--f-mono);font-size:.9rem}.qm-loc small{color:var(--muted)}
+.qm-loc input:checked + span{border-color:var(--accent);background:var(--accent-soft)}
+.qm-loc input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px}
+.qm-step{display:grid;grid-template-columns:56px 1fr 56px;gap:8px;margin:0 0 12px}
+.qm-step .btn{min-height:52px;font-size:1.4rem;justify-content:center}
+.qm-step input{text-align:center;font-size:1.4rem;font-family:var(--f-mono);font-weight:700;min-height:52px}
+.qm-fiche{margin-top:4px}
+dialog footer .btn.qm-out{background:#B42318;border-color:#B42318;color:#fff}
+dialog footer .btn.qm-in{border-color:#16703F;color:#16703F;font-weight:700}
+@media (prefers-color-scheme:dark){ dialog footer .qm-in{color:#5FCB8F;border-color:#5FCB8F} }
+@media (max-width:760px){
+  .myday{padding:14px;border-radius:18px;margin-bottom:14px}
+  .md-scan{width:100%;justify-content:center;box-sizing:border-box;padding:16px}
+  .bento:not(.cadre) .bt-o{display:none}
+  .bt-w .bt-foot{display:flex}
+}
+dialog.qm footer > .btn[data-close]{display:none}
+dialog.qm footer .btn{flex:1;justify-content:center;min-height:48px;font-size:1rem}
+.qm-step input::-webkit-inner-spin-button,.qm-step input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.qm-step input{-moz-appearance:textfield;appearance:textfield}
+
+/* ---------- Planning : vérifier avant d'imprimer ---------- */
+.pcheck{display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
+.pc-row{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-radius:12px;background:var(--sunk)}
+.pc-row b{display:block}
+.pc-row ul{margin:6px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px;font-size:.88rem}
+.pc-row ul li{display:flex;align-items:center;gap:6px}
+.pc-row p{margin:4px 0 0;font-size:.88rem;color:var(--muted)}
+.pc-i{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:800;background:var(--surface)}
+.pc-i .ico{width:15px;height:15px}
+.pc-row.ok .pc-i{background:var(--accent-soft);color:var(--accent)}
+.pc-row.bad{background:var(--bad-soft)}.pc-row.bad .pc-i{color:var(--bad)}
+.pc-row.warn{background:var(--warn-soft)}.pc-row.warn .pc-i{color:var(--warn)}
+.plan-ready{align-self:center}

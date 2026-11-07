@@ -92,6 +92,12 @@ async def main():
         rows = await pg.evaluate("JRN.query({}).then(r => r.map(e => e.txt))")
         ok(any('a sorti 2' in t for t in rows), 'sortie notée dans l’historique')
 
+        await pg.evaluate("quickMove(getPiece('p1'))"); await pg.wait_for_timeout(250)
+        await pg.select_option('dialog[open] select[name=rap]', 'i1'); await pg.click('dialog[open] button.qm-out'); await pg.wait_for_timeout(500)
+        ok(await pg.evaluate("getPiece('p1').stock[0].qte === 2 && getInt('i1').pieces.some(x => x.pieceId === 'p1' && x.qte === 1)"), 'sortie rapide liée au rapport (pièces consommées)')
+        await pg.evaluate("quickMove(getPiece('p1'))"); await pg.wait_for_timeout(250)
+        await pg.click('dialog[open] .qm-step [data-q=\"1\"]'); await pg.click('dialog[open] button.qm-in'); await pg.wait_for_timeout(500)
+        ok(await pg.evaluate("getPiece('p1').stock[0].qte === 4"), 'entrée rapide avec le bouton +')
         print('Pages (ordinateur)')
         for js, nom in [("go('accueil')", 'accueil'), ("S.sel.pieces=null; go('pieces')", 'pieces'), ("go('pieces','p1')", 'piece'),
                         ("go('taches','t2')", 'travaux-afaire'), ("S.statut='actives'; go('interventions')", 'travaux-encours'),
@@ -144,6 +150,9 @@ async def main():
         ok(await pg.evaluate("![...document.querySelectorAll('.wkgrid th.pn')].some(x => x.textContent.includes('ECHO'))"), 'personne en vacances masquée du planning')
         await pg.evaluate("tx(() => db.taches.push({id:'t3', titre:'Contrôle éclairage', kksId:'', assign:{type:'groupe', v:'Électricien'}, freq:{n:1, unite:'once'}, prochaine:'', actif:true, kind:'petit', prio:'haute'})); S.pside = true; render()"); await pg.wait_for_timeout(300)
         ok(await pg.evaluate("[...document.querySelectorAll('.pside [data-act=plan-met]')].map(b => b.textContent.replace(/\\s*\\d+$/, '').trim()).join('|') === 'Tout|Électricien|Automaticien|Mécanicien|Intendance'"), 'À planifier : pastilles par métier')
+        await pg.evaluate("ACT['plan-print']({f:'a3'})"); await pg.wait_for_timeout(300)
+        ok(await pg.evaluate("document.querySelectorAll('dialog[open] .pcheck .pc-row').length >= 3"), 'planning : liste de contrôle avant impression')
+        await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close())")
         await pg.click('.pside [data-act=plan-met][data-m=elec]'); await pg.wait_for_timeout(300)
         ok(await pg.evaluate("[...document.querySelectorAll('.pside .ps-t')].every(c => tMet(get('taches', c.dataset.tid)) === 'elec') && document.querySelectorAll('.pside .ps-t').length > 0 && !!document.querySelector('.wkgrid tr.pg.on .m-elec')"), 'tri Électricité : liste filtrée et groupe éclairé dans la grille')
         await capture('planning-metier')
@@ -159,7 +168,7 @@ async def main():
         print('Pages (téléphone)')
         await pg.set_viewport_size({'width': 390, 'height': 844})
         for js, nom in [("go('accueil')", 'accueil'), ("S.sel.pieces=null; go('pieces')", 'pieces'), ("S.sel.taches=null; go('taches')", 'travaux'), ("S.sel.interventions=null; S.statut='terminee'; go('interventions')", 'travaux-fait'),
-                        ("go('interventions','i1')", 'rapport'), ("go('planning')", 'planning')]:
+                        ("go('interventions','i1')", 'rapport'), ("go('planning')", 'planning'), ("go('accueil'); quickMove(getPiece('p1'))", 'sortie-rapide')]:
             await aller(js, 'tel-' + nom)
         await b.close()
     srv.shutdown()

@@ -58,12 +58,12 @@ document.addEventListener('keydown', e => {
 /* Scanner un QR code avec la caméra (téléphone ou PC) */
 let jsQRp = null;
 const loadJsQR = () => window.jsQR ? Promise.resolve() : jsQRp || (jsQRp = new Promise((ok, ko) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js'; sc.onload = ok; sc.onerror = () => { jsQRp = null; ko(new Error('Lecteur de QR indisponible (pas de connexion ?).')); }; document.head.append(sc); }));
-function openCode(raw){
+function openCode(raw, quick = false){
   const t = String(raw || '').trim(); if (!t) return false;
   const m = t.match(/#(piece|lieu|int)=(.+)$/); let v = m ? m[2] : t; try { v = decodeURIComponent(v); } catch(e){}
   const c = normCode(v);
   const p = (!m || m[1] === 'piece') && (db.pieces.find(x => x.ref.toUpperCase() === c) || (!m ? null : findPiece(v)));
-  if (p){ go('pieces', p.id); return true; }
+  if (p){ if (quick) quickMove(p); else go('pieces', p.id); return true; }
   const l = (!m || m[1] === 'lieu') && findLieu(c); if (l){ go('lieux', l.id); return true; }
   const k = !m && db.kks.find(x => x.code.replace(/\s+/g, '').toUpperCase() === c.replace(/\s+/g, '')); if (k){ go('kks', k.id); return true; }
   const i = (!m || m[1] === 'int') && db.interventions.find(x => x.num.toUpperCase() === c); if (i){ go('interventions', i.id); return true; }
@@ -73,7 +73,7 @@ function scanDialog(){
   let stream = null, raf = 0, done = false;
   const d = dialog({title:'Scanner un QR code', saveLabel:'Fermer', body:`<div class="scanbox"><video playsinline muted></video><span class="scan-frame"></span></div><p class="hint" data-sm>Visez l’étiquette QR d’une pièce ou d’un emplacement.</p>
       <label>Ou tapez le code<input name="code" placeholder="ID de pièce, emplacement, KKS ou n° de rapport" autocomplete="off"></label>`,
-    onSave(f){ const v = val(f, 'code'); if (!v) return; if (!openCode(v)) return false; },
+    onSave(f){ const v = val(f, 'code'); if (!v) return; if (!openCode(v, true)) return false; },
     async onOpen(f, dd){
       const video = $('video', dd), msg = $('[data-sm]', dd), cv = document.createElement('canvas'), cx = cv.getContext('2d', {willReadFrequently:true});
       dd.addEventListener('close', () => { done = true; cancelAnimationFrame(raf); stream?.getTracks().forEach(t => t.stop()); });
@@ -84,7 +84,7 @@ function scanDialog(){
         video.srcObject = stream; await video.play();
         const det = 'BarcodeDetector' in window ? new BarcodeDetector({formats:['qr_code']}) : null;
         if (!det) await loadJsQR();
-        const hit = txt => { if (done || !txt) return; done = true; try { navigator.vibrate?.(35); } catch(e){} dd.classList.add('scan-ok'); setTimeout(() => { dd.close(); openCode(txt); }, 180); };
+        const hit = txt => { if (done || !txt) return; done = true; try { navigator.vibrate?.(35); } catch(e){} dd.classList.add('scan-ok'); setTimeout(() => { dd.close(); openCode(txt, true); }, 180); };
         const tick = async () => {
           if (done) return;
           if (video.readyState >= 2){

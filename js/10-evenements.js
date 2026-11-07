@@ -25,9 +25,11 @@ const ACT = {
   hmet(d){ const g = db.listes.groupes.find(x => metOf(x) === d.k); S.pour = g ? 'g:' + g : ''; S.back = [];
     if (d.f === 'encours'){ ACT.wtab({w:'encours'}); return; } S.tf = d.f || ''; S.sel.taches = null; go('taches'); },
   /* Bandeau sous l'en-tête */
+  'quick-out'(d){ const p = getPiece(d.id); if (p) quickMove(p); },
+  'pour-set-go'(d){ S.pour = d.v || ''; S.tf = ''; S.back = []; go('taches'); },
   'pour-set'(d){ S.pour = d.v || ''; if (S.view === 'interventions') S.ryear = null; render(); },
   hband(d){ S.back = []; if (d.f === 'low'){ ACT['show-low'](); return; } S.tf = d.f; S.sel.taches = null; go('taches'); },
-  'plan-print'(d){ const a3 = d.f === 'a3'; document.body.classList.add('land'); document.body.classList.toggle('a3', a3); doPrint(fitSheet(planSheetHTML(), a3 ? 396 : 277, a3 ? 271 : 188)); },
+  'plan-print'(d){ if (d.f === 'a3' && !d.ok) return planCheckDialog(); const a3 = d.f === 'a3'; document.body.classList.add('land'); document.body.classList.toggle('a3', a3); doPrint(fitSheet(planSheetHTML(), a3 ? 396 : 277, a3 ? 271 : 188)); },
   me: () => meDialog(),
   help: () => helpDialog(),
   'relink-kks'(){ const r = tx(() => linkPartialKks(db)); render(); toast(r.nl ? `${r.nl} lien(s) pièce ↔ KKS ajouté(s)${r.nc ? ` · ${r.nc} repère(s) KKS créé(s)` : ''}` : 'Aucun nouveau repère KKS trouvé dans les pièces', '', !!r.nl); },

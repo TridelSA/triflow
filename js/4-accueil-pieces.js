@@ -55,8 +55,22 @@ VIEWS.accueil = {
     const nP = ppl.length, nL = db.lieux.filter(live).length, nK = db.kks.filter(live).length;
     const options = `<section class="btile bt-o">${head('options', 'cog', 'Options', 'o')}
       <div class="bt-links"><button data-act="opt" data-sec="personnes">${icon('person')}<span>Personnes</span><small>${nP}</small></button><button data-act="opt" data-sec="lieux">${icon('shelf')}<span>Emplacements</span><small>${nL}</small></button><button data-act="opt" data-sec="kks">${icon('plant')}<span>Installation (KKS)</span><small>${nK}</small></button><button data-act="opt" data-sec="historique">${icon('list')}<span>Historique</span></button></div></section>`;
+    /* « Ma journée » : la case du planning d'aujourd'hui, mes travaux, et le scan */
+    const me = meId(), mp = me && getPers(me);
+    let myday = '';
+    if (mp){
+      const mine = T.filter(t => forWho(t, 'p:' + me));
+      const mr = mine.filter(t => tKey(t) === 'retard').sort(urgSort), ms = mine.filter(t => tKey(t) === 'semaine').sort(urgSort), mh = mine.filter(t => isPetit(t) && prioOf(t) === 'haute' && !['retard', 'semaine'].includes(tKey(t))).sort(petitSort);
+      const mrows = [...mr.map(t => trow(t, 'bad')), ...ms.map(t => trow(t, 'warn')), ...mh.map(t => trow(t, 'hi'))];
+      const items = db.plan.filter(x => x.who === me && x.date === today), pr = presOk ? presOf(mp, today) : null, absent = pr && pr.code && !isDispo(pr.code);
+      const it = x => { const t = x.tacheId && get('taches', x.tacheId); return t ? `<button class="md-it task" data-act="goto" data-view="taches" data-id="${t.id}">${mdot(tMet(t))}${esc(t.titre)}</button>` : `<span class="md-it">${esc(x.text)}</span>`; };
+      myday = `<section class="myday"><div class="md-h"><div><p class="md-k">Ma journée</p><h2>Bonjour ${esc(mp.prenom || persName(mp))}</h2></div><button class="md-scan" data-act="scan">${icon('scan')}<span>Scanner une pièce</span></button></div>
+        <div class="md-plan"><span class="md-l">${icon('calendar')}Au planning</span>${absent ? '<span class="md-it abs">Pas au planning aujourd’hui</span>' : items.length ? items.map(it).join('') : '<span class="muted">Rien de noté pour aujourd’hui.</span>'}</div>
+        ${mrows.length ? `<ul class="bt-rows">${mrows.slice(0, 5).join('')}</ul>${mrows.length > 5 ? `<button class="link" data-act="pour-set-go" data-v="p:${me}">Voir mes ${mrows.length} travaux</button>` : ''}` : '<p class="bt-empty">Aucun travail urgent pour vous. </p>'}</section>
+        <h2 class="ov-h">Vue d’ensemble</h2>`;
+    }
     return `${db.meta.demo ? `<div class="notice"><p><strong>Données d'exemple.</strong> Elles sont fictives et servent à essayer l'outil.</p><button class="btn" data-act="clear-demo">Effacer les exemples</button></div>` : ''}
-    <div class="bento">${travaux}${pieces}${planning}${rapports}${options}</div>`;
+    ${myday}<div class="bento ${canDel() ? 'cadre' : ''}">${travaux}${pieces}${planning}${rapports}${options}</div>`;
   },
   list: () => '', detail: () => ''
 };
@@ -113,7 +127,7 @@ VIEWS.pieces = {
         <div class="pd-qty"><span class="n">${num(dispo(p))}</span><span class="u">${esc(p.unite)}</span><span class="l">en magasin${p.stockMin ? ` · min ${num(p.stockMin)}` : ''}</span></div>
         <button class="btn primary" data-act="move" data-id="${p.id}" data-type="sortie">${icon('move')}Mouvement de stock</button>
       </div>
-      <div class="pd-mbar"><button class="btn big-out" data-act="move" data-id="${p.id}" data-type="sortie">− Sortir</button><button class="btn big-in" data-act="move" data-id="${p.id}" data-type="entree">+ Entrer</button></div>
+      <div class="pd-mbar"><button class="btn big-out" data-act="quick-out" data-id="${p.id}">− Sortir</button><button class="btn big-in" data-act="quick-out" data-id="${p.id}">+ Entrer</button></div>
       <section class="pd-sec"><h3>${icon('shelf')}Où la trouver</h3>
         ${phys.length ? `<div class="pd-where">${phys.map(x => { const l = getLieu(x.lieuId); return `<div class="pd-loc">${plate(l)}<span class="t">${esc(salleOf(l))}</span><span class="q">${num(x.qte)} <small>${esc(p.unite)}</small></span>${!x.qte ? `<button class="link danger" data-act="unlink-lieu" data-piece="${p.id}" data-id="${x.lieuId}" title="Retirer cet emplacement">×</button>` : ''}</div>`; }).join('')}</div>` : '<p class="empty-line">Rangée nulle part pour l’instant.</p>'}
         ${out.length ? `<div class="pd-where out">${out.map(x => `<div class="pd-loc">${plate(getLieu(x.lieuId))}<span class="t">hors magasin</span><span class="q">${num(x.qte)} <small>${esc(p.unite)}</small></span></div>`).join('')}</div>` : ''}</section>

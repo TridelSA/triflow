@@ -98,7 +98,7 @@ VIEWS.planning = {
         <div class="pweek"><button class="btn icon-only" data-act="pweek" data-n="-7" aria-label="Semaine précédente">${icon('chev')}</button><div class="pw-l"><b>Semaine ${isoWeek(mon)}</b><span>${range}</span></div><button class="btn icon-only" data-act="pweek" data-n="7" aria-label="Semaine suivante">${icon('chev')}</button></div>
         <button class="btn side-tg ${S.pside ? 'on' : ''}" data-act="plan-side" title="Liste des travaux à glisser dans le planning">${icon('list')}Travaux à planifier${(() => { const n = planSideCount(days, ppl); return n ? ` <span class="badge">${n}</span>` : ''; })()}</button>
         ${mon !== planWeek() ? `<button class="btn small" data-act="pweek" data-n="0">Semaine prochaine</button>` : `<button class="btn small" data-act="pweek" data-n="-7">Cette semaine</button>`}
-        <button class="btn primary" data-act="plan-print" data-f="a3" title="Imprimer la semaine sur une feuille A3 paysage">${icon('printer')}Imprimer A3</button>
+        <button class="btn primary" data-act="plan-print" data-f="a3" title="Imprimer la semaine sur une feuille A3 paysage">${icon('printer')}Imprimer A3</button>${(() => { const r = db.reglages.planPret?.[mon]; return r ? `<span class="chip ok plan-ready" title="Imprimée le ${fmtDT(r.at)}">${icon('check')}Prête${getPers(r.by) ? ' · ' + esc(getPers(r.by).nom) : ''}</span>` : ''; })()}
         ${menu([['plan-hide', 'Personnes affichées…', 'person', {}]])}</div></header>
       <div class="ptip-row"><p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez dans une case et tapez le travail à faire : <b>Entrée</b> valide, <b>Tab</b> passe au jour suivant. Le petit <b>⋯</b> permet de lier un travail ou de remplir plusieurs jours.</p>${planLegend()}</div>
       <div class="pwrap ${S.pside ? '' : 'noside'}"><div class="wkgrid-wrap"><table class="wkgrid"><thead><tr><th></th>${days.map((d, i) => `<th class="${d === today ? 'today' : ''}">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>${S.pside ? planSideHTML(days, ppl) : ''}</div>
@@ -121,6 +121,26 @@ const mdot = k => k ? `<i class="mdot m-${k}" aria-hidden="true"></i>` : '';
 const pKey = (t, start, end) => !t.prochaine ? 'asap' : daysTo(t.prochaine) < -365 ? 'vieux' : t.prochaine < start ? 'retard' : t.prochaine <= end ? 'semaine' : 'plus';
 const P_URG = ['retard', 'semaine', 'asap'];
 /* Travaux pas encore placés cette semaine, pour les personnes affichées, à glisser dans une case */
+/* Avant d'imprimer : ce qui manque dans la semaine, puis « semaine prête » */
+function planCheckDialog(){
+  const mon = S.pweek || planWeek(), days = Array.from({length:5}, (_, i) => isoAdd(mon, i)), ppl = planPeople(), conge = planPeople.conge || [];
+  const late = planSideTasks(days, ppl).filter(t => pKey(t, days[0], days[4]) === 'retard');
+  const wk = planSideTasks(days, ppl).filter(t => pKey(t, days[0], days[4]) === 'semaine');
+  const empty = ppl.filter(p => days.some(d => isDispo(presOf(p, d)?.code)) && !db.plan.some(x => x.who === p.id && x.date >= days[0] && x.date <= days[4]));
+  const names = l => l.slice(0, 12).map(p => esc(p.nom)).join(', ') + (l.length > 12 ? ` et ${l.length - 12} autre(s)` : '');
+  const titles = l => l.slice(0, 5).map(t => `<li>${mdot(tMet(t))}${esc(t.titre)}</li>`).join('') + (l.length > 5 ? `<li class="muted">et ${l.length - 5} autre(s)</li>` : '');
+  const row = (ok, tone, txt, more = '') => `<div class="pc-row ${ok ? 'ok' : tone}"><span class="pc-i">${ok ? icon('check') : '!'}</span><div><b>${txt}</b>${more}</div></div>`;
+  dialog({title:`Semaine ${isoWeek(mon)} : avant d’imprimer`, saveLabel:`${icon('printer')}Imprimer A3`, body:`<div class="pcheck">
+      ${row(!late.length, 'bad', late.length ? `${late.length} travail${late.length > 1 ? 'x' : ''} en retard pas encore placé${late.length > 1 ? 's' : ''}` : 'Aucun travail en retard oublié', late.length ? `<ul>${titles(late)}</ul>` : '')}
+      ${row(!wk.length, 'warn', wk.length ? `${wk.length} travail${wk.length > 1 ? 'x' : ''} prévu${wk.length > 1 ? 's' : ''} cette semaine, pas encore placé${wk.length > 1 ? 's' : ''}` : 'Les travaux de la semaine sont placés', wk.length ? `<ul>${titles(wk)}</ul>` : '')}
+      ${row(!empty.length, 'warn', empty.length ? `${empty.length} personne${empty.length > 1 ? 's' : ''} disponible${empty.length > 1 ? 's' : ''} sans rien de prévu` : 'Tout le monde a quelque chose de prévu', empty.length ? `<p>${names(empty)}</p>` : '')}
+      ${conge.length ? row(true, '', `Pas disponibles cette semaine : ${conge.length}`, `<p>${names(conge)}</p>`) : ''}</div>
+      <p class="hint">Vous pouvez imprimer quand même. La semaine sera notée « prête ».</p>`,
+    onSave(){
+      tx(() => { db.reglages.planPret = {...(db.reglages.planPret || {}), [mon]:{at:new Date().toISOString(), by:meId() || ''}}; });
+      setTimeout(() => { render(); ACT['plan-print']({f:'a3', ok:'1'}); }, 60);
+    }});
+}
 function planSideTasks(days, ppl){
   const end = days[days.length - 1], start = days[0], q = norm(S.q.planside || '');
   const whoKeys = ppl.map(p => 'p:' + p.id), planned = new Set(db.plan.filter(x => x.tacheId && x.date >= start && x.date <= end).map(x => x.tacheId));
