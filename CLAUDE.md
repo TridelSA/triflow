@@ -16,15 +16,16 @@ Pas d'outil de compilation : `index.html` (squelette) charge `css/triflow.css` p
 | Fichier | Contenu |
 |---|---|
 | `css/triflow.css` | Tous les styles. Couleurs dans `:root` et `prefers-color-scheme: dark`. Règles téléphone : `@media (max-width:760px)` (plusieurs blocs). |
+| `sw.js` | Fonctionnement sans réseau (garde le site sur l'appareil). Ne jamais y mettre en cache la base Supabase. |
 | `js/qrcode.js` | Bibliothèque QR (ne pas modifier). |
-| `js/1-base.js` | Outils, `ICONS`, `menu()`, migrations des données (`migrate`, drapeaux `d.meta.xxxV`). |
-| `js/2-cloud.js` | `COLS`, `CLOUD` : Supabase (chargement + cache IndexedDB, `push`, temps réel). |
+| `js/1-base.js` | Outils, **`morph()`** (mise à jour ciblée du HTML, utilisée par `render`), `ICONS`, `menu()`, migrations des données (`migrate`, drapeaux `d.meta.xxxV`). |
+| `js/2-cloud.js` | `COLS`, `CLOUD` : Supabase (chargement + cache IndexedDB, `push`, temps réel). Hors ligne : les modifications non envoyées sont gardées (`pendKey`) et partent au retour du réseau (`goOffline`, événement `online`). |
 | `js/3-coeur.js` | Journal « qui a fait quoi » (`jDescribe`, `JRN`, `jCtx`), connexion, **`tx()`**, identité et droits (`personFromEmail`, `canDel`, `meId`), aide, archives, stock (`addStock`), numéros (`nextNum`), `dueInfo`, état **`S`**, `render`/`fillList`/`fillDetail`. |
 | `js/4-accueil-pieces.js` | `VIEWS`, pages Accueil et Pièces, doublons, emplacements. |
 | `js/5-travaux-installation.js` | Page Travaux : vues `taches` (onglet À faire) et `interventions` (En cours / Fait), en-tête commun `travauxShell` + `wtabs` ; « C’est fait » = `doTache` (demande s’il faut un rapport) et `finishTask` (coché sans rapport) ; `newTacheDialog`, `tacheDialog`. Installation (KKS). |
 | `js/6-planning-options.js` | Planning (`PCODE`, `DISPO`, grille, panneau « À planifier », `planInline`, `planSheetHTML` = feuille A3), emplacements (`locDialog`), accès (`accessDialog`), pages Options (`OPT.xxx`). |
 | `js/7-recherche-scan.js` | Recherche globale, scan QR. |
-| `js/8-fenetres.js` | `dialog()` (fenêtres : `onSave` peut être `async`, une `Error` s'affiche dans la fenêtre, `info:true` = sans Annuler), fenêtres pièce/mouvement/emplacements, imports, étiquettes, impression, `combo()`. |
+| `js/8-fenetres.js` | `quickMove()` (sortie / entrée rapide, liée à un rapport), photos (`photoUpload`, `photoStrip`, seau Supabase « photos »), `dialog()` (fenêtres : `onSave` peut être `async`, une `Error` s'affiche dans la fenêtre, `info:true` = sans Annuler), fenêtres pièce/mouvement/emplacements, imports, étiquettes, impression, `combo()`. |
 | `js/9-rapports-exports.js` | Fenêtre rapport (`interventionDialog`), KKS, personnes, synchronisation du personnel, exports Excel. |
 | `js/10-evenements.js` | **`ACT`** (toutes les actions : `data-act="nom"` appelle `ACT.nom(dataset, element)`), événements, démarrage. |
 
@@ -70,6 +71,10 @@ python3 outils/tests/test.py --captures
 ```
 Le test ouvre `index.html` dans un vrai navigateur avec une **fausse base** (`outils/tests/supabase-factice.js`, mot de passe `secret`) et un **faux planning** (personnes inventées), crée quelques fiches, fait le tour des pages (ordinateur et téléphone) et vérifie les parcours principaux. Il échoue à la moindre erreur JavaScript. Les captures vont dans `outils/tests/captures/` (non versionné) : **les regarder** quand on touche à l'affichage. Ajouter une vérification au test quand on ajoute une fonction.
 
+Comparaison visuelle : avec `--captures`, chaque capture est comparée à `outils/tests/reference/` (date figée au 4.11.2026 09:30) ; les différences sont listées et dessinées en rouge dans `captures/diff-*.png`. Après un changement d'affichage **voulu**, mettre la référence à jour : `python3 outils/tests/test.py --reference` (et la publier). `--strict` fait échouer le test si une capture a changé.
+
+Mise en forme du code : `node /opt/node22/lib/node_modules/prettier/bin/prettier.cjs --write js/<fichier>.js` (réglages dans `.prettierrc.json`).
+
 Vérification rapide de syntaxe : `node --check js/<fichier>.js`.
 
 ## Publier
@@ -80,4 +85,4 @@ Commit sur `main` avec un message en français qui dit ce qui change pour l'util
 - Lancer `outils/photos.sql` dans Supabase (seau privé « photos ») pour activer les photos des pièces et des rapports.
 - Ajouter les secrets GitHub de la sauvegarde (`TRIFLOW_EMAIL`, `TRIFLOW_PASSWORD`, `BACKUP_PASSWORD`).
 - Vérifier la région du projet Supabase (idéalement Zurich).
-- Idées en attente : lien Microsoft To Do / Teams (rappels), photos dans les rapports, droits par rôle.
+- Idées en attente : lien Microsoft To Do / Teams (rappels), droits par rôle.

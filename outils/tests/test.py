@@ -16,6 +16,12 @@ import asyncio, datetime, functools, http.server, json, os, sys, threading
 RACINE = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 ICI = os.path.dirname(os.path.abspath(__file__))
 CAPTURES = '--captures' in sys.argv
+REFERENCE = '--reference' in sys.argv          # enregistre les captures actuelles comme nouvelle référence
+STRICT = '--strict' in sys.argv                # échoue si une capture a changé par rapport à la référence
+if REFERENCE: CAPTURES = True
+REF_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'reference')
+# Date et heure figées (le temps avance mille fois moins vite) : les captures sont comparables d'un jour à l'autre
+HEURE_FIXE = '2026-11-04T09:30:00'
 PORT = 8799
 
 def serveur():
@@ -58,6 +64,9 @@ async def main():
         b = await p.chromium.launch()
         pg = await b.new_page(viewport={'width': 1300, 'height': 820})
         pg.on('pageerror', lambda e: erreurs.append(str(e)))
+        await pg.add_init_script(f"""(() => {{ const R = Date, base = new R('{HEURE_FIXE}').getTime(), t0 = R.now();
+          class D extends R {{ constructor(...a) {{ super(...(a.length ? a : [base + Math.floor((R.now() - t0) / 1000)])); }} static now() {{ return base + Math.floor((R.now() - t0) / 1000); }} }}
+          window.Date = D; }})()""")
         await pg.route('**/supabase.js', lambda r: r.fulfill(status=200, content_type='application/javascript', body=factice))
         await pg.route('**/planning/planning-*.json', lambda r: r.fulfill(status=200, content_type='application/json', body=faux_planning(int(r.request.url.split('planning-')[1][:4]))))
         await pg.route('**/jsQR*', lambda r: r.fulfill(status=200, content_type='application/javascript', body='window.jsQR=()=>null;'))
@@ -186,9 +195,35 @@ async def main():
             await aller(js, 'tel-' + nom)
         await b.close()
     srv.shutdown()
+    if CAPTURES: comparer(echecs)
     for e in erreurs: print('  ✗ Erreur JavaScript : ' + e)
     if erreurs or echecs:
         print(f'\nÉCHEC : {len(echecs)} vérification(s) et {len(erreurs)} erreur(s) JavaScript.'); sys.exit(1)
     print('\nTout est bon.' + (' Captures : outils/tests/captures/' if CAPTURES else ''))
+
+def comparer(echecs):
+    """Compare chaque capture à la référence (outils/tests/reference/) et signale ce qui a changé visuellement."""
+    import shutil
+    from PIL import Image, ImageChops
+    cap = os.path.join(ICI, 'captures'); os.makedirs(REF_DIR, exist_ok=True)
+    noms = sorted(f for f in os.listdir(cap) if f.endswith('.png') and not f.startswith('diff-'))
+    if REFERENCE:
+        for f in noms: shutil.copy(os.path.join(cap, f), os.path.join(REF_DIR, f))
+        print(f'Référence mise à jour : {len(noms)} captures.'); return
+    changees, nouvelles = [], []
+    for f in noms:
+        r = os.path.join(REF_DIR, f)
+        if not os.path.exists(r): nouvelles.append(f); continue
+        a, b = Image.open(r).convert('RGB'), Image.open(os.path.join(cap, f)).convert('RGB')
+        if a.size != b.size: changees.append((f, 100.0)); continue
+        d = ImageChops.difference(a, b).convert('L').point(lambda v: 255 if v > 24 else 0)
+        n = sum(d.histogram()[255:]) ; part = 100 * n / (a.size[0] * a.size[1])
+        if part > 0.3:
+            changees.append((f, part))
+            rouge = Image.new('RGB', b.size, (230, 30, 40)); Image.composite(rouge, b, d).save(os.path.join(cap, 'diff-' + f))
+    print('Comparaison visuelle : ' + (f'{len(noms) - len(changees) - len(nouvelles)} identiques' if noms else 'aucune capture'))
+    for f, part in changees: print(f'  ≠ {f} a changé ({part:.1f} % de la surface) : voir captures/diff-{f}')
+    if nouvelles: print('  + nouvelles captures sans référence : ' + ', '.join(nouvelles))
+    if STRICT and changees: echecs.append('captures différentes de la référence')
 
 asyncio.run(main())

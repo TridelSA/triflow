@@ -331,7 +331,7 @@ const JRN = {
     if (who) r = r.eq('data->>by', who);
     const {data, error} = await r.order('id', {ascending: false}).range(offset, offset + limit - 1);
     if (error) throw error;
-    let rows = (data || []).map(x => x.data).sort((a, b) => (b.at || '').localeCompare(a.at || ''));
+    let rows = (data || []).map(x => x.data).sort((a, b) => (b.at || '').localeCompare(a.at || '') || (a.txt || '').localeCompare(b.txt || ''));
     if (col === 'autre') rows = rows.filter(x => !['interventions', 'taches', 'pieces', 'plan'].includes(x.col));
     if (col === 'pieces') rows = rows.filter(x => x.act !== 'stock');
     if (q) {
