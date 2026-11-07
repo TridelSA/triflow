@@ -316,7 +316,7 @@ VIEWS.planning = {
             ? `<span class="chip ok plan-ready" title="Imprimée le ${fmtDT(r.at)}">${icon('check')}Prête${getPers(r.by) ? ' · ' + esc(getPers(r.by).nom) : ''}</span>`
             : '';
         })()}
-        ${menu([['plan-hide', 'Personnes affichées…', 'person', {}]])}</div></header>
+        <button class="btn" data-act="plan-hide">${icon('person')}Personnes affichées</button></div></header>
       <div class="ptip-row"><p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez dans une case et tapez le travail à faire : <b>Entrée</b> valide, <b>Tab</b> passe au jour suivant. Le petit <b>⋯</b> permet de lier un travail ou de remplir plusieurs jours.</p>${planLegend()}</div>
       <div class="pwrap ${S.pside ? '' : 'noside'}"><div class="wkgrid-wrap"><table class="wkgrid"><thead><tr><th></th>${days.map((d, i) => `<th class="${d === today ? 'today' : ''}">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>${S.pside ? planSideHTML(days, ppl) : ''}</div>
       ${

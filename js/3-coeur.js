@@ -1133,7 +1133,7 @@ const archBanner = (col, x) =>
 const archCount = col => db[col].filter(x => x.arch).length;
 const archItem = v => [
   'arch-view',
-  S.arch[v] ? 'Quitter les archives' : `Archives${archCount(v) ? ` (${archCount(v)})` : ''}`,
+  S.arch[v] ? 'Revenir à la liste' : `Voir les archives${archCount(v) ? ` (${archCount(v)})` : ''}`,
   'archive',
   {v}
 ];

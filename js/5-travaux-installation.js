@@ -18,7 +18,7 @@ function travauxShell() {
   const t = S.view === 'taches';
   return `<header class="page-head"><h1>Travaux</h1><div class="tools">${searchBox(t ? 'taches' : 'interventions', t ? 'Rechercher un travail…' : 'Rechercher un rapport…')}
     ${t ? `<button class="btn primary" data-act="new-tache">${icon('plus')}Nouveau travail</button>` : `<button class="btn primary" data-act="new-int">${icon('plus')}Nouveau rapport</button>`}
-    ${menu(t ? [['new-int', 'Nouveau rapport (travail imprévu)', 'report', {}], ['print-taches', 'Imprimer la liste de travail', 'printer', {}], ['xl-taches', 'Exporter la liste (Excel)', 'excel', {}], '-', archItem('taches')] : [['xl-ints', 'Exporter la liste (Excel)', 'excel', {}], archItem('interventions'), '-', ['import-travaux', 'Importer depuis CareOffice (fichier)', 'save', {}]])}</div></header>
+    ${menu(t ? [['new-int', 'Nouveau rapport sans travail prévu', 'report', {}], ['print-taches', 'Imprimer la liste', 'printer', {}], ['xl-taches', 'Exporter en Excel', 'excel', {}], '-', archItem('taches')] : [['xl-ints', 'Exporter en Excel', 'excel', {}], archItem('interventions'), ...(canDel() ? ['-', ['import-travaux', 'Importer depuis CareOffice', 'save', {}]] : [])])}</div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`;
 }
 const doneOn = (t, d) => db.interventions.some(i => i.tacheId === t.id && i.date === d) || (t.faits || []).some(f => f.date === d);
@@ -661,13 +661,13 @@ VIEWS.kks = {
   shell: () => `<header class="page-head"><h1>Installation</h1><div class="tools">${searchBox('kks', 'KKS, AIC ou équipement…')}
     ${menu(
       [
-        ['new-kks', 'Un équipement', 'plus', {}],
-        ['import-kks', 'Coller une liste', 'list', {}]
+        ['new-kks', 'Un seul équipement', 'plus', {}],
+        ['import-kks', 'Plusieurs (coller une liste)', 'list', {}]
       ],
       'Ajouter',
       'plus',
       'primary'
-    )}${menu([['xl-kks', 'Exporter (Excel)', 'excel', {}], archItem('kks')])}</div></header>
+    )}${menu([['xl-kks', 'Exporter en Excel', 'excel', {}], archItem('kks')])}</div></header>
     <div class="split tsplit"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list() {
     if (!db.kks.length) return empty('Aucun équipement', '<p>Ajoutez-les avec « Coller une liste ».</p>');

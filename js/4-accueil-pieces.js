@@ -222,7 +222,7 @@ function filteredPieces() {
 VIEWS.pieces = {
   shell:
     () => `<header class="page-head"><h1>Pièces</h1><div class="tools">${searchBox('pieces', 'Rechercher une pièce…')}<button class="btn icon-only" data-act="scan" title="Scanner un QR code" aria-label="Scanner un QR code">${icon('scan')}</button><button class="btn primary" data-act="new-piece">${icon('plus')}Nouvelle pièce</button>
-    ${menu([['labels-list', 'Étiquettes QR de la liste', 'qr', {}], ['toggle-low', S.lowOnly ? 'Afficher toutes les pièces' : 'Pièces sous le stock minimum', 'list', {}], ['xl-pieces', 'Exporter la liste (Excel)', 'excel', {}], '-', ['to-order', 'Liste à commander', 'truck', {}], ['dups', 'Rechercher les doublons', 'merge', {}], ['relink-kks', 'Relier les repères KKS cités dans les notes', 'plant', {}], archItem('pieces'), '-', ['import-pieces', 'Importer depuis CareOffice (fichier)', 'save', {}]])}</div></header>
+    ${menu([['to-order', 'Pièces à commander', 'truck', {}], ['xl-pieces', 'Exporter en Excel', 'excel', {}], ['labels-list', 'Imprimer les étiquettes QR', 'qr', {}], '-', archItem('pieces'), ...(canDel() ? ['-', ['dups', 'Trouver les doublons', 'merge', {}], ['import-pieces', 'Importer depuis CareOffice', 'save', {}]] : [])])}</div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list() {
     const rows = filteredPieces();
@@ -304,7 +304,7 @@ VIEWS.pieces = {
         return acc;
       }, []);
     const low = p.stockMin > 0 && dispo(p) < p.stockMin;
-    return `<button class="btn small m-only back-list" data-act="desel">${icon('chev')}Liste des pièces</button>${archBanner('pieces', p)}<div class="pd-head"><span class="pd-id">ID ${esc(p.ref)}</span><div class="pd-tools"><button class="btn small" data-act="edit-piece" data-id="${p.id}">${icon('edit')}Modifier</button>${menu([['labels-one', 'Étiquette QR', 'qr', {id: p.id}], ['print-piece', 'Fiche A4', 'printer', {id: p.id}], ['add-place', 'Ranger à un autre emplacement', 'shelf', {id: p.id}], '-', p.arch ? ['unarch', 'Restaurer la pièce', 'archive', {col: 'pieces', id: p.id}] : ['arch', 'Archiver la pièce', 'archive', {col: 'pieces', id: p.id}], hardItem('pieces', p.id)].filter(Boolean), 'Plus', 'more', 'small')}</div></div>
+    return `<button class="btn small m-only back-list" data-act="desel">${icon('chev')}Liste des pièces</button>${archBanner('pieces', p)}<div class="pd-head"><span class="pd-id">ID ${esc(p.ref)}</span><div class="pd-tools"><button class="btn small" data-act="edit-piece" data-id="${p.id}">${icon('edit')}Modifier</button>${menu([['add-place', 'Ajouter un emplacement', 'shelf', {id: p.id}], ['labels-one', 'Imprimer l’étiquette QR', 'qr', {id: p.id}], ['print-piece', 'Imprimer la fiche', 'printer', {id: p.id}], '-', p.arch ? ['unarch', 'Restaurer la pièce', 'archive', {col: 'pieces', id: p.id}] : ['arch', 'Archiver la pièce', 'archive', {col: 'pieces', id: p.id}], hardItem('pieces', p.id)].filter(Boolean), 'Plus', 'more', 'small')}</div></div>
       <h2 class="pd-title">${esc(p.designation)}</h2>
       ${p.fabricant || p.refFab ? `<p class="pd-sub">${esc(p.fabricant || '')}${p.refFab ? ` <span class="muted">· réf.</span> <span class="mono">${esc(p.refFab)}</span>` : ''}</p>` : ''}
       <div class="pd-stock ${low ? 'low' : ''}">
@@ -623,7 +623,7 @@ function lieuTree(ls, act, selId) {
 }
 VIEWS.lieux = {
   shell:
-    () => `<header class="page-head"><h1>Emplacements</h1><div class="tools">${searchBox('lieux', 'Filtrer : code, salle ou pièce rangée…')}${menu([['opt', 'Gérer les emplacements', 'shelf', {sec: 'lieux'}], '-', ['new-salle', 'Nouvelle salle', 'plus', {}], ['new-lieu', 'Nouvel emplacement', 'plus', {}], ['gen-series', 'Créer une série', 'plus', {}], '-', ['arch-view', S.arch.lieux ? 'Quitter les archives' : 'Archives', 'archive', {v: 'lieux'}]])}</div></header>
+    () => `<header class="page-head"><h1>Emplacements</h1><div class="tools">${searchBox('lieux', 'Filtrer : code, salle ou pièce rangée…')}${menu([['new-lieu', 'Nouvel emplacement', 'plus', {}], ['new-salle', 'Nouveau local', 'plus', {}], ['gen-series', 'Plusieurs emplacements d’un coup', 'list', {}], '-', ['arch-view', S.arch.lieux ? 'Revenir à la liste' : 'Voir les archives', 'archive', {v: 'lieux'}]])}</div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list() {
     if (!db.salles.length)
@@ -683,13 +683,13 @@ VIEWS.lieux = {
     if (s?.statut)
       return `<div class="d-head"><div class="d-title"><span>${plate(l, false).replace('class="stat"', 'class="stat big"')}</span><h2>Hors magasin</h2><p class="muted">Les pièces ici ne sont pas en stock : elles sont ${esc(salleCode(s).toLowerCase())}${pathOf(l).length ? ' (' + esc(pathOf(l).join(' › ')) + ')' : ''}. Pour les remettre en magasin, faites un « Déplacer » vers un emplacement physique.</p></div>
       <div class="d-actions">${menu([
-        ['edit-lieu', 'Modifier', 'edit', {id: l.id}],
+        ['edit-lieu', 'Modifier l’emplacement', 'edit', {id: l.id}],
         ['edit-salle', 'Modifier le statut', 'edit', {id: l.salleId}]
       ])}</div></div>
       <section class="block"><h3>Pièces concernées</h3>${items.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${items.map(x => `<tr data-act="goto" data-view="pieces" data-id="${x.p.id}" tabindex="0"><td><span class="ref">${esc(x.p.ref)}</span> ${esc(x.p.designation)}</td><td class="num qty">${num(x.qte)} <span class="muted">${esc(x.p.unite)}</span></td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-line">Aucune pièce.</p>'}</section>`;
     return `<div class="d-head"><div class="d-title"><span><span class="plate big">${esc(lieuCode(l))}</span></span><h2>${esc(s?.nom || '')}</h2><p class="muted">${parts}</p></div>
       <div class="d-actions"><button class="btn primary" data-act="labels-here" data-id="${l.id}" ${withStock.length ? '' : 'disabled'}>${icon('qr')}Étiquettes du matériel (${withStock.length})</button>
-        ${menu([['edit-lieu', 'Modifier l’emplacement', 'edit', {id: l.id}], ['edit-salle', 'Modifier la salle', 'edit', {id: l.salleId}], ['labels-loc', 'Étiquette d’emplacement', 'tag', {ids: l.id}], '-', ['opt', 'Gérer les emplacements', 'shelf', {sec: 'lieux'}], ['arch', 'Archiver l’emplacement', 'archive', {col: 'lieux', id: l.id}]])}</div></div>
+        ${menu([['edit-lieu', 'Modifier l’emplacement', 'edit', {id: l.id}], ['edit-salle', 'Modifier le local', 'edit', {id: l.salleId}], ['labels-loc', 'Imprimer l’étiquette de l’emplacement', 'tag', {ids: l.id}], '-', ['arch', 'Archiver l’emplacement', 'archive', {col: 'lieux', id: l.id}]])}</div></div>
       <section class="block"><h3>Rangé ici</h3>${items.length ? `<div class="tbl-wrap"><table class="tbl compact"><tbody>${items.map(x => `<tr data-act="goto" data-view="pieces" data-id="${x.p.id}" tabindex="0"><td><span class="ref">${esc(x.p.ref)}</span> ${esc(x.p.designation)}</td><td class="num qty">${num(x.qte)} <span class="muted">${esc(x.p.unite)}</span></td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-line">Emplacement vide.</p>'}</section>
       ${l.note ? `<section class="block"><h3>Note</h3><p class="pre">${esc(l.note)}</p></section>` : ''}`;
   }
