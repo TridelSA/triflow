@@ -1338,3 +1338,21 @@ li.sw-go,tr.sw-go td{background:color-mix(in srgb,var(--accent) 22%,var(--surfac
 .ph-big{display:grid;place-items:center;background:var(--sunk);border-radius:var(--r-lg);overflow:hidden;margin-bottom:12px}
 .ph-img.big{width:auto;max-width:100%;height:auto;max-height:70vh;object-fit:contain}
 .prow .ph-row{width:40px;height:40px;flex:none;border-radius:var(--r-sm);margin-right:10px}
+
+/* ---------- Téléphone : pas d'impression, rien sous le bouton rond ---------- */
+.d-inline{display:inline}
+@media (max-width:760px){
+  .d-inline{display:none}
+  [data-act="plan-print"],[data-act="print-int"],[data-act="print-taches"],[data-act="print-piece"],[data-act^="labels-"],[data-act="opt"][data-sec="etiquettes"]{display:none !important}
+  body > #nav{z-index:60}
+  .app{padding-bottom:calc(150px + env(safe-area-inset-bottom,0px))}
+}
+body.printing #nav{display:none!important}
+/* Fenêtres : toujours entières à l'écran (barres du navigateur comprises) */
+dialog.dlg{max-height:calc(100dvh - 32px)}
+.dlg form{max-height:calc(100dvh - 34px)}
+details.more > summary{flex-wrap:wrap;row-gap:0}
+@media (max-width:760px){
+  dialog.dlg{max-height:92vh;max-height:92dvh}
+  .dlg form{max-height:92vh;max-height:92dvh}
+}

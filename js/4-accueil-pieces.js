@@ -72,7 +72,7 @@ VIEWS.accueil = {
     const planning = `<section class="btile bt-l">${head('planning', 'calendar', 'Planning', 'l')}
       <div class="bt-n"><b>${here == null ? '–' : here}</b><span>${here == null ? 'présences en chargement' : plural(here, 'présent aujourd’hui', 'présents aujourd’hui')} · semaine ${isoWeek(nw)} : <strong>${placed}</strong> ${plural(placed, 'case remplie', 'cases remplies')}</span></div>
       <div class="bt-week">${days.map((d, i) => `<div><span>${DAYS[i].slice(0, 3)}</span><b class="${cnt[i] ? 'on' : ''}">${cnt[i] || ''}</b></div>`).join('')}</div>
-      <div class="bt-foot"><button class="btn small" data-act="nav" data-view="planning">${icon('printer')}Préparer et imprimer</button></div></section>`;
+      <div class="bt-foot"><button class="btn small" data-act="nav" data-view="planning">${icon('calendar')}Préparer<span class="d-inline"> et imprimer</span></button></div></section>`;
     /* Rapports */
     const mon = isoAdd(today, -((new Date(today + 'T12:00:00').getDay() + 6) % 7));
     const done = db.interventions

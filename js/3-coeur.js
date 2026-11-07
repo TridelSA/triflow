@@ -1832,6 +1832,7 @@ function fillDetail() {
     morph(el, h, '[data-jrn]');
   }
   if ($('[data-jrn]')) jrnRefresh();
+  const hadSel = !!$('#main .split.has-sel');
   $('#main .split')?.classList.toggle(
     'has-sel',
     (S.view === 'pieces' && !!getPiece(S.sel.pieces)) ||
@@ -1842,6 +1843,11 @@ function fillDetail() {
         )) ||
       (S.view === 'taches' && !!get('taches', S.sel.taches))
   );
+  /* Téléphone : en ouvrant une fiche, on la montre depuis son début */
+  if (!hadSel && $('#main .split.has-sel') && matchMedia('(max-width: 760px)').matches) {
+    const r = $('#detail')?.getBoundingClientRect();
+    if (r) scrollTo({top: Math.max(0, scrollY + r.top - 10)});
+  }
   if (el && (S.view === 'interventions' || S.view === 'taches') && S.sel[S.view] && !el.querySelector('.placeholder'))
     el.insertAdjacentHTML(
       'afterbegin',

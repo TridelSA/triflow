@@ -1015,6 +1015,20 @@ window.addEventListener('hashchange', () => {
 hydrateIcons();
 if (CLOUD.cfg().url) {
   bootCloud();
+  /* Téléphone : le menu du bas vit hors du bandeau, pour qu'aucun contenu ne passe jamais par-dessus */
+  {
+    const mq = matchMedia('(max-width: 760px)'),
+      place = () => {
+        const n = $('#nav'),
+          side = $('.hero-side');
+        if (!n || !side) return;
+        if (mq.matches) {
+          if (n.parentElement !== document.body) document.body.append(n);
+        } else if (n.parentElement !== side) side.append(n);
+      };
+    mq.addEventListener ? mq.addEventListener('change', place) : mq.addListener(place);
+    place();
+  }
   /* Le site reste utilisable sans réseau (pas en test local) */
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 } else {

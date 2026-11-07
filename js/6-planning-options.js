@@ -1622,7 +1622,7 @@ OPT.donnees =
 VIEWS.options = {
   shell: () => `<header class="page-head"><h1>Options</h1></header>
     <div class="opt"><nav class="opt-nav" aria-label="Sections des options"><button data-act="nav" data-view="kks" title="Fiche de chaque équipement : rapports, tâches et pièces">${icon('plant')}Installation</button>${OPT_SECS.map(([k, t, ic]) => `<button data-act="opt" data-sec="${k}" aria-current="${S.opt === k}">${icon(ic)}${t}</button>`).join('')}</nav>
-    <div class="opt-body">${OPT[S.opt]()}</div></div>`,
+    <div class="opt-body">${(OPT[S.opt] || OPT[(S.opt = OPT_SECS[0][0])])()}</div></div>`,
   list: () => '',
   detail: () => ''
 };
