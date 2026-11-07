@@ -1029,6 +1029,25 @@ if (CLOUD.cfg().url) {
     mq.addEventListener ? mq.addEventListener('change', place) : mq.addListener(place);
     place();
   }
+  /* iPhone : quand la barre d'adresse de Safari bouge, la barre du bas reste collée au bas de la partie visible ;
+     clavier ouvert : on la cache pour laisser la place à la saisie */
+  if (window.visualViewport) {
+    const vv = window.visualViewport;
+    let raf = 0;
+    const fit = () => {
+      raf = 0;
+      const n = $('#nav');
+      if (!n || n.parentElement !== document.body) return;
+      const off = Math.round(innerHeight - vv.height - vv.offsetTop);
+      document.body.classList.toggle('kbd', off > 150);
+      n.style.transform = off > 0 && off <= 150 ? `translateY(${-off}px)` : '';
+    };
+    const ask = () => raf || (raf = requestAnimationFrame(fit));
+    vv.addEventListener('resize', ask);
+    vv.addEventListener('scroll', ask);
+    addEventListener('scroll', ask, {passive: true});
+    fit();
+  }
   /* Le site reste utilisable sans réseau (pas en test local) */
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 } else {

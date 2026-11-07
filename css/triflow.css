@@ -1419,3 +1419,9 @@ details.more > summary{flex-wrap:wrap;row-gap:0}
   .pour-chips .mini.pour,.fchips [data-act="tf"],.fchips > .ysep{display:none}
 }
 @media (max-width:760px){ .page-head [data-act="scan"]{display:none} }
+/* iPhone : barre du bas toujours au-dessus de la barre d'adresse ; cachée quand le clavier est ouvert */
+@media (max-width:760px){
+  body > #nav{bottom:0;will-change:transform;-webkit-transform:translateZ(0)}
+  body.kbd > #nav{display:none}
+  html,body{min-height:100%;overscroll-behavior-y:none}
+}
