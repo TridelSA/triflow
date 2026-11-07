@@ -108,6 +108,16 @@ const CLOUD = {
     this.status('saving');
     this.timer = setTimeout(() => this.push(), 120);
   },
+  /* Modifications faites sans réseau, gardées sur l'appareil jusqu'à leur envoi */
+  pendKey() {
+    return 'pend:' + this.cacheKey();
+  },
+  /* Démarrage depuis la copie locale, en gardant l'état « déjà envoyé » pour pouvoir envoyer la différence plus tard */
+  async fromCacheKeep() {
+    const c = await IDB.get(this.cacheKey());
+    if (!c || !Array.isArray(c.rows) || !c.rows.length) return null;
+    return this.build(c.rows).d;
+  },
   cacheKey() {
     return 'snap:' + (this.cfg().url || '') + ':' + (this.user?.email || '');
   },
@@ -262,7 +272,9 @@ const CLOUD = {
         jr = [];
       } while (this.again);
       this.status('ok');
+      IDB.del(this.pendKey());
     } catch (e) {
+      IDB.set(this.pendKey(), {db: JSON.parse(JSON.stringify(db)), at: Date.now()});
       this.status(navigator.onLine === false || /fetch|network/i.test(String(e.message || e)) ? 'offline' : 'error');
       clearTimeout(this.timer);
       this.timer = setTimeout(() => this.push(), 5000);

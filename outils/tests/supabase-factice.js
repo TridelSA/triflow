@@ -18,6 +18,7 @@ window.__srv = window.__srv || {rows:new Map(), handlers:[], session:null, rpcCa
       const q = {order(){ return q; }, eq(k, v){ if (k === 'collection') f.c = v; else f.eqs.push([k.replace('data->>', ''), v]); return q; }, neq(k, v){ f.neq = v; return q; }, in(k, v){ f.ids = v; return q; }, async range(a, b){ S.reads = (S.reads || 0) + 1; return {data:list().slice(a, b + 1).map(pick), error:null}; }, then(ok, ko){ S.reads = (S.reads || 0) + 1; return Promise.resolve({data:list().map(pick), error:null}).then(ok, ko); }};
       return q; }}; },
     async rpc(name, {changes}){
+      if (S.offline) throw new TypeError('Failed to fetch');
       S.rpcCalls++;
       for (const c of changes){ const k = c.c + '|' + c.id; const cur = S.rows.get(k); if ((cur ? cur.rev : 0) !== (c.rev || 0)) return {error:{message:'GMAO_CONFLIT ' + k}}; }
       for (const c of changes){ const k = c.c + '|' + c.id; const cur = S.rows.get(k);

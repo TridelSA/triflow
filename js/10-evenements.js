@@ -1004,6 +1004,8 @@ window.addEventListener('hashchange', () => {
 hydrateIcons();
 if (CLOUD.cfg().url) {
   bootCloud();
+  /* Le site reste utilisable sans réseau (pas en test local) */
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 } else {
   applyHash();
   render();

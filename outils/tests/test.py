@@ -98,6 +98,10 @@ async def main():
         await pg.evaluate("quickMove(getPiece('p1'))"); await pg.wait_for_timeout(250)
         await pg.click('dialog[open] .qm-step [data-q=\"1\"]'); await pg.click('dialog[open] button.qm-in'); await pg.wait_for_timeout(500)
         ok(await pg.evaluate("getPiece('p1').stock[0].qte === 4"), 'entrée rapide avec le bouton +')
+        await pg.evaluate("__srv.offline = true; tx(() => { getPiece('p1').notes = 'hors ligne'; })"); await pg.wait_for_timeout(700)
+        ok(await pg.evaluate("CLOUD.state === 'offline' && IDB.get(CLOUD.pendKey()).then(x => !!x?.db)"), 'hors ligne : modification gardée sur l’appareil')
+        await pg.evaluate("__srv.offline = false; dispatchEvent(new Event('online'))"); await pg.wait_for_timeout(900)
+        ok(await pg.evaluate("CLOUD.state === 'ok' && [...__srv.rows.values()].some(r => r.data?.notes === 'hors ligne')"), 'retour du réseau : modification envoyée')
         print('Pages (ordinateur)')
         for js, nom in [("go('accueil')", 'accueil'), ("S.sel.pieces=null; go('pieces')", 'pieces'), ("go('pieces','p1')", 'piece'),
                         ("go('taches','t2')", 'travaux-afaire'), ("S.statut='actives'; go('interventions')", 'travaux-encours'),

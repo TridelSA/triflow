@@ -476,11 +476,29 @@ async function startCloud() {
       render();
       CLOUD.status('sync');
     }
-    const {data: u} = await CLOUD.sb.auth.getUser();
+    const pend = CLOUD.user ? await IDB.get(CLOUD.pendKey()) : null;
+    let u;
+    try {
+      ({data: u} = await CLOUD.sb.auth.getUser());
+    } catch (e) {
+      u = null;
+    }
+    /* Pas de réseau : on travaille sur la copie de l'appareil, tout partira au retour du réseau */
+    if (!u?.user && cached && (navigator.onLine === false || !(await netOk()))) return goOffline(pend);
     CLOUD.user = u?.user || null;
     if (!CLOUD.user) {
       CLOUD.warming = false;
       return loginForm();
+    }
+    /* Des modifications faites hors ligne attendent : on les envoie d'abord */
+    if (pend?.db) {
+      await CLOUD.fromCacheKeep();
+      db = migrate(pend.db);
+      CLOUD.on = true;
+      CLOUD.warming = false;
+      await CLOUD.push();
+      if (CLOUD.state !== 'ok') return goOffline(pend);
+      toast('Modifications faites hors ligne envoyées.');
     }
     const {d, empty} = await CLOUD.loadAll();
     CLOUD.on = true;
@@ -509,6 +527,33 @@ async function startCloud() {
     );
   }
 }
+/* Mode hors ligne */
+async function netOk() {
+  try {
+    await fetch(CLOUD.cfg().url + '/auth/v1/health', {method: 'GET', cache: 'no-store', headers: {apikey: CLOUD.cfg().key}});
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+async function goOffline(pend) {
+  const base = await CLOUD.fromCacheKeep();
+  db = migrate(pend?.db || base);
+  CLOUD.on = true;
+  CLOUD.warming = false;
+  CLOUD.offline = true;
+  hideGate();
+  applyHash();
+  render();
+  CLOUD.status('offline');
+  toast('Pas de réseau : vous travaillez sur la copie de cet appareil. Tout sera envoyé au retour du réseau.');
+}
+addEventListener('online', () => {
+  if (CLOUD.offline) {
+    CLOUD.offline = false;
+    startCloud();
+  } else if (CLOUD.on && CLOUD.state !== 'ok') CLOUD.push();
+});
 /* Toute modification passe par tx() : si une étape échoue, rien n'est enregistré. */
 let REV = 0,
   LASTTX = null;
