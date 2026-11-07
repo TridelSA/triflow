@@ -1192,7 +1192,7 @@ dialog.dlg[open]{animation:dlg-in .2s var(--ease-out)}
 .md-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .md-k{margin:0;font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
 .md-h h2{margin:2px 0 0;font-size:1.35rem}
-.md-scan{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:14px;background:var(--accent);color:var(--accent-ink);font-weight:700;box-shadow:0 6px 16px -6px rgba(31,122,77,.6);transition:transform .12s var(--ease-out,ease-out)}
+.md-scan{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:14px;background:var(--accent);color:var(--accent-ink);font-weight:700;box-shadow:0 6px 16px -8px rgba(0,0,0,.35);transition:transform .12s var(--ease-out,ease-out)}
 .md-scan .ico{width:22px;height:22px}
 .md-scan:active{transform:scale(.97)}
 .md-scan:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
