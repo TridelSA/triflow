@@ -27,7 +27,7 @@ function doTache(t, opts = {}){
   if (t.rapport === 'oui') return interventionDialog(null, null, t, opts);
   if (t.rapport === 'non') return finishTask(t, opts);
   const nx = nextAfter(t, opts.date || todayISO());
-  dialog({title:'C’est fait', saveLabel:'Fermer', info:true, body:`<p class="task-note">${icon('check')}<span><b>${esc(t.titre)}</b>${nx ? ` · reviendra le ${fmtD(nx)}` : ''}</span></p>
+  const dd = dialog({title:'C’est fait', saveLabel:'Annuler', info:true, body:`<p class="task-note">${icon('check')}<span><b>${esc(t.titre)}</b>${nx ? ` · reviendra le ${fmtD(nx)}` : ''}</span></p>
     <p class="hint" style="margin:0 0 8px">Faut-il un rapport ?</p><div class="kind-pick">
       <button type="button" class="kind" data-r="non">${icon('check')}<b>Non, juste cocher</b><span>Pour les petites choses : une ampoule, un nettoyage…</span></button>
       <button type="button" class="kind" data-r="oui">${icon('report')}<b>Oui, faire un rapport</b><span>Noter ce qui a été fait, les pièces utilisées, qui était là.</span></button></div>
@@ -36,11 +36,15 @@ function doTache(t, opts = {}){
       if (r === 'non') return finishTask(t, opts, keep ? 'non' : null);
       if (keep) tx(() => { t.rapport = 'oui'; });
       interventionDialog(null, null, t, opts); }); }, onSave(){}});
+  $('footer .primary', dd)?.classList.remove('primary');
 }
 function finishTask(t, opts = {}, setRap = null){
   const date = opts.date || todayISO(), me = meId(), who = [...new Set([...(opts.who || []), ...(me ? [me] : [])])].filter(id => getPers(id));
   tx(() => { if (setRap) t.rapport = setRap; t.faits = [...(t.faits || []), {date, who}]; advanceTask(t, date); });
-  render(); toast(isPetit(t) ? `Fait : ${t.titre}` : `Fait · prochaine fois le ${fmtD(t.prochaine)}`, '', true);
+  const rows = $$(`[data-act="do-tache"][data-id="${t.id}"]`).map(b => b.closest('li, tr') || b.parentElement);
+  rows.forEach(r => r.classList.add('done-out'));
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (rows.length && !reduce) setTimeout(render, 320); else render(); toast(isPetit(t) ? `Fait : ${t.titre}` : `Fait · prochaine fois le ${fmtD(t.prochaine)}`, '', true);
 }
 function doneHTML(t){
   const reps = db.interventions.filter(i => i.tacheId === t.id && live(i)), fs = t.faits || [];
@@ -64,9 +68,15 @@ function filteredTaches(){
   return rows.sort((a, b) => (a.actif === false) - (b.actif === false) || (a.prochaine && b.prochaine ? a.prochaine.localeCompare(b.prochaine) : 0) || petitSort(a, b));
 }
 function pourSelect(){
+  /* Pastilles « Moi / Mon équipe / Tous », le reste (autre équipe, autre personne) dans « Autre… » */
+  const me = meId(), mg = me && getPers(me)?.groupe, quick = [['', 'Tout le monde']].concat(me ? [['p:' + me, 'Moi']] : [], mg ? [['g:' + mg, 'Mon équipe']] : []);
+  const other = S.pour && !quick.some(q => q[0] === S.pour);
+  return `<span class="pour-chips" role="group" aria-label="Pour qui">${quick.map(([v, l]) => `<button type="button" class="ychip" data-act="pour-set" data-v="${esc(v)}" aria-pressed="${S.pour === v}">${l}</button>`).join('')}${pourOther(other)}</span>`;
+}
+function pourOther(on){
   const groups = db.listes.groupes.filter(g => db.personnes.some(p => p.groupe === g && p.actif !== false));
   const people = db.personnes.filter(p => p.actif !== false && live(p)).sort(persSort);
-  return `<select class="mini pour ${S.pour ? 'on' : ''}" data-change="pour" aria-label="Pour qui" title="${S.pour ? 'Filtre actif : choisissez « Tout le monde » pour tout voir' : ''}"><option value="">Tout le monde</option><optgroup label="Corps de métier">${groups.map(g => opt('g:' + g, g, S.pour)).join('')}</optgroup><optgroup label="Personne">${people.map(p => opt('p:' + p.id, persName(p), S.pour)).join('')}</optgroup></select>`;
+  return `<select class="mini pour ${on ? 'on' : ''}" data-change="pour" aria-label="Autre équipe ou personne"><option value="" ${on ? '' : 'selected'}>Autre…</option><optgroup label="Corps de métier">${groups.map(g => opt('g:' + g, g, S.pour)).join('')}</optgroup><optgroup label="Personne">${people.map(p => opt('p:' + p.id, persName(p), S.pour)).join('')}</optgroup></select>`;
 }
 function tacheRow(t, withSel = true){
   const k = getKks(t.kksId), run = openRun(t), off = t.actif === false;
@@ -78,12 +88,12 @@ VIEWS.taches = {
   shell: travauxShell,
   list(){
     const head = wtabs();
-    if (!db.taches.length) return head + empty('Rien à faire', '<p>Ajoutez un travail avec « Nouveau travail » : une réparation, un contrôle, un entretien qui revient…</p>');
+    if (!db.taches.length) return head + empty('Rien à faire', `<p>Une réparation, un contrôle, un entretien qui revient…</p><button class="btn primary" data-act="new-tache">${icon('plus')}Nouveau travail</button>`);
     const rows = filteredTaches(), base = S.arch.taches ? [] : baseTaches().filter(t => t.actif !== false);
     const cnt = {}; for (const t of base){ const k = tKey(t); cnt[k] = (cnt[k] || 0) + 1; }
     const chip = (f, t, n, tone = '') => f && !n && S.tf !== f ? '' : `<button role="tab" class="ychip ${tone}" data-act="tf" data-f="${f}" aria-selected="${(S.tf || '') === f}">${t} <small>${n || 0}</small></button>`;
     const chips = S.arch.taches ? '' : `<div class="fchips" role="tablist" aria-label="Quand">${pourSelect()}<span class="ysep" aria-hidden="true"></span>${chip('', 'Tout', base.length)}${T_GRP.map(([k, l, tone]) => chip(k, k === 'vieux' ? 'Anciens retards' : l, cnt[k], tone)).join('')}</div>`;
-    if (!rows.length) return head + chips + (S.arch.taches ? empty('Aucun travail archivé', '') : empty('Rien à faire', '<p>Aucun travail pour cette sélection.</p>'));
+    if (!rows.length) return head + chips + (S.arch.taches ? empty('Aucun travail archivé', '') : empty('Rien à faire', S.pour || S.tf ? `<p>Aucun travail pour cette sélection.</p><button class="btn" data-act="pour-set" data-v="">Tout voir</button>` : `<p>Tout est à jour.</p><button class="btn" data-act="new-tache">${icon('plus')}Nouveau travail</button>`));
     const grp = {}; rows.forEach(t => (grp[tKey(t)] ||= []).push(t));
     const sec = (key, title) => grp[key]?.length ? `<tbody><tr class="grp ${key === 'vieux' ? 'old' : ''}"><th colspan="2"><span>${title}</span> <span class="muted" style="font-family:var(--f-body);font-size:.8rem">${grp[key].length}</span></th></tr>${grp[key].map(t => tacheRow(t)).join('')}</tbody>` : '';
     return `${head}${chips}<div class="tbl-wrap"><table class="tbl">${T_GRP.map(([k, l]) => sec(k, l)).join('')}${sec('fait', 'Faits')}</table></div>`;
@@ -125,10 +135,11 @@ function tacheDialog(t, kksId){
           <label>Pour quand ? (facultatif)<input name="pdate" type="date" value="${petit0 ? esc(v.prochaine || '') : ''}"></label></div>
         <div data-rec><label>${isNew || petit0 ? 'Première fois le' : 'Prochaine fois le'}<input name="prochaine" type="date" value="${esc(petit0 ? (v.prochaine || todayISO()) : v.prochaine)}"></label><p class="hint" data-fprev></p></div></fieldset>
       <label>Pour qui ?<input name="assign" data-id="${esc(aId)}" data-label="${esc(aId ? assignLabel(v.assign) : '')}" value="${esc(aId ? assignLabel(v.assign) : '')}" placeholder="Un corps de métier ou une personne"></label>
+      <details class="more" ${!isNew && (v.kksId || v.description || v.rapport === 'non') ? 'open' : ''}><summary>Plus de détails <span class="muted">(équipement, rapport, consignes)</span></summary>
       <label>Équipement (repère KKS)<input name="kks" data-id="${k ? k.id : ''}" data-label="${k ? esc(kksLabel(k)) : ''}" value="${k ? esc(kksLabel(k)) : ''}" placeholder="Facultatif : code ou désignation"></label>
       <fieldset><legend>Faut-il un rapport ?</legend><div class="prio-pick rap-pick" role="radiogroup" aria-label="Rapport">${pill('rapport', 'oui', 'Oui', 'info', v.rapport || 'oui')}${pill('rapport', 'non', 'Non', 'info', v.rapport || 'oui')}</div>
         </fieldset>
-      <label>Ce qu’il faut faire<textarea name="description" rows="3" placeholder="Consignes, points de contrôle… (facultatif)">${esc(v.description)}</textarea></label>`,
+      <label>Ce qu’il faut faire<textarea name="description" rows="3" placeholder="Consignes, points de contrôle… (facultatif)">${esc(v.description)}</textarea></label></details>`,
     onOpen(f, d){
       combo(f.elements.kks, {items: () => db.kks.filter(live).map(x => ({id:x.id, key:x.code, label:kksLabel(x), search:x.code + ' ' + x.designation, html:`<span class="kks">${esc(x.code)}</span> ${esc(x.designation)}`}))});
       combo(f.elements.assign, {items:assignItems});
@@ -190,7 +201,7 @@ VIEWS.interventions = {
       if (S.arch.interventions) return head + empty('Aucun rapport archivé', '');
       if (S.pour) return head + bar + empty(`Rien pour ${esc(pourLabel(S.pour))}`, '<p><button class="btn small" data-act="pour-all">Voir tout le monde</button></p>');
       if (norm(S.q.interventions)) return head + bar + empty('Rien ne correspond', '');
-      return head + bar + (openOnly ? empty('Rien en cours', '<p>Tous les rapports sont terminés.</p>') : empty('Rien de fait pour l’instant', '<p>Les rapports terminés et les travaux cochés arrivent ici.</p>'));
+      return head + bar + (openOnly ? empty('Rien en cours', `<p>Tous les rapports sont terminés.</p><button class="btn" data-act="new-int">${icon('report')}Nouveau rapport</button>`) : empty('Rien de fait pour l’instant', `<p>Les rapports terminés et les travaux cochés arrivent ici.</p><button class="btn" data-act="new-int">${icon('report')}Nouveau rapport</button>`));
     }
     const yc = new Map(); for (const i of all){ const y = (i.date || '').slice(0, 4) || '—'; yc.set(y, (yc.get(y) || 0) + 1); }
     const years = [...yc.keys()].sort().reverse();

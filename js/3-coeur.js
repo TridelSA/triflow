@@ -566,7 +566,8 @@ const S = {ttab:'petits', pwe:false, psf:'petits', ppick:null, pside:(() => { tr
 function toast(msg, kind = '', undo = false){
   const t = $('#toast'); t.textContent = msg; t.className = 'show ' + kind + (undo ? ' undo' : '');
   if (undo && LASTTX){ const rev = LASTTX.rev, b = document.createElement('button'); b.type = 'button'; b.textContent = 'Annuler'; b.onclick = () => { t.className = ''; undoLast(rev); }; t.append(b); }
-  clearTimeout(toast.t); toast.t = setTimeout(() => t.className = '', kind === 'bad' ? 5000 : undo ? 7000 : 2600);
+  const ms = kind === 'bad' ? 5000 : undo ? 7000 : 2600, arm = () => { clearTimeout(toast.t); toast.t = setTimeout(() => t.className = '', ms); };
+  t.onpointerenter = () => clearTimeout(toast.t); t.onpointerleave = arm; arm();
 }
 function refreshDatalists(){
   const uniq = arr => [...new Set(arr.map(x => String(x || '').trim()).filter(Boolean))].sort(coll.compare).map(c => `<option value="${esc(c)}"></option>`).join('');

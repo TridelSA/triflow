@@ -84,7 +84,7 @@ function scanDialog(){
         video.srcObject = stream; await video.play();
         const det = 'BarcodeDetector' in window ? new BarcodeDetector({formats:['qr_code']}) : null;
         if (!det) await loadJsQR();
-        const hit = txt => { if (done || !txt) return; done = true; dd.close(); openCode(txt); };
+        const hit = txt => { if (done || !txt) return; done = true; try { navigator.vibrate?.(35); } catch(e){} dd.classList.add('scan-ok'); setTimeout(() => { dd.close(); openCode(txt); }, 180); };
         const tick = async () => {
           if (done) return;
           if (video.readyState >= 2){

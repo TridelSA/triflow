@@ -113,7 +113,7 @@ function planLegend(){
   return `<details class="plegend"><summary>${icon('list')}Que veulent dire les codes ?</summary><div class="lg">${g('on', 'Présent')}${g('rot', 'Rotation')}${g('piq', 'Piquet')}${g('off', 'Congé')}${g('abs', 'Absent')}</div></details>`;
 }
 /* Les quatre métiers qui reviennent le plus : même nom et même couleur dans « À planifier » et dans la grille */
-const METIERS = [['elec', 'Électricité', /^elec/], ['auto', 'Automation', /^auto/], ['meca', 'Mécanique', /^meca/], ['intend', 'Intendance', /^intend/]];
+const METIERS = [['elec', 'Électricien', /^elec/], ['auto', 'Automaticien', /^auto/], ['meca', 'Mécanicien', /^meca/], ['intend', 'Intendance', /^intend/]];
 const metOf = g => (METIERS.find(m => m[2].test(norm(g || ''))) || [''])[0];
 const tMet = t => metOf(t.assign?.type === 'personne' ? getPers(t.assign.v)?.groupe : t.assign?.v);
 const mdot = k => k ? `<i class="mdot m-${k}" aria-hidden="true"></i>` : '';
@@ -159,6 +159,7 @@ function planSuggest(tid){
 function placeTask(tid, who, date){
   const t = get('taches', tid); if (!t) return; const p = getPers(who), pr = p ? presOf(p, date) : null, abs = pr && PCODE[pr.code]?.[1] === 'abs';
   S.ppick = null; tx(() => { db.plan.push({id:uid(), date, who, tacheId:t.id, text:''}); }); render();
+  const cell = $(`.wkgrid .pc[data-who="${CSS.escape(who)}"][data-date="${date}"]`); if (cell){ cell.classList.add('flash', 'm-' + (tMet(t) || 'none')); setTimeout(() => cell.classList.remove('flash'), 600); }
   toast(`${t.titre} → ${p ? persName(p) : PLAN_ROWS.find(r => r[0] === who)?.[1] || ''}, ${dayLbl(date)}${abs ? ` · attention : absent (${pr.code})` : ''}`, abs ? 'bad' : '', true);
 }
 document.addEventListener('dragstart', e => { const t = e.target.closest?.('[data-tid]'); if (!t) return; e.dataTransfer.setData('text/plain', 'tid:' + t.dataset.tid); e.dataTransfer.effectAllowed = 'copy'; t.classList.add('drag'); document.body.classList.add('placing'); planSuggest(t.dataset.tid); });

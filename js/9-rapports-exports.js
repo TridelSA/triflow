@@ -18,7 +18,7 @@ function interventionDialog(it, kksId, tache, opts = {}){
   const isNew = !it;
   const T = tache || get('taches', it?.tacheId);
   const v = it || (tache ? {num:nextNum(), date:todayISO(), type:db.listes.types.find(x => /pr[ée]ventive/i.test(x)) || db.listes.types[0] || '', statut:'terminee', kksId:tache.kksId, titre:tache.titre, constat:tache.description, travaux:'', duree:'', intervenants:tache.assign?.type === 'personne' && getPers(tache.assign.v) ? [tache.assign.v] : [], pieces:[]}
-    : {num:nextNum(), date:todayISO(), type:db.listes.types[0] || '', statut:'ouverte', kksId:kksId || '', titre:'', constat:'', travaux:'', duree:'', intervenants:[], pieces:[]});
+    : {num:nextNum(), date:todayISO(), type:db.listes.types[0] || '', statut:'terminee', kksId:kksId || '', titre:'', constat:'', travaux:'', duree:'', intervenants:[], pieces:[]});
   if (isNew){ const me = meId(); const add = [...(opts.who || []), ...(me ? [me] : [])].filter(id => getPers(id)); if (add.length) v.intervenants = [...new Set([...v.intervenants, ...add])]; if (opts.date) v.date = opts.date; if (opts.text && !v.travaux) v.constat = [v.constat, opts.text].filter(Boolean).join('\n'); }
   const k = getKks(v.kksId);
   const people = db.personnes.filter(p => (p.actif !== false && live(p)) || v.intervenants.includes(p.id)).sort(persSort);

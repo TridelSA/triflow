@@ -444,7 +444,7 @@ details.oroom > summary .cnt{margin-left:auto;font-family:var(--f-mono);font-siz
 .pmr{display:grid;grid-template-columns:110px minmax(0,1fr);border-top:1px solid var(--line)}
 .pmr .pn{padding:8px 10px;font-weight:600;font-size:.85rem;border-right:1px solid var(--line)}
 .pmr.me .pn{background:var(--accent-soft)}
-@media (max-width:420px){ #nav button{font-size:.6rem;padding:6px 0} #nav .ico{width:17px;height:17px} }
+@media (max-width:420px){ #nav button{font-size:.68rem;padding:6px 0} #nav .ico{width:18px;height:18px} }
 @media (max-width:760px){ .wkgrid-wrap,.ptip{display:none} .pmobile{display:block} .pweek .pw-l{min-width:120px} }
 .dlg-warn{display:flex;gap:8px;align-items:center;padding:8px 12px;border-radius:10px;background:var(--bad-soft);color:var(--bad);font-weight:600;margin:0}
 .dlg-warn .ico{width:16px;height:16px}
@@ -476,7 +476,7 @@ details.more > *:not(summary){margin-top:12px}
 .matl-r .pid{margin-left:auto;font-family:var(--f-mono);font-size:.75rem;color:var(--muted);white-space:nowrap}
 .ychips{display:flex;gap:6px;overflow-x:auto;padding:10px 12px;border-bottom:1px solid var(--line);scrollbar-width:thin}
 .ychip{all:unset;cursor:pointer;flex:none;padding:5px 11px;border-radius:999px;font-size:.85rem;font-weight:600;color:var(--muted);background:var(--sunk)}
-.ychip small{font-weight:500;opacity:.75;margin-left:2px}
+.ychip small{font-weight:500;margin-left:2px}
 .ychip[aria-selected=true]{background:var(--accent);color:var(--accent-ink)}
 .ysep{flex:none;width:1px;align-self:stretch;margin:3px 2px;background:var(--line)}
 .ychip.warn[aria-selected=false] small{color:var(--warn);opacity:1;font-weight:700}
@@ -1141,3 +1141,49 @@ button.hb-i:hover b{text-decoration:underline}
   .btn:active,.tick:active,.bt-links button:active,.bt-chips button:active,.fab:active{transform:none}
   #toast{transition-property:opacity}
 }
+
+/* ---------- Critique (impeccable + Emil), novembre 2026 : lisibilité et gants ---------- */
+.hb-t{font-size:.68rem}
+.bt-week div{font-size:.72rem}
+.ychip[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+.ychip[aria-selected=true] small,.ychip[aria-pressed=true] small{color:inherit;opacity:1}
+.pour-chips{display:inline-flex;gap:6px;align-items:center;flex:none}
+.pour-chips .mini.pour{width:auto;max-width:150px}
+.ps-g > summary span::before{content:'›';display:inline-block;margin-right:6px;transition:transform .15s ease-out}
+.ps-g[open] > summary span::before{transform:rotate(90deg)}
+@media (max-width:760px){
+  .tick{width:44px;height:44px}
+  .ychip{min-height:36px;box-sizing:border-box;display:inline-flex;align-items:center}
+  .help-btn{width:36px;height:36px}
+  .icon-btn{width:44px;height:44px}
+  .chips .c .icon-btn{width:32px;height:32px}
+  dialog .btn,.page-head .btn{min-height:44px}
+  .bt-go{min-height:44px;display:inline-flex;align-items:center}
+  .nav button{font-size:.7rem}
+  .fchips{flex-wrap:wrap;overflow:visible}
+}
+@media (max-width:760px){ .pour-chips{flex-basis:100%;flex-wrap:wrap} .fchips > .ysep{display:none} .pour-chips .mini.pour{max-width:130px;min-height:36px} }
+
+/* ---------- Finitions « qui font plaisir » (Emil Kowalski) ---------- */
+:root{--ease-out:cubic-bezier(.23,1,.32,1);--ease-sheet:cubic-bezier(.32,.72,0,1)}
+/* ✓ : se remplit de vert, la ligne s'efface en douceur */
+.tick:hover{border-color:var(--accent);color:var(--accent)}
+.tick:active{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.done-out{transition:opacity .28s var(--ease-out),transform .28s var(--ease-out);opacity:0;transform:translateX(12px)}
+.done-out .tick{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+tr.done-out td{background:var(--accent-soft)}
+/* Planning : la case reçoit un flash de la couleur du métier */
+.pc.flash{animation:pc-flash .6s var(--ease-out)}
+@keyframes pc-flash{0%{box-shadow:inset 0 0 0 3px var(--accent);background:var(--accent-soft)}100%{box-shadow:inset 0 0 0 0 transparent}}
+/* Scan réussi : cadre vert */
+dialog.scan-ok video,dialog.scan-ok .scan-box{outline:4px solid var(--accent);outline-offset:-4px;transition:outline-color .1s}
+/* Fenêtres : apparition douce ; sur téléphone, elles montent du bas */
+dialog.dlg[open]{animation:dlg-in .2s var(--ease-out)}
+@keyframes dlg-in{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+@media (max-width:760px){
+  dialog.dlg{width:100%;max-width:100%;margin:auto 0 0;border-radius:18px 18px 0 0;max-height:92vh;border-bottom:0}
+  dialog.dlg[open]{animation:sheet-up .26s var(--ease-sheet)}
+  @keyframes sheet-up{from{transform:translateY(100%)}to{transform:none}}
+  dialog.dlg footer{padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+}
+@media (prefers-reduced-motion:reduce){ dialog.dlg[open],.pc.flash{animation:none} .done-out{transition:opacity .2s;transform:none} }
