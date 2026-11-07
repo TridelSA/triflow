@@ -597,7 +597,7 @@ function headBand(){
   const today = todayISO(), dt = new Date(today + 'T12:00:00');
   const T = db.taches.filter(t => live(t) && t.actif !== false && forWho(t, S.pour)), ret = T.filter(t => tKey(t) === 'retard').length, sem = T.filter(t => tKey(t) === 'semaine').length;
   const low = db.pieces.filter(p => live(p) && isLow(p)).length;
-  const it = (f, tone, tag, v, l) => `<span class="hb-sep" aria-hidden="true"></span><button class="hb-i ${v ? tone : ''}" data-act="hband" data-f="${f}"><span class="hb-t"><i></i>${tag}</span><b>${v}</b> ${l}</button>`;
+  const it = (f, tone, tag, v, l) => `<span class="hb-sep" aria-hidden="true"></span><button class="hb-i ${v ? tone : ''}" data-act="hband" data-f="${f}"><span class="hb-t"><i></i>${tag}</span><b>${v}</b><span class="hb-w">${l}</span></button>`;
   b.innerHTML = `<span class="hb-i hb-day"><span class="hb-t"><i></i>Aujourd’hui</span>${DAYN[(dt.getDay() + 6) % 7]} ${dt.getDate()} ${MOIS_L[dt.getMonth()]} <span class="muted">· sem. ${isoWeek(today)}</span></span>`
     + (S.view === 'accueil' ? '' : it('retard', 'bad', 'En retard', ret, ret > 1 ? 'travaux' : 'travail') + it('semaine', 'warn', 'Cette semaine', sem, sem > 1 ? 'travaux' : 'travail') + it('low', 'warn', 'À commander', low, low > 1 ? 'pièces' : 'pièce'));
 }
