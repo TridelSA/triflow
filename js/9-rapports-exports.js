@@ -145,9 +145,35 @@ function interventionDialog(it, kksId, tache, opts = {}) {
       <details class="more" ${!isNew && (v.constat || v.duree || v.pieces.length) ? 'open' : ''}><summary>${icon('chev')}Plus de détails <span class="muted">type, durée, constat, pièces utilisées</span></summary>
       <div class="grid2"><label>Type<select name="type">${optList(db.listes.types, v.type)}</select></label><label>Durée (heures)<input name="duree" type="number" min="0" step="0.25" value="${esc(v.duree)}"></label></div>
       <label>Constat / demande<span class="dict-wrap"><textarea name="constat" rows="3">${esc(v.constat)}</textarea>${HAS_DICT ? `<button type="button" class="dict" data-dict="constat" title="Dicter" aria-label="Dicter le texte">${icon('mic')}</button>` : ''}</span></label>
+      <fieldset><legend>Photos</legend><div data-phwrap>${photoStrip(v.photos || [], {}, true)}</div></fieldset>
       <fieldset><legend>Pièces consommées</legend><div class="plines"></div><div class="tools"><button type="button" class="btn ghost small" data-addline>${icon('plus')}Ajouter une pièce</button></div><p class="hint">Les quantités sont retirées du stock à l’enregistrement ; modifier ou supprimer une ligne remet la différence en stock.</p></fieldset></details>`,
     del: isNew ? null : archDel('interventions', it, () => HARD.interventions(it)),
     onOpen(f, d) {
+      d._photos = [...(v.photos || [])];
+      const phDraw = () => {
+        $('[data-phwrap]', d).innerHTML = photoStrip(d._photos, {}, true);
+      };
+      d.addEventListener('change', async e => {
+        const inp = e.target.closest('[data-photo-pick]');
+        if (!inp || !inp.files?.length) return;
+        try {
+          for (const fl of inp.files) d._photos.push(await photoUpload(fl, 'rapports'));
+          phDraw();
+        } catch (er) {
+          toast(er.message, 'bad');
+        }
+      });
+      d.addEventListener('click', e => {
+        const b = e.target.closest('[data-act="photo-open"]');
+        if (!b || b.dataset.col) return;
+        e.stopPropagation();
+        e.preventDefault();
+        const path = b.dataset.path;
+        photoViewer(path, () => {
+          d._photos = d._photos.filter(x => x.path !== path);
+          phDraw();
+        });
+      }, true);
       d._pers = new Set(v.intervenants);
       d._snap = snapFor;
       const sel = $('[data-psel]', d),
@@ -381,6 +407,7 @@ function interventionDialog(it, kksId, tache, opts = {}) {
         intervenants: [...d._pers],
         snap: Object.fromEntries([...d._pers].map(id => [id, persSnapFor(id)])),
         pieces: lines,
+        photos: d._photos || [],
         ks: kk ? (frozen && it.ks && it.kksId === kk.id ? it.ks : kSnap(kk)) : null,
         ts: frozen && it.ts ? it.ts : tk ? tSnap(tk) : it?.ts || null
       };

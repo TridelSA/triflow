@@ -564,6 +564,7 @@ VIEWS.interventions = {
         <dt>Intervenants</dt><dd>${pills ? `<span class="pps">${pills}</span>` : '—'}</dd></dl>
       ${i.constat ? `<section class="pd-sec"><h3>${icon('report')}Constat / demande</h3><p class="pre">${esc(i.constat)}</p></section>` : ''}
       ${i.travaux ? `<section class="pd-sec"><h3>${icon('wrench')}Travaux réalisés</h3>${travauxHTML(i.travaux)}</section>` : ''}
+      <section class="pd-sec"><h3>${icon('camera')}Photos <span class="muted">${(i.photos || []).length || ''}</span></h3>${photoStrip(i.photos, {col: 'interventions', id: i.id})}</section>
       ${byLine(i)}${
         i.pieces.length
           ? `<section class="block"><h3>Pièces utilisées</h3><div class="tbl-wrap"><table class="tbl compact"><tbody>${i.pieces

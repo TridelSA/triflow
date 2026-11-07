@@ -88,6 +88,17 @@ const ACT = {
     go('taches');
   },
   /* Bandeau sous l'en-tête */
+  'photo-open'(d) {
+    if (!d.col) return;
+    const x = get(d.col, d.id);
+    photoViewer(d.path, x ? () => {
+      tx(() => {
+        x.photos = (x.photos || []).filter(p => p.path !== d.path);
+      });
+      render();
+      toast('Photo retirée', '', true);
+    } : null);
+  },
   'quick-out'(d) {
     const p = getPiece(d.id);
     if (p) quickMove(p);

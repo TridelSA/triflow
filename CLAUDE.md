@@ -77,6 +77,7 @@ Commit sur `main` avec un message en français qui dit ce qui change pour l'util
 
 ## Reste à faire côté Thomas (ne pas refaire, rappeler si utile)
 - Lancer `outils/droits.sql` et installer la fonction `creer-utilisateur` dans Supabase.
+- Lancer `outils/photos.sql` dans Supabase (seau privé « photos ») pour activer les photos des pièces et des rapports.
 - Ajouter les secrets GitHub de la sauvegarde (`TRIFLOW_EMAIL`, `TRIFLOW_PASSWORD`, `BACKUP_PASSWORD`).
 - Vérifier la région du projet Supabase (idéalement Zurich).
 - Idées en attente : lien Microsoft To Do / Teams (rappels), photos dans les rapports, droits par rôle.

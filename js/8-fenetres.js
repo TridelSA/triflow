@@ -1256,3 +1256,112 @@ const pieceItems = () =>
         right: `<span class="qty">${num(total(p))} ${esc(p.unite)}</span>${mp ? ' · ' + esc(lieuCode(mp)) : ''}`
       };
     });
+
+/* ---------- Photos (pièces et rapports) ----------
+   Rangées dans Supabase Storage (seau privé « photos », voir outils/photos.sql).
+   Dans la fiche, on garde seulement le chemin : photos: [{path, at, by}].
+   À l'envoi, la photo est réduite (1600 px, JPEG) pour rester légère. */
+const PHOTOS = {urls: new Map(), asked: new Set(), wait: null};
+function photoUrl(path) {
+  const u = PHOTOS.urls.get(path);
+  if (u && u.exp > Date.now()) return u.url;
+  if (!PHOTOS.asked.has(path)) {
+    PHOTOS.asked.add(path);
+    clearTimeout(PHOTOS.wait);
+    PHOTOS.wait = setTimeout(photoFetch, 30);
+  }
+  return '';
+}
+async function photoFetch() {
+  const paths = [...PHOTOS.asked].filter(p => !(PHOTOS.urls.get(p)?.exp > Date.now()));
+  if (!paths.length || !CLOUD.sb?.storage) return;
+  try {
+    const {data, error} = await CLOUD.sb.storage.from('photos').createSignedUrls(paths, 3600);
+    if (error) throw error;
+    for (const r of data || []) if (r.signedUrl) PHOTOS.urls.set(r.path, {url: r.signedUrl, exp: Date.now() + 3500e3});
+  } catch (e) {
+    /* hors ligne ou seau absent : on réessaiera plus tard */
+  }
+  for (const p of paths) PHOTOS.asked.delete(p);
+  $$('img[data-photo]').forEach(im => {
+    const u = PHOTOS.urls.get(im.dataset.photo);
+    if (u && im.getAttribute('src') !== u.url) im.src = u.url;
+  });
+}
+const photoImg = (path, cls = '') =>
+  `<img class="ph-img ${cls}" data-photo="${esc(path)}" src="${esc(photoUrl(path))}" alt="" loading="lazy" decoding="async">`;
+function photoStrip(list, {col, id} = {}, canAdd = true) {
+  const ph = list || [];
+  return `<div class="ph-strip">${ph
+    .map(
+      (x, i) =>
+        `<button type="button" class="ph-th" data-act="photo-open" data-path="${esc(x.path)}" ${col ? `data-col="${col}" data-id="${esc(id)}" data-i="${i}"` : ''} aria-label="Agrandir la photo">${photoImg(x.path)}</button>`
+    )
+    .join('')}${
+    canAdd
+      ? `<label class="ph-add" title="Ajouter une photo">${icon('plus')}<span>Photo</span><input type="file" accept="image/*" capture="environment" ${col ? `data-photo-add="${col}" data-id="${esc(id)}"` : 'data-photo-pick'} hidden></label>`
+      : ''
+  }</div>`;
+}
+/* Réduit l'image et l'envoie ; renvoie le chemin rangé */
+async function photoUpload(file, prefix) {
+  if (!CLOUD.sb?.storage) throw new Error('Photos indisponibles ici.');
+  if (navigator.onLine === false) throw new Error('Il faut du réseau pour envoyer une photo.');
+  const bmp = await createImageBitmap(file).catch(() => null);
+  let blob = file;
+  if (bmp) {
+    const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height)),
+      c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * k);
+    c.height = Math.round(bmp.height * k);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.82));
+  }
+  const path = `${prefix}/${todayISO().slice(0, 7)}/${uid()}.jpg`;
+  const {error} = await CLOUD.sb.storage.from('photos').upload(path, blob, {contentType: 'image/jpeg', upsert: false});
+  if (error)
+    throw new Error(
+      /bucket|not found/i.test(error.message || '') ? 'Les photos ne sont pas encore activées (outils/photos.sql).' : error.message || 'Envoi impossible.'
+    );
+  return {path, at: new Date().toISOString(), by: meId() || ''};
+}
+function photoViewer(path, onDel) {
+  const d = dialog({
+    title: 'Photo',
+    wide: true,
+    info: true,
+    saveLabel: 'Fermer',
+    body: `<div class="ph-big">${photoImg(path, 'big')}</div>${onDel ? '<button type="button" class="btn danger-ghost" data-phdel>Retirer la photo</button>' : ''}`,
+    onSave() {}
+  });
+  const b = $('[data-phdel]', d);
+  if (b)
+    b.onclick = () => {
+      onDel();
+      d.close();
+    };
+}
+/* Ajout depuis une fiche (pièce ou rapport) */
+document.addEventListener('change', async e => {
+  const inp = e.target.closest('[data-photo-add]');
+  if (!inp || !inp.files?.length) return;
+  const col = inp.dataset.photoAdd,
+    x = get(col, inp.dataset.id);
+  if (!x) return;
+  const lab = inp.closest('.ph-add');
+  lab?.classList.add('busy');
+  try {
+    for (const f of inp.files) {
+      const ph = await photoUpload(f, col === 'pieces' ? 'pieces' : 'rapports');
+      tx(() => {
+        x.photos = [...(x.photos || []), ph];
+      });
+    }
+    render();
+    toast('Photo ajoutée');
+  } catch (er) {
+    toast(er.message, 'bad');
+  }
+  lab?.classList.remove('busy');
+  inp.value = '';
+});

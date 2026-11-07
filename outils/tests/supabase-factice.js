@@ -17,6 +17,10 @@ window.__srv = window.__srv || {rows:new Map(), handlers:[], session:null, rpcCa
       const list = () => [...S.rows.values()].filter(r => (!f.c || r.collection === f.c) && (!f.neq || r.collection !== f.neq) && f.eqs.every(([k, v]) => String(r.data?.[k]) === String(v)) && (!f.ids || f.ids.includes(r.id))).sort((a, b) => (a.collection + '|' + a.id).localeCompare(b.collection + '|' + b.id));
       const q = {order(){ return q; }, eq(k, v){ if (k === 'collection') f.c = v; else f.eqs.push([k.replace('data->>', ''), v]); return q; }, neq(k, v){ f.neq = v; return q; }, in(k, v){ f.ids = v; return q; }, async range(a, b){ S.reads = (S.reads || 0) + 1; return {data:list().slice(a, b + 1).map(pick), error:null}; }, then(ok, ko){ S.reads = (S.reads || 0) + 1; return Promise.resolve({data:list().map(pick), error:null}).then(ok, ko); }};
       return q; }}; },
+    storage: {from(){ return {
+      async upload(path, blob){ S.photos = S.photos || new Map(); S.photos.set(path, 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><rect width="40" height="30" fill="#9cd"/></svg>')); return {data:{path}, error:null}; },
+      async createSignedUrls(paths){ return {data: paths.map(p => ({path:p, signedUrl:(S.photos && S.photos.get(p)) || ''})), error:null}; }
+    }; }},
     async rpc(name, {changes}){
       if (S.offline) throw new TypeError('Failed to fetch');
       S.rpcCalls++;

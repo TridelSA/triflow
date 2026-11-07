@@ -230,7 +230,7 @@ VIEWS.pieces = {
           n = sortedStock(p).length,
           hm = horsMag(p);
         return `<button class="prow ${S.sel.pieces === p.id ? 'sel' : ''}" data-act="select" data-id="${p.id}">
-        <span class="pm"><span class="pdes" title="${esc(p.designation)}">${esc(p.designation)}</span>
+        ${p.photos?.length ? photoImg(p.photos[0].path, 'ph-row') : ''}<span class="pm"><span class="pdes" title="${esc(p.designation)}">${esc(p.designation)}</span>
           <span class="ploc"><span class="pid">${esc(p.ref)}</span>${mp ? plate(mp, false) + (n > 1 ? ` <span class="muted">+${n - 1}</span>` : '') : '<span class="muted">Sans emplacement</span>'}${hm.length ? ` <span class="muted" style="color:var(--stat)">+${num(hm.reduce((a, s) => a + s.qte, 0))} hors magasin</span>` : ''}</span></span>
         <span class="pq ${isOut(p) ? 'zero' : isLow(p) ? 'low' : ''}"><b>${num(dispo(p))}</b><small>${isOut(p) ? 'épuisé' : isLow(p) ? 'stock bas' : esc(p.unite)}</small></span></button>`;
       })
@@ -271,6 +271,7 @@ VIEWS.pieces = {
         <button class="btn primary" data-act="move" data-id="${p.id}" data-type="sortie">${icon('move')}Mouvement de stock</button>
       </div>
       <div class="pd-mbar"><button class="btn big-out" data-act="quick-out" data-id="${p.id}">− Sortir</button><button class="btn big-in" data-act="quick-out" data-id="${p.id}">+ Entrer</button></div>
+      <section class="pd-sec"><h3>${icon('camera')}Photos <span class="muted">${(p.photos || []).length || ''}</span></h3>${photoStrip(p.photos, {col: 'pieces', id: p.id})}</section>
       <section class="pd-sec"><h3>${icon('shelf')}Où la trouver</h3>
         ${
           phys.length

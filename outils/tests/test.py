@@ -102,6 +102,9 @@ async def main():
         ok(await pg.evaluate("CLOUD.state === 'offline' && IDB.get(CLOUD.pendKey()).then(x => !!x?.db)"), 'hors ligne : modification gardée sur l’appareil')
         await pg.evaluate("__srv.offline = false; dispatchEvent(new Event('online'))"); await pg.wait_for_timeout(900)
         ok(await pg.evaluate("CLOUD.state === 'ok' && [...__srv.rows.values()].some(r => r.data?.notes === 'hors ligne')"), 'retour du réseau : modification envoyée')
+        await pg.evaluate("""(async () => { const c = document.createElement('canvas'); c.width = 20; c.height = 20; const b = await new Promise(ok => c.toBlob(ok, 'image/png'));
+          const ph = await photoUpload(new File([b], 'x.png', {type:'image/png'}), 'pieces'); tx(() => { getPiece('p1').photos = [ph]; }); go('pieces', 'p1'); })()"""); await pg.wait_for_timeout(600)
+        ok(await pg.evaluate("!!document.querySelector('#detail .ph-th img[src^=\"data:\"]') && !!document.querySelector('#list .ph-row')"), 'photo d’une pièce : envoyée, affichée dans la fiche et la liste')
         print('Pages (ordinateur)')
         for js, nom in [("go('accueil')", 'accueil'), ("S.sel.pieces=null; go('pieces')", 'pieces'), ("go('pieces','p1')", 'piece'),
                         ("go('taches','t2')", 'travaux-afaire'), ("S.statut='actives'; go('interventions')", 'travaux-encours'),
