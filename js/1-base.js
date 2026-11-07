@@ -145,6 +145,7 @@ const ICONS = {
   chev: 'M9 6l6 6-6 6',
   arrow: 'M4 12h15M14 7l5 5-5 5',
   camera: 'M4 8h3l2-3h6l2 3h3v11H4zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
+  bell: 'M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0',
   truck: 'M3 7h11v9H3zM14 10h4l3 3v3h-7M7 19.5a1.8 1.8 0 100-3.6 1.8 1.8 0 000 3.6zM17 19.5a1.8 1.8 0 100-3.6 1.8 1.8 0 000 3.6z',
   flame: 'M12 3c.8 3.5 5 5.2 5 10a5 5 0 01-10 0c0-2.6 1.6-3.9 2-6.2.9.9 1.6 2 1.6 3.4C12.6 8 12.4 5.5 12 3z',
   drop: 'M12 3s6 6.8 6 11a6 6 0 01-12 0c0-4.2 6-11 6-11z',
@@ -797,6 +798,7 @@ const PLANNING_STAFF = [
   ['UMUHIRE', 'Cadres'],
   ['ZERMATTEN', 'Cadres']
 ];
+const PANNES_DEF = ['Usure', 'Encrassement / bouchage', 'Fuite', 'Défaut électrique', 'Capteur / mesure', 'Casse mécanique', 'Surchauffe', 'Réglage / paramètre', 'Erreur d’utilisation', 'Autre'];
 const STATUTS = {ouverte: ['Ouverte', 'bad'], encours: ['En cours', 'info'], terminee: ['Terminée', 'ok']};
 const LEGACY_TYPES = {corrective: 'Corrective', preventive: 'Préventive', amelioration: 'Amélioration', controle: 'Contrôle'};
 
@@ -836,6 +838,7 @@ function blank() {
       categories: ['Mécanique', 'Électrique', 'Instrumentation', 'Hydraulique', 'Pneumatique', 'Consommable'],
       unites: ['pce', 'jeu', 'm', 'l', 'kg', 'rouleau', 'boîte'],
       types: ['Corrective', 'Préventive', 'Contrôle', 'Amélioration'],
+      pannes: PANNES_DEF.slice(),
       groupes: ['Électricien', 'Automaticien', 'Mécanicien', 'Intendance', 'Chauffeurs-grutiers', 'Cadres', 'Équipe', 'Administration'],
       systemes: {}
     },
@@ -1180,6 +1183,8 @@ function migrate(d) {
     seedTaches(d);
   }
   d.meta.tachesV = 1;
+  /* Codes de panne (liste modifiable dans Options › Listes) */
+  if (!Array.isArray(d.listes.pannes)) d.listes.pannes = PANNES_DEF.slice();
   d.version = 2;
   return d;
 }

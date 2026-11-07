@@ -142,11 +142,17 @@ function interventionDialog(it, kksId, tache, opts = {}) {
         <input data-padd placeholder="Tapez un nom : personne ou entreprise externe…" aria-label="Ajouter un intervenant" autocomplete="off">`
           : '<p class="hint">Aucune personne enregistrée.</p>'
       }</fieldset>
-      <details class="more" ${!isNew && (v.constat || v.pieces.length) ? 'open' : ''}><summary>${icon('chev')}Plus de détails <span class="muted">type, constat, pièces utilisées</span></summary>
-      <label>Type<select name="type">${optList(db.listes.types, v.type)}</select></label>
+      ${(() => {
+        const pts = v.points?.length ? v.points : (T?.points || []).map(t => ({t, ok: false}));
+        return pts.length
+          ? `<fieldset class="pts-f"><legend>Points contrôlés</legend><div class="pts">${pts.map((p, i) => `<label class="pt"><input type="checkbox" name="pt" value="${i}" ${p.ok ? 'checked' : ''}><span>${esc(p.t)}</span></label>`).join('')}</div><input type="hidden" name="ptlist" value="${esc(JSON.stringify(pts.map(p => p.t)))}"></fieldset>`
+          : '';
+      })()}
+      <details class="more" ${!isNew && (v.constat || v.pieces.length || v.cause) ? 'open' : ''}><summary>${icon('chev')}Plus de détails <span class="muted">type, cause, constat, pièces utilisées</span></summary>
+      <div class="grid2"><label>Type<select name="type">${optList(db.listes.types, v.type)}</select></label><label>Cause (si panne)<select name="cause"><option value="">—</option>${(db.listes.pannes || []).map(x => opt(x, x, v.cause || '')).join('')}${v.cause && !(db.listes.pannes || []).includes(v.cause) ? opt(v.cause, v.cause, v.cause) : ''}</select></label></div>
       <label>Constat / demande<span class="dict-wrap"><textarea name="constat" rows="3">${esc(v.constat)}</textarea>${HAS_DICT ? `<button type="button" class="dict" data-dict="constat" title="Dicter" aria-label="Dicter le texte">${icon('mic')}</button>` : ''}</span></label>
       <fieldset><legend>Photos</legend><div data-phwrap>${photoStrip(v.photos || [], {}, true)}</div></fieldset>
-      <fieldset><legend>Pièces consommées</legend><div class="plines"></div><div class="tools"><button type="button" class="btn ghost small" data-addline>${icon('plus')}Ajouter une pièce</button></div><p class="hint">Les quantités sont retirées du stock à l’enregistrement ; modifier ou supprimer une ligne remet la différence en stock.</p></fieldset></details>`,
+      <fieldset><legend>Pièces consommées</legend><div class="pl-sugg" hidden></div><div class="plines"></div><div class="tools"><button type="button" class="btn ghost small" data-addline>${icon('plus')}Ajouter une pièce</button></div><p class="hint">Les quantités sont retirées du stock à l’enregistrement ; modifier ou supprimer une ligne remet la différence en stock.</p></fieldset></details>`,
     del: isNew ? null : archDel('interventions', it, () => HARD.interventions(it)),
     onOpen(f, d) {
       d._photos = [...(v.photos || [])];
@@ -347,6 +353,27 @@ function interventionDialog(it, kksId, tache, opts = {}) {
       };
       v.pieces.forEach(addLine);
       $('[data-addline]', d).onclick = () => $('.pl-piece', addLine()).focus();
+      /* Pièces de rechange de l'équipement choisi : un toucher les ajoute */
+      const sugg = $('.pl-sugg', d);
+      const drawSugg = () => {
+        const kid = (val(f, 'kks') && findKks(val(f, 'kks'))?.id) || '',
+          inLines = new Set($$('.pl-piece', d).map(x => x.dataset.id)),
+          ps = kid ? db.pieces.filter(p => live(p) && (p.kks || []).includes(kid) && !inLines.has(p.id)).slice(0, 8) : [];
+        sugg.hidden = !ps.length;
+        sugg.innerHTML = ps.length
+          ? `<span class="muted">Pièces de cet équipement :</span>${ps.map(p => `<button type="button" class="ychip" data-sugg="${p.id}">${icon('plus')}${esc(p.designation)} <small>${num(dispo(p))}</small></button>`).join('')}`
+          : '';
+      };
+      sugg.onclick = e => {
+        const b = e.target.closest('[data-sugg]');
+        if (!b) return;
+        addLine({pieceId: b.dataset.sugg, qte: 1});
+        drawSugg();
+      };
+      f.addEventListener('input', drawSugg);
+      f.addEventListener('change', drawSugg);
+      f.addEventListener('focusout', () => setTimeout(drawSugg, 50));
+      drawSugg();
     },
     onSave(f, d) {
       const titre = val(f, 'titre'),
@@ -406,6 +433,12 @@ function interventionDialog(it, kksId, tache, opts = {}) {
         snap: Object.fromEntries([...d._pers].map(id => [id, persSnapFor(id)])),
         pieces: lines,
         photos: d._photos || [],
+        cause: val(f, 'cause'),
+        points: (() => {
+          const l = f.elements.ptlist ? JSON.parse(f.elements.ptlist.value || '[]') : [],
+            ok = new Set($$('input[name=pt]:checked', f).map(x => +x.value));
+          return l.map((t, i) => ({t, ok: ok.has(i)}));
+        })(),
         ks: kk ? (frozen && it.ks && it.kksId === kk.id ? it.ks : kSnap(kk)) : null,
         ts: frozen && it.ts ? it.ts : tk ? tSnap(tk) : it?.ts || null
       };
@@ -501,6 +534,8 @@ function reportHTML(i) {
       <tr><th>Date</th><td colspan="3">${fmtD(i.date)}</td></tr></table>
     <h2>Constat / demande</h2><div class="rpt-box">${esc(i.constat)}</div>
     <h2>Travaux réalisés</h2><div class="rpt-box tall">${esc(i.travaux)}</div>
+    ${(i.points || []).length ? `<h2>Points contrôlés</h2><div class="rpt-box">${i.points.map(p => `${p.ok ? '☑' : '☐'} ${esc(p.t)}`).join('<br>')}</div>` : ''}
+    ${i.cause ? `<p><b>Cause de la panne :</b> ${esc(i.cause)}</p>` : ''}
     <h2>Pièces consommées</h2>${
       i.pieces.length
         ? `<table class="rpt-tbl"><thead><tr><th>ID</th><th>Désignation</th><th>Prélevé en</th><th class="n">Qté</th></tr></thead><tbody>${i.pieces
@@ -887,6 +922,7 @@ function xlInts() {
         'Repère KKS',
         'Équipement',
         'Intervenants',
+        'Cause',
         'Constat',
         'Travaux',
         'Pièces consommées'
@@ -903,6 +939,7 @@ function xlInts() {
       k ? k.code : '',
       k ? k.designation : '',
       intPers(i).map(persName).join(', '),
+      i.cause || '',
       i.constat || '',
       i.travaux || '',
       i.pieces

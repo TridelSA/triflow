@@ -26,6 +26,9 @@ const J_FIELDS = {
     constat: 'constat',
     travaux: 'ce qui a été fait',
     duree: 'durée',
+    cause: 'cause de la panne',
+    points: 'points contrôlés',
+    photos: 'photos',
     intervenants: 'intervenants',
     pieces: 'pièces consommées'
   },
@@ -36,7 +39,10 @@ const J_FIELDS = {
     assign: 'attribution',
     freq: 'fréquence',
     prochaine: 'prochaine échéance',
-    derniere: 'dernière fois'
+    derniere: 'dernière fois',
+    points: 'points à contrôler',
+    demande: 'demande',
+    photos: 'photos'
   },
   kks: {code: 'code', designation: 'désignation', aic: 'AIC'},
   personnes: {nom: 'nom', prenom: 'prénom', groupe: 'groupe', fonction: 'fonction', actif: 'actif'},

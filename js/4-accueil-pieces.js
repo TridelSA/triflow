@@ -119,7 +119,7 @@ VIEWS.accueil = {
           ? `<button class="md-it task" data-act="goto" data-view="taches" data-id="${t.id}">${mdot(tMet(t))}${esc(t.titre)}</button>`
           : `<span class="md-it">${esc(x.text)}</span>`;
       };
-      myday = `<section class="myday"><div class="md-h"><div><p class="md-k">Ma journée</p><h2>Bonjour ${esc(mp.prenom || niceName(mp.nom || persName(mp)))}</h2></div><button class="md-scan" data-act="scan">${icon('scan')}<span>Scanner une pièce</span></button></div>
+      myday = `<section class="myday"><div class="md-h"><div><p class="md-k">Ma journée</p><h2>Bonjour ${esc(mp.prenom || niceName(mp.nom || persName(mp)))}</h2></div><span class="md-btns"><button class="btn" data-act="signal">${icon('bell')}Signaler un problème</button><button class="md-scan" data-act="scan">${icon('scan')}<span>Scanner une pièce</span></button></span></div>
         <div class="md-plan"><span class="md-l">${icon('calendar')}Au planning</span>${absent ? '<span class="md-it abs">Pas au planning aujourd’hui</span>' : items.length ? items.map(it).join('') : '<span class="muted">Rien de noté pour aujourd’hui.</span>'}</div>
         ${mrows.length ? `<ul class="bt-rows">${mrows.slice(0, 5).join('')}</ul>${mrows.length > 5 ? `<button class="link" data-act="pour-set-go" data-v="p:${me}">Voir mes ${mrows.length} travaux</button>` : ''}` : '<p class="bt-empty">Aucun travail urgent pour vous. </p>'}</section>
         <h2 class="ov-h">Vue d’ensemble</h2>`;
@@ -159,6 +159,7 @@ VIEWS.accueil = {
         ${mp ? `<section class="mh-card"><p class="mh-lbl">Au planning aujourd’hui</p><div class="md-plan">${absent ? '<span class="md-it abs">Pas au planning aujourd’hui</span>' : items.length ? items.map(it).join('') : '<span class="muted">Rien de noté pour aujourd’hui.</span>'}</div></section>` : ''}
         <p class="mh-lbl">${me ? 'Mes travaux' : 'Travaux urgents'}</p>
         ${rows.length || reps.length ? `<ul class="mh-card mh-list">${rows.slice(0, 6).join('')}${reps.map(rrow).join('')}</ul>${rows.length > 6 ? `<button class="mh-more" data-act="pour-set-go" data-v="${me ? 'p:' + me : ''}">Voir les ${rows.length} travaux ›</button>` : ''}` : `<div class="mh-card mh-ok">${icon('check')}<span>Rien d’urgent${me ? ' pour vous' : ''}.</span></div>`}
+        <button class="mh-card mh-signal" data-act="signal">${icon('bell')}<span>Signaler un problème</span></button>
         <p class="mh-lbl">Stock</p>
         <button class="mh-card mh-stock" data-act="${low.length ? 'to-order' : 'nav'}" data-view="pieces"><span>${low.length ? `<b class="warn">${low.length}</b> ${plural(low.length, 'pièce à commander', 'pièces à commander')}` : 'Rien à commander'}</span><span class="mh-v">Voir ›</span></button>
       </div>`;

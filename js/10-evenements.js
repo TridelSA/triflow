@@ -99,6 +99,16 @@ const ACT = {
       toast('Photo retirée', '', true);
     } : null);
   },
+  signal: () => signalDialog(),
+  'dem-ok'(d) {
+    const t = get('taches', d.id);
+    if (!t?.demande) return;
+    tx(() => {
+      t.demande = {...t.demande, ok: true, okBy: meId() || '', okAt: new Date().toISOString()};
+    });
+    render();
+    toast('Demande acceptée : elle est dans les travaux à faire.', '', true);
+  },
   'quick-out'(d) {
     const p = getPiece(d.id);
     if (p) quickMove(p);

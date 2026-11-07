@@ -41,14 +41,17 @@ Toujours calculés à partir des données existantes, affichés simplement (un c
 - **MTBF** (temps moyen entre pannes) = période ÷ nombre de pannes, par KKS. **MTTR** demande une durée de réparation : TriFlow ne la note plus, donc ne pas le proposer sans en parler à Thomas.
 - **Stock** : pièces sous le minimum (`isLow`), à zéro (`isOut`), sorties du mois par pièce.
 
-## 4. Idées tirées des GMAO pro (à proposer, pas à imposer)
-- **Codes de panne** (cause / dégât / action, comme les « catalogues » SAP) : une petite liste dans Options, un choix facultatif dans le rapport → permet les « pannes répétées ».
-- **Demande d'intervention** par n'importe qui (photo + KKS + phrase), qui devient un petit travail à valider par le responsable du métier.
-- **Gammes** : liste de points à cocher dans un travail récurrent (« Ce qu'il faut faire » en cases).
-- **Compteurs** (heures de marche) pour un préventif déclenché à l'usage plutôt qu'au calendrier.
-- **Pièces de rechange par équipement** (nomenclature) : déjà amorcé par le lien pièce ↔ KKS.
+## 4. Déjà en place (novembre 2026)
+- **Causes de panne** : liste `db.listes.pannes` (Options › Listes), champ `cause` du rapport, résumé « N pannes en 12 mois » sur la fiche KKS, colonne de l'export.
+- **Signaler un problème** (`signalDialog`) : petit travail avec `demande:{by, at, ok}` ; « Demande » dans la liste ; Accepter (`dem-ok`) / Refuser (archiver) par un cadre ou le responsable du métier (`canValidate`, `reglages.resp`).
+- **Points à contrôler** : `taches.points` (liste de textes) → cases dans le rapport → `interventions.points:[{t, ok}]`, affichés et imprimés.
+- **Pièces de l'équipement** proposées dans le rapport (pastilles `.pl-sugg`, d'après `pieces.kks`).
 
-## 5. Avant de livrer une fonction métier
+## 5. Idées encore possibles (à proposer, pas à imposer)
+- **Compteurs** (heures de marche) pour un préventif déclenché à l'usage : **refusé pour l'instant par Thomas** (ne pas le proposer à nouveau sans raison).
+- **Tableau d'indicateurs** (section 3) : pas encore fait.
+
+## 6. Avant de livrer une fonction métier
 1. Le mot affiché est-il celui de l'atelier (« travail », « rapport », « pièce », « emplacement », « repère KKS ») et pas un mot de SAP ?
 2. Ça marche au téléphone, avec des gants, et hors ligne (les données passent par `tx()` ; pas d'appel réseau obligatoire) ?
 3. Un technicien le fait en **3 touches ou moins** ?

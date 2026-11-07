@@ -114,6 +114,19 @@ async def main():
         await pg.evaluate("""(async () => { const c = document.createElement('canvas'); c.width = 20; c.height = 20; const b = await new Promise(ok => c.toBlob(ok, 'image/png'));
           const ph = await photoUpload(new File([b], 'x.png', {type:'image/png'}), 'pieces'); tx(() => { getPiece('p1').photos = [ph]; }); go('pieces', 'p1'); })()"""); await pg.wait_for_timeout(600)
         ok(await pg.evaluate("!!document.querySelector('#detail .ph-th img[src^=\"data:\"]') && !!document.querySelector('#list .ph-row')"), 'photo d’une pièce : envoyée, affichée dans la fiche et la liste')
+        # Métier : demande, points à contrôler, cause de panne, pièces de l'équipement
+        await pg.evaluate("signalDialog()"); await pg.wait_for_timeout(200)
+        await pg.fill('dialog[open] input[name=titre]', 'Fuite sous la pompe'); await pg.click('dialog[open] .prio-o:has(input[name=grp])'); await pg.click('dialog[open] button[type=submit]'); await pg.wait_for_timeout(400)
+        ok(await pg.evaluate("db.taches.some(t => t.titre === 'Fuite sous la pompe' && t.demande && !t.demande.ok && t.kind === 'petit')"), 'signaler un problème : demande créée')
+        await pg.evaluate("const t = db.taches.find(t => t.titre === 'Fuite sous la pompe'); go('taches', t.id)"); await pg.wait_for_timeout(300)
+        await pg.click('#detail [data-act=dem-ok]'); await pg.wait_for_timeout(300)
+        ok(await pg.evaluate("db.taches.find(t => t.titre === 'Fuite sous la pompe').demande.ok === true"), 'demande acceptée par un cadre')
+        await pg.evaluate("tx(() => db.taches.push({id:'t9', titre:'Contrôle pompe', kksId:'k1', assign:{type:'groupe', v:'Mécanicien'}, freq:{n:1, unite:'mois'}, prochaine:isoAdd(todayISO(), 20), actif:true, kind:'rec', rapport:'oui', points:['Niveau d’huile', 'Bruit anormal']})); interventionDialog(null, null, get('taches', 't9'))"); await pg.wait_for_timeout(300)
+        ok(await pg.evaluate("document.querySelectorAll('dialog[open] input[name=pt]').length === 2"), 'rapport : points à contrôler en cases')
+        ok(await pg.evaluate("!!document.querySelector('dialog[open] .pl-sugg [data-sugg=p1]')"), 'rapport : pièces de l’équipement proposées')
+        await pg.evaluate("document.querySelector('dialog[open] details.more').open = true"); await pg.click('dialog[open] input[name=pt][value=\"0\"]')
+        await pg.select_option('dialog[open] select[name=cause]', 'Fuite'); await pg.click('dialog[open] button[type=submit]'); await pg.wait_for_timeout(500)
+        ok(await pg.evaluate("db.interventions.some(i => i.tacheId === 't9' && i.cause === 'Fuite' && i.points.length === 2 && i.points[0].ok && !i.points[1].ok)"), 'rapport : cause et points enregistrés')
         print('Pages (ordinateur)')
         for js, nom in [("go('accueil')", 'accueil'), ("S.sel.pieces=null; go('pieces')", 'pieces'), ("go('pieces','p1')", 'piece'),
                         ("go('taches','t2')", 'travaux-afaire'), ("S.statut='actives'; go('interventions')", 'travaux-encours'),

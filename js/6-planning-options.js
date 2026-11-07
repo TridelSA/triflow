@@ -1601,6 +1601,7 @@ OPT.listes = () => {
     ${block('categories', 'Catégories de pièces', 'Proposées dans la fiche pièce.')}
     ${block('unites', 'Unités', 'pce, m, kg…')}
     ${block('types', 'Types d’intervention', 'Proposés dans les rapports.')}
+    ${block('pannes', 'Causes de panne', 'Proposées dans les rapports ; servent à repérer les pannes qui reviennent.')}
     ${block('groupes', 'Groupes de personnes', 'Les mêmes que sur le Planning Tridel.')}</div></div></section>`;
 };
 OPT.etiquettes = () => `<section class="opt-sec"><div class="head"><h2>Étiquettes & QR codes</h2></div>

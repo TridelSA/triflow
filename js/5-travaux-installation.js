@@ -18,7 +18,7 @@ function travauxShell() {
   const t = S.view === 'taches';
   return `<header class="page-head"><h1>Travaux</h1><div class="tools">${searchBox(t ? 'taches' : 'interventions', t ? 'Rechercher un travail…' : 'Rechercher un rapport…')}
     ${t ? `<button class="btn primary" data-act="new-tache">${icon('plus')}Nouveau travail</button>` : `<button class="btn primary" data-act="new-int">${icon('plus')}Nouveau rapport</button>`}
-    ${menu(t ? [['new-int', 'Nouveau rapport sans travail prévu', 'report', {}], ['print-taches', 'Imprimer la liste', 'printer', {}], ['xl-taches', 'Exporter en Excel', 'excel', {}], '-', archItem('taches')] : [['xl-ints', 'Exporter en Excel', 'excel', {}], archItem('interventions'), ...(canDel() ? ['-', ['import-travaux', 'Importer depuis CareOffice', 'save', {}]] : [])])}</div></header>
+    ${menu(t ? [['signal', 'Signaler un problème', 'bell', {}], ['new-int', 'Nouveau rapport sans travail prévu', 'report', {}], ['print-taches', 'Imprimer la liste', 'printer', {}], ['xl-taches', 'Exporter en Excel', 'excel', {}], '-', archItem('taches')] : [['xl-ints', 'Exporter en Excel', 'excel', {}], archItem('interventions'), ...(canDel() ? ['-', ['import-travaux', 'Importer depuis CareOffice', 'save', {}]] : [])])}</div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`;
 }
 const doneOn = (t, d) => db.interventions.some(i => i.tacheId === t.id && i.date === d) || (t.faits || []).some(f => f.date === d);
@@ -155,7 +155,7 @@ function tacheRow(t, withSel = true) {
     run = openRun(t),
     off = t.actif === false;
   return `<tr data-act="${withSel ? 'select' : 'goto'}" ${withSel ? '' : 'data-view="taches"'} data-id="${t.id}" class="${withSel && S.sel.taches === t.id ? 'sel' : ''}" tabindex="0">
-    <td><span class="des">${esc(t.titre)}</span><span class="sub">${k ? esc(k.code) + ' · ' : ''}${esc(assignLabel(t.assign))}${isPetit(t) ? '' : ` · <span class="rep">${icon('repeat')}${esc(freqLabel(t.freq))}</span>`}</span>${!off && !run ? `<span class="mdue">${dueInfo(t).chip}</span>` : ''}</td>
+    <td><span class="des">${t.demande && !t.demande.ok ? '<span class="chip info dem">Demande</span> ' : ''}${esc(t.titre)}</span><span class="sub">${k ? esc(k.code) + ' · ' : ''}${esc(assignLabel(t.assign))}${isPetit(t) ? '' : ` · <span class="rep">${icon('repeat')}${esc(freqLabel(t.freq))}</span>`}</span>${!off && !run ? `<span class="mdue">${dueInfo(t).chip}</span>` : ''}</td>
     <td class="num"><span class="trow-r">${off ? '<span class="chip ok">Fait</span>' : run ? '<span class="chip info">En cours</span>' : dueInfo(t).chip}${!off && !run && !t.arch ? `<button class="tick" data-act="do-tache" data-id="${t.id}" title="C’est fait" aria-label="C’est fait : ${esc(t.titre)}">${icon('check')}</button>` : ''}</span></td></tr>`;
 }
 VIEWS.taches = {
@@ -225,7 +225,10 @@ VIEWS.taches = {
         ${off || t.arch ? '' : run ? `<button class="btn primary" data-act="edit-int" data-id="${run.id}">${icon('report')}Compléter le rapport ${esc(run.num)}</button>` : `<button class="btn primary" data-act="do-tache" data-id="${t.id}">${icon('check')}C’est fait</button>`}
       </div>
       ${!off && !t.arch && !isPetit(t) && daysTo(t.prochaine) < 0 ? `<p class="recal">${icon('repeat')}<span>Plus d’actualité ?</span><button class="btn small" data-act="recaler" data-id="${t.id}">Recaler sur la prochaine échéance</button></p>` : ''}
+      ${demandeHTML(t)}
       ${t.description ? `<section class="pd-sec"><h3>${icon('list')}Ce qu’il faut faire</h3><p class="pre">${esc(t.description)}</p></section>` : ''}
+      ${(t.points || []).length ? `<section class="pd-sec"><h3>${icon('check')}Points à contrôler</h3><ul class="pts-list">${t.points.map(p => `<li>${esc(p)}</li>`).join('')}</ul></section>` : ''}
+      ${(t.photos || []).length || t.demande ? `<section class="pd-sec"><h3>${icon('camera')}Photos</h3>${photoStrip(t.photos, {col: 'taches', id: t.id})}</section>` : ''}
       <section class="pd-sec"><h3>${icon('check')}Déjà fait</h3>${doneHTML(t)}</section>${byLine(t)}`;
   }
 };
@@ -293,11 +296,12 @@ function tacheDialog(t, kksId) {
           <label>Pour quand ? (facultatif)<input name="pdate" type="date" value="${petit0 ? esc(v.prochaine || '') : ''}"></label></div>
         <div data-rec><label>${isNew || petit0 ? 'Première fois le' : 'Prochaine fois le'}<input name="prochaine" type="date" value="${esc(petit0 ? v.prochaine || todayISO() : v.prochaine)}"></label><p class="hint" data-fprev></p></div></fieldset>
       <label>Pour qui ?<input name="assign" data-id="${esc(aId)}" data-label="${esc(aId ? assignLabel(v.assign) : '')}" value="${esc(aId ? assignLabel(v.assign) : '')}" placeholder="Un corps de métier ou une personne"></label>
-      <details class="more" ${!isNew && (v.kksId || v.description || v.rapport === 'non') ? 'open' : ''}><summary>Plus de détails <span class="muted">(équipement, rapport, consignes)</span></summary>
+      <details class="more" ${!isNew && (v.kksId || v.description || v.rapport === 'non' || (v.points || []).length) ? 'open' : ''}><summary>Plus de détails <span class="muted">(équipement, rapport, consignes, points à contrôler)</span></summary>
       <label>Équipement (repère KKS)<input name="kks" data-id="${k ? k.id : ''}" data-label="${k ? esc(kksLabel(k)) : ''}" value="${k ? esc(kksLabel(k)) : ''}" placeholder="Facultatif : code ou désignation"></label>
       <fieldset><legend>Faut-il un rapport ?</legend><div class="prio-pick rap-pick" role="radiogroup" aria-label="Rapport">${pill('rapport', 'oui', 'Oui', 'info', v.rapport || 'oui')}${pill('rapport', 'non', 'Non', 'info', v.rapport || 'oui')}</div>
         </fieldset>
-      <label>Ce qu’il faut faire<textarea name="description" rows="3" placeholder="Consignes, points de contrôle… (facultatif)">${esc(v.description)}</textarea></label></details>`,
+      <label>Ce qu’il faut faire<textarea name="description" rows="3" placeholder="Consignes… (facultatif)">${esc(v.description)}</textarea></label>
+      <label>Points à contrôler <span class="muted">(un par ligne : ils deviennent des cases à cocher dans le rapport)</span><textarea name="points" rows="3" placeholder="ex. Niveau d’huile&#10;Serrage des bornes&#10;Bruit anormal">${esc((v.points || []).join('\n'))}</textarea></label></details>`,
     onOpen(f, d) {
       combo(f.elements.kks, {
         items: () =>
@@ -355,6 +359,10 @@ function tacheDialog(t, kksId) {
       const data = {
         titre,
         description: val(f, 'description'),
+        points: val(f, 'points')
+          .split('\n')
+          .map(x => x.trim())
+          .filter(Boolean),
         kksId: kk ? kk.id : '',
         assign,
         freq: {n, unite},
@@ -557,13 +565,14 @@ VIEWS.interventions = {
     return `${archBanner('interventions', i)}<div class="pd-head"><span class="pd-id">${esc(i.num)}</span><div class="pd-tools">${i.statut !== 'terminee' ? statutChip(i.statut) : ''}<button class="btn small" data-act="edit-int" data-id="${i.id}">${icon('edit')}${i.statut === 'terminee' ? 'Modifier' : 'Compléter'}</button><button class="btn small" data-act="print-int" data-id="${i.id}">${icon('printer')}Imprimer</button>${menu([i.arch ? ['unarch', 'Restaurer le rapport', 'archive', {col: 'interventions', id: i.id}] : ['arch', 'Archiver le rapport', 'archive', {col: 'interventions', id: i.id}], hardItem('interventions', i.id)].filter(Boolean), 'Plus', 'more', 'small')}</div></div>
       <h2 class="pd-title">${esc(i.titre)}</h2>
       ${k ? `<div class="equip-hero">${kTagI(i)}<span>${esc(k.designation || '')}</span></div>` : ''}
-      <p class="pd-sub">${fmtD(i.date)}${i.type ? ` · ${esc(i.type)}` : ''}${i.statut === 'terminee' ? ' · <span style="color:var(--ok)">terminé</span>' : ''}</p>
+      <p class="pd-sub">${fmtD(i.date)}${i.type ? ` · ${esc(i.type)}` : ''}${i.cause ? ` · cause : ${esc(i.cause)}` : ''}${i.statut === 'terminee' ? ' · <span style="color:var(--ok)">terminé</span>' : ''}</p>
       <dl class="pd-info rep">
         ${k ? '' : '<dt>Équipement</dt><dd>—</dd>'}
         ${T ? `<dt>Tâche</dt><dd>${get('taches', i.tacheId) ? `<button class="link" data-act="goto" data-view="taches" data-id="${i.tacheId}">${esc(T.titre)}</button>` : esc(T.titre)} <span class="muted">· ${esc(T.freq)}</span></dd>` : ''}
         <dt>Intervenants</dt><dd>${pills ? `<span class="pps">${pills}</span>` : '—'}</dd></dl>
       ${i.constat ? `<section class="pd-sec"><h3>${icon('report')}Constat / demande</h3><p class="pre">${esc(i.constat)}</p></section>` : ''}
       ${i.travaux ? `<section class="pd-sec"><h3>${icon('wrench')}Travaux réalisés</h3>${travauxHTML(i.travaux)}</section>` : ''}
+      ${(i.points || []).length ? `<section class="pd-sec"><h3>${icon('check')}Points contrôlés <span class="muted">${i.points.filter(p => p.ok).length} / ${i.points.length}</span></h3><ul class="pts-list done">${i.points.map(p => `<li class="${p.ok ? 'ok' : 'no'}">${p.ok ? '✓' : '—'} ${esc(p.t)}</li>`).join('')}</ul></section>` : ''}
       <section class="pd-sec"><h3>${icon('camera')}Photos <span class="muted">${(i.photos || []).length || ''}</span></h3>${photoStrip(i.photos, {col: 'interventions', id: i.id})}</section>
       ${byLine(i)}${
         i.pieces.length
@@ -769,6 +778,14 @@ VIEWS.kks = {
       <div class="kstats">${stat(ps.length, 'pièce(s) de rechange', ps.length ? `${inStock} en stock` : '', ps.length && !inStock ? 'bad' : '')}${stat(ints.length, 'rapport(s)', ints[0] ? `dernier le ${fmtD(ints[0].date)}` : '')}${stat(ts.length, 'tâche(s)', nxt ? `prochaine le ${fmtD(nxt.prochaine)}` : '', nxt && daysTo(nxt.prochaine) < 0 ? 'bad' : '')}</div>
       <div class="kacts"><button class="btn primary" data-act="new-int" data-kks="${k.id}">${icon('report')}Nouveau rapport</button><button class="btn" data-act="new-tache" data-kks="${k.id}">${icon('check')}Nouveau travail</button></div>
       ${ts.length ? `<section class="pd-sec"><h3>${icon('repeat')}Tâches</h3><div class="tbl-wrap"><table class="tbl compact"><tbody>${ts.map(t => tacheRow(t, false)).join('')}</tbody></table></div></section>` : ''}
+      ${(() => {
+        const y = isoAdd(todayISO(), -365),
+          pn = ints.filter(i => live(i) && i.date >= y && (i.cause || /correct/i.test(i.type || '')));
+        if (!pn.length) return '';
+        const c = new Map();
+        pn.forEach(i => i.cause && c.set(i.cause, (c.get(i.cause) || 0) + 1));
+        return `<p class="pannes ${pn.length >= 3 ? 'warn' : ''}">${icon('bolt')}<span><b>${pn.length} panne${pn.length > 1 ? 's' : ''}</b> en 12 mois${c.size ? ' · ' + [...c].sort((a, b) => b[1] - a[1]).map(([k, n]) => `${esc(k)}${n > 1 ? ' ×' + n : ''}`).join(', ') : ''}</span></p>`;
+      })()}
       <section class="pd-sec"><h3>${icon('report')}Rapports <span class="muted">${ints.length || ''}</span></h3>${ints.length ? intTable(allI ? ints : ints.slice(0, 6), true) + (ints.length > 6 ? `<button class="link" data-act="k-all" data-id="${k.id}">${allI ? 'Réduire' : `Voir les ${ints.length} rapports`}</button>` : '') : '<p class="empty-line">Aucun rapport sur cet équipement.</p>'}</section>
       <section class="pd-sec"><h3>${icon('box')}Pièces de rechange <span class="muted">${ps.length || ''}</span></h3>
         ${
@@ -784,3 +801,71 @@ VIEWS.kks = {
         <form class="inline-form" data-form="link-piece" data-kks="${k.id}"><input name="piece" list="dl-pieces" placeholder="Lier une pièce (ID ou désignation)" aria-label="Pièce à lier" autocomplete="off"><button class="btn">Lier</button></form></section>`;
   }
 };
+
+/* ---------- Signaler un problème (demande d'intervention) ----------
+   N'importe qui : quoi, où (facultatif), quel métier, urgent ?, photo. Devient un petit travail marqué « Demande »,
+   que le responsable du métier (Options › Rôles) ou un cadre accepte ou refuse. */
+const canValidate = t => canDel() || (db.reglages.resp || {})[t.assign?.type === 'groupe' ? t.assign.v : getPers(t.assign?.v)?.groupe] === meId();
+function demandeHTML(t) {
+  if (!t.demande) return '';
+  const by = getPers(t.demande.by);
+  if (t.demande.ok) return `<p class="dem-line">${icon('check')}<span>Demande de ${esc(by ? persName(by) : 'quelqu’un')} le ${fmtD(t.demande.at.slice(0, 10))}, acceptée${getPers(t.demande.okBy) ? ' par ' + esc(persName(getPers(t.demande.okBy))) : ''}.</span></p>`;
+  return `<div class="dem-box"><p><b>Demande à valider</b> · signalée par ${esc(by ? persName(by) : 'quelqu’un')} le ${fmtD(t.demande.at.slice(0, 10))}.</p>${
+    canValidate(t) && !t.arch
+      ? `<div class="dem-act"><button class="btn primary" data-act="dem-ok" data-id="${t.id}">${icon('check')}Accepter</button><button class="btn" data-act="arch" data-col="taches" data-id="${t.id}">Refuser</button></div>`
+      : '<p class="muted">En attente du responsable du métier.</p>'
+  }</div>`;
+}
+function signalDialog() {
+  const groups = METIERS.map(([k, lbl]) => [k, lbl, db.listes.groupes.find(g => metOf(g) === k)]).filter(x => x[2]);
+  const mine = metOf(getPers(meId())?.groupe);
+  dialog({
+    title: 'Signaler un problème',
+    saveLabel: 'Envoyer',
+    body: `<label>Quel est le problème ?<input name="titre" required placeholder="ex. Fuite d’huile sous la pompe P2"></label>
+      <label>Où ? <span class="muted">(repère KKS, facultatif)</span><input name="kks" data-id="" placeholder="Code ou nom de l’équipement"></label>
+      <fieldset><legend>Pour quel métier ?</legend><div class="prio-pick">${groups.map(([k, lbl, g]) => `<label class="prio-o"><input type="radio" name="grp" value="${esc(g)}" ${k === mine ? 'checked' : ''}><span>${mdot(k)}${lbl}</span></label>`).join('')}</div></fieldset>
+      <label class="toggle"><input type="checkbox" name="urgent"> C’est urgent</label>
+      <fieldset><legend>Photo <span class="muted">(facultatif)</span></legend><div data-phwrap>${photoStrip([], {}, true)}</div></fieldset>`,
+    onOpen(f, d) {
+      d._photos = [];
+      combo(f.elements.kks, {items: () => db.kks.filter(live).map(x => ({id: x.id, key: x.code, label: kksLabel(x), search: x.code + ' ' + x.designation, html: `<span class="kks">${esc(x.code)}</span> ${esc(x.designation)}`}))});
+      d.addEventListener('change', async e => {
+        const inp = e.target.closest('[data-photo-pick]');
+        if (!inp || !inp.files?.length) return;
+        try {
+          for (const fl of inp.files) d._photos.push(await photoUpload(fl, 'demandes'));
+          $('[data-phwrap]', d).innerHTML = photoStrip(d._photos, {}, true);
+        } catch (er) {
+          toast(er.message, 'bad');
+        }
+      });
+    },
+    onSave(f, d) {
+      const titre = val(f, 'titre');
+      if (!titre) throw new Error('Décrivez le problème en quelques mots.');
+      const kk = f.elements.kks.dataset.id ? getKks(f.elements.kks.dataset.id) : null;
+      if (val(f, 'kks') && !kk) throw new Error('Repère inconnu : choisissez-le dans la liste, ou laissez vide.');
+      const g = (f.querySelector('input[name=grp]:checked') || {}).value || '';
+      if (!g) throw new Error('Choisissez le métier concerné (une touche).');
+      const x = {
+        id: uid(),
+        titre,
+        description: '',
+        kksId: kk ? kk.id : '',
+        assign: {type: 'groupe', v: g},
+        freq: {n: 1, unite: 'once'},
+        prochaine: '',
+        actif: true,
+        kind: 'petit',
+        prio: f.elements.urgent.checked ? 'haute' : 'normale',
+        rapport: '',
+        photos: d._photos || [],
+        demande: {by: meId() || '', at: new Date().toISOString(), ok: false}
+      };
+      tx(() => db.taches.push(x));
+      render();
+      toast('Merci, c’est signalé. Le responsable du métier va le prendre en charge.', '', true);
+    }
+  });
+}
