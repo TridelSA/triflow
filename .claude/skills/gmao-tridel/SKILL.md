@@ -46,10 +46,11 @@ Toujours calculés à partir des données existantes, affichés simplement (un c
 - **Signaler un problème** (`signalDialog`) : petit travail avec `demande:{by, at, ok}` ; « Demande » dans la liste ; Accepter (`dem-ok`) / Refuser (archiver) par un cadre ou le responsable du métier (`canValidate`, `reglages.resp`).
 - **Points à contrôler** : `taches.points` (liste de textes) → cases dans le rapport → `interventions.points:[{t, ok}]`, affichés et imprimés.
 - **Pièces de l'équipement** proposées dans le rapport (pastilles `.pl-sugg`, d'après `pieces.kks`).
+- **Arrêt de l'usine (révision)** : case « À faire pendant l'arrêt » sur un travail (`taches.arret`), dates dans `reglages.arret {du, au}` (`arretDates`, `arretOn`, `arretFait` = fait depuis 3 mois avant le début). Pastille « Arrêt » dans Travaux (bandeau dates + avancement, « Imprimer la liste » = liste par métier `arretSheetHTML`). Hors arrêt : groupe « Pour l'arrêt » (pas en retard) ; pendant l'arrêt : « Cette semaine » et au planning (`pKey`).
 
 ## 5. Idées encore possibles (à proposer, pas à imposer)
 - **Compteurs** (heures de marche) pour un préventif déclenché à l'usage : **refusé pour l'instant par Thomas** (ne pas le proposer à nouveau sans raison).
-- **Tableau d'indicateurs** (section 3) : pas encore fait.
+- **Tableau d'indicateurs** (section 3) : **Thomas n'y voit pas d'intérêt** (novembre 2026), ne pas le reproposer.
 
 ## 6. Avant de livrer une fonction métier
 1. Le mot affiché est-il celui de l'atelier (« travail », « rapport », « pièce », « emplacement », « repère KKS ») et pas un mot de SAP ?

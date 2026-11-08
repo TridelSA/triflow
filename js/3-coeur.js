@@ -42,7 +42,8 @@ const J_FIELDS = {
     derniere: 'dernière fois',
     points: 'points à contrôler',
     demande: 'demande',
-    photos: 'photos'
+    photos: 'photos',
+    arret: 'pendant l’arrêt'
   },
   kks: {code: 'code', designation: 'désignation', aic: 'AIC'},
   personnes: {nom: 'nom', prenom: 'prénom', groupe: 'groupe', fonction: 'fonction', actif: 'actif'},
@@ -183,7 +184,8 @@ function jDescribe(col, id, o, n) {
               resp: 'responsables de groupe',
               systemes: 'noms des systèmes KKS',
               qrBase: 'adresse des QR codes',
-              labelFmt: 'format des étiquettes'
+              labelFmt: 'format des étiquettes',
+              arret: 'dates de l’arrêt'
             }[kk] || kk
           );
     }
@@ -337,7 +339,9 @@ const JRN = {
     if (who) r = r.eq('data->>by', who);
     const {data, error} = await r.order('id', {ascending: false}).range(offset, offset + limit - 1);
     if (error) throw error;
-    let rows = (data || []).map(x => x.data).sort((a, b) => (b.at || '').localeCompare(a.at || '') || (a.txt || '').localeCompare(b.txt || ''));
+    let rows = (data || [])
+      .map(x => x.data)
+      .sort((a, b) => (b.at || '').localeCompare(a.at || '') || (a.txt || '').localeCompare(b.txt || ''));
     if (col === 'autre') rows = rows.filter(x => !['interventions', 'taches', 'pieces', 'plan'].includes(x.col));
     if (col === 'pieces') rows = rows.filter(x => x.act !== 'stock');
     if (q) {
@@ -420,8 +424,10 @@ function showGate(html) {
 function showSkeleton() {
   hideGate();
   const b = (w, h = 14) => `<i class="sk" style="width:${w};height:${h}px"></i>`;
-  const card = n => `<div class="btile sk-card">${b('40%', 18)}${b('22%', 40)}${Array.from({length: n}, () => b('100%', 34)).join('')}</div>`;
-  $('#main').innerHTML = `<div class="bento" aria-busy="true" aria-label="Chargement">${card(4)}${card(1)}${card(1)}${card(2)}${card(1)}</div>`;
+  const card = n =>
+    `<div class="btile sk-card">${b('40%', 18)}${b('22%', 40)}${Array.from({length: n}, () => b('100%', 34)).join('')}</div>`;
+  $('#main').innerHTML =
+    `<div class="bento" aria-busy="true" aria-label="Chargement">${card(4)}${card(1)}${card(1)}${card(2)}${card(1)}</div>`;
   $('#main').dataset.view = '';
 }
 function hideGate() {
@@ -1806,6 +1812,11 @@ function fillList() {
   if (el) {
     morph(el, VIEWS[S.view].list());
     if (AUTOIO) $$('[data-autoload]', el).forEach(b => AUTOIO.observe(b));
+    /* Pastille choisie toujours visible quand la rangée défile de côté */
+    const c = $('.fchips .ychip[aria-selected="true"]', el),
+      row = c?.closest('.fchips');
+    if (row && (c.offsetLeft < row.scrollLeft || c.offsetLeft + c.offsetWidth > row.scrollLeft + row.clientWidth))
+      row.scrollLeft = c.offsetLeft - 12;
   }
 }
 /* Sur grand écran, ouvrir le premier élément de la liste plutôt qu'un panneau vide */

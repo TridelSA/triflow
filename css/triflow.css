@@ -476,6 +476,9 @@ legend .chk input{width:auto;min-height:0}
 .recal{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 0;padding:10px 12px;border-radius:var(--r-md);background:var(--sunk);font-size:var(--t-md)}
 .recal .ico{width:16px;height:16px;flex:none;color:var(--muted)}
 .recal span{flex:1;min-width:200px}
+.arr-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px;padding:10px 12px;border-radius:var(--r-md);background:var(--sunk);font-size:var(--t-md)}
+.arr-bar .ico{width:16px;height:16px;flex:none;color:var(--muted)}
+.arr-bar span{flex:1;min-width:180px}
 details.more{border:1px solid var(--line);border-radius:var(--r-lg);padding:0 14px;margin-top:4px}
 details.more[open]{padding-bottom:14px}
 details.more > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:12px 0;font-weight:600}
@@ -855,7 +858,7 @@ body.a3 .plan-sheet .rpt-head h1{font-size:20pt}
 .pcode.k-abs{color:var(--bad);border-color:currentColor}.pcode.k-on{color:var(--ok)}.pcode.k-rot{color:var(--steel)}
 .four-row td:first-child{display:table-cell}
 .four-row .fr-n{display:flex;align-items:center;gap:8px}
-.fchips{display:flex;gap:6px;overflow-x:auto;padding:10px 12px;border-bottom:1px solid var(--line);scrollbar-width:thin}
+.fchips{position:relative;display:flex;gap:6px;overflow-x:auto;padding:10px 12px;border-bottom:1px solid var(--line);scrollbar-width:thin}
 .fchips .ychip.bad[aria-selected=false] small{color:var(--bad);opacity:1;font-weight:700}
 .fchips .ychip.warn[aria-selected=false] small{color:var(--warn);opacity:1;font-weight:700}
 .list-bar .lb-sort{margin-left:auto}

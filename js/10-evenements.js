@@ -91,13 +91,18 @@ const ACT = {
   'photo-open'(d) {
     if (!d.col) return;
     const x = get(d.col, d.id);
-    photoViewer(d.path, x ? () => {
-      tx(() => {
-        x.photos = (x.photos || []).filter(p => p.path !== d.path);
-      });
-      render();
-      toast('Photo retirée', '', true);
-    } : null);
+    photoViewer(
+      d.path,
+      x
+        ? () => {
+            tx(() => {
+              x.photos = (x.photos || []).filter(p => p.path !== d.path);
+            });
+            render();
+            toast('Photo retirée', '', true);
+          }
+        : null
+    );
   },
   signal: () => signalDialog(),
   'dem-ok'(d) {
@@ -597,6 +602,25 @@ const ACT = {
     }
   },
   'print-taches': () => doPrint(tachesSheetHTML()),
+  'arret-dates': () => {
+    const a = arretDates();
+    dialog({
+      title: 'Dates de l’arrêt',
+      body: `<p class="hint">Pendant ces jours, les travaux marqués « pendant l’arrêt » passent dans « Cette semaine » et au planning.</p><div class="grid2"><label>Du<input name="du" type="date" value="${esc(a.du || '')}"></label><label>Au<input name="au" type="date" value="${esc(a.au || '')}"></label></div>`,
+      onSave(f) {
+        const du = val(f, 'du'),
+          au = val(f, 'au');
+        if (!du !== !au) throw new Error('Indiquez les deux dates, ou aucune.');
+        if (du && au < du) throw new Error('La fin doit être après le début.');
+        tx(() => {
+          if (du) db.reglages.arret = {du, au};
+          else delete db.reglages.arret;
+        });
+        render();
+        toast(du ? 'Dates de l’arrêt enregistrées' : 'Dates de l’arrêt retirées');
+      }
+    });
+  },
   'edit-int': d => interventionDialog(getInt(d.id)),
   'print-int': d => doPrint(reportHTML(getInt(d.id))),
   'print-piece': d => doPrint(pieceSheetHTML(getPiece(d.id))),

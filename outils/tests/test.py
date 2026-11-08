@@ -61,7 +61,7 @@ async def main():
         print(('  ✓ ' if cond else '  ✗ ') + msg)
         if not cond: echecs.append(msg)
     async with async_playwright() as p:
-        b = await p.chromium.launch()
+        b = await p.chromium.launch(**({"executable_path": "/opt/pw-browsers/chromium"} if os.path.isfile("/opt/pw-browsers/chromium") else {}))
         pg = await b.new_page(viewport={'width': 1300, 'height': 820})
         pg.on('pageerror', lambda e: erreurs.append(str(e)))
         await pg.add_init_script(f"""(() => {{ const R = Date, base = new R('{HEURE_FIXE}').getTime(), t0 = R.now();
@@ -127,6 +127,21 @@ async def main():
         await pg.evaluate("document.querySelector('dialog[open] details.more').open = true"); await pg.click('dialog[open] input[name=pt][value=\"0\"]')
         await pg.select_option('dialog[open] select[name=cause]', 'Fuite'); await pg.click('dialog[open] button[type=submit]'); await pg.wait_for_timeout(500)
         ok(await pg.evaluate("db.interventions.some(i => i.tacheId === 't9' && i.cause === 'Fuite' && i.points.length === 2 && i.points[0].ok && !i.points[1].ok)"), 'rapport : cause et points enregistrés')
+        # Arrêt de l'usine (révision)
+        await pg.evaluate("S.tf='arret'; go('taches'); newTacheDialog()"); await pg.wait_for_timeout(200)
+        ok(await pg.evaluate("document.querySelector('dialog[open] input[name=arret]').checked"), 'arrêt : case cochée depuis l’onglet Arrêt')
+        await pg.fill('dialog[open] input[name=titre]', 'Ramonage chaudière'); await pg.click('dialog[open] button[type=submit]'); await pg.wait_for_timeout(400)
+        ok(await pg.evaluate("db.taches.some(t => t.titre === 'Ramonage chaudière' && t.arret === true) && tKey(db.taches.find(t => t.titre === 'Ramonage chaudière')) === 'arret'"), 'arrêt : travail créé dans « Pour l’arrêt »')
+        ok(await pg.evaluate("S.tf === 'arret' && /Ramonage/.test($('#list').textContent) && !!$('.arr-bar') && /Arrêt/.test($('.fchips').textContent)"), 'arrêt : pastille, bandeau et liste')
+        ok(await pg.evaluate("/Travaux de l’arrêt/.test(tachesSheetHTML()) && /Ramonage/.test(tachesSheetHTML())"), 'arrêt : liste à imprimer')
+        await pg.evaluate("ACT['arret-dates']()"); await pg.wait_for_timeout(200)
+        await pg.evaluate("const f=document.querySelector('dialog[open] form'); f.elements.du.value=todayISO(); f.elements.au.value=isoAdd(todayISO(), 10)")
+        await pg.click('dialog[open] button[type=submit]'); await pg.wait_for_timeout(400)
+        ok(await pg.evaluate("arretOn() && tKey(db.taches.find(t => t.titre === 'Ramonage chaudière')) === 'semaine'"), 'arrêt : pendant l’arrêt, ses travaux passent dans « Cette semaine »')
+        await pg.evaluate("finishTask(db.taches.find(t => t.titre === 'Ramonage chaudière'))"); await pg.wait_for_timeout(500)
+        ok(await pg.evaluate("arretFait(db.taches.find(t => t.titre === 'Ramonage chaudière')) && /0 à faire · 1 fait/.test($('.arr-bar').textContent)"), 'arrêt : avancement à jour')
+        await capture('ordi-travaux-arret')
+        await pg.evaluate("tx(() => { delete db.reglages.arret; db.taches = db.taches.filter(t => t.titre !== 'Ramonage chaudière'); }); S.tf=''")
         print('Pages (ordinateur)')
         for js, nom in [("go('accueil')", 'accueil'), ("S.sel.pieces=null; go('pieces')", 'pieces'), ("go('pieces','p1')", 'piece'),
                         ("go('taches','t2')", 'travaux-afaire'), ("S.statut='actives'; go('interventions')", 'travaux-encours'),

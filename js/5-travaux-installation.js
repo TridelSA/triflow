@@ -105,9 +105,23 @@ function doneHTML(t) {
   ].sort((a, b) => b.d.localeCompare(a.d));
   return `<div class="tbl-wrap"><table class="tbl compact itbl"><tbody>${rows.map(r => r.h).join('')}</tbody></table></div>`;
 }
-/* Quand ? : regroupement des travaux à faire */
+/* Arrêt de l'usine (révision) : travaux marqués « arret », dates dans reglages.arret {du, au} */
+const arretDates = () => db.reglages.arret || {};
+const arretOn = (from = todayISO(), to = from) => {
+  const a = arretDates();
+  return !!(a.du && a.au && a.du <= to && a.au >= from);
+};
+/* Fait pour cet arrêt : fait depuis 3 mois avant le début (préparation comprise) ; sans dates : petit travail coché */
+const arretFait = t => {
+  const a = arretDates();
+  if (!a.du) return t.actif === false;
+  if (!t.derniere) return t.actif === false;
+  return t.derniere >= isoAdd(a.du, -90) && (!a.au || t.derniere <= a.au);
+};
+/* Quand ? : regroupement des travaux à faire (pendant l'arrêt, ses travaux passent dans « Cette semaine ») */
 const tKey = t => {
   if (t.actif === false) return 'fait';
+  if (t.arret && !arretFait(t)) return arretOn() ? 'semaine' : 'arret';
   if (!t.prochaine) return 'asap';
   const n = daysTo(t.prochaine);
   return n < -365 ? 'vieux' : n < 0 ? 'retard' : n <= 7 ? 'semaine' : 'plus';
@@ -117,6 +131,7 @@ const T_GRP = [
   ['semaine', 'Cette semaine', 'warn'],
   ['asap', 'Dès que possible', ''],
   ['plus', 'Plus tard', ''],
+  ['arret', 'Pour l’arrêt', ''],
   ['vieux', 'En retard depuis plus d’un an', '']
 ];
 function baseTaches() {
@@ -129,7 +144,9 @@ function baseTaches() {
   return rows;
 }
 function filteredTaches() {
-  const rows = baseTaches().filter(t => S.arch.taches || (S.tf ? tKey(t) === S.tf : t.actif !== false));
+  const rows = baseTaches().filter(
+    t => S.arch.taches || (S.tf === 'arret' ? t.arret && (t.actif !== false || arretFait(t)) : S.tf ? tKey(t) === S.tf : t.actif !== false)
+  );
   return rows.sort(
     (a, b) =>
       (a.actif === false) - (b.actif === false) ||
@@ -153,10 +170,10 @@ function pourOther(on) {
 function tacheRow(t, withSel = true) {
   const k = getKks(t.kksId),
     run = openRun(t),
-    off = t.actif === false;
+    off = t.actif === false || (S.tf === 'arret' && arretFait(t));
   return `<tr data-act="${withSel ? 'select' : 'goto'}" ${withSel ? '' : 'data-view="taches"'} data-id="${t.id}" class="${withSel && S.sel.taches === t.id ? 'sel' : ''}" tabindex="0">
-    <td><span class="des">${t.demande && !t.demande.ok ? '<span class="chip info dem">Demande</span> ' : ''}${esc(t.titre)}</span><span class="sub">${k ? esc(k.code) + ' · ' : ''}${esc(assignLabel(t.assign))}${isPetit(t) ? '' : ` · <span class="rep">${icon('repeat')}${esc(freqLabel(t.freq))}</span>`}</span>${!off && !run ? `<span class="mdue">${dueInfo(t).chip}</span>` : ''}</td>
-    <td class="num"><span class="trow-r">${off ? '<span class="chip ok">Fait</span>' : run ? '<span class="chip info">En cours</span>' : dueInfo(t).chip}${!off && !run && !t.arch ? `<button class="tick" data-act="do-tache" data-id="${t.id}" title="C’est fait" aria-label="C’est fait : ${esc(t.titre)}">${icon('check')}</button>` : ''}</span></td></tr>`;
+    <td><span class="des">${t.demande && !t.demande.ok ? '<span class="chip info dem">Demande</span> ' : ''}${esc(t.titre)}</span><span class="sub">${k ? esc(k.code) + ' · ' : ''}${esc(assignLabel(t.assign))}${isPetit(t) ? '' : ` · <span class="rep">${icon('repeat')}${esc(freqLabel(t.freq))}</span>`}${t.arret ? ' · Arrêt' : ''}</span>${!off && !run ? `<span class="mdue">${dueInfo(t).chip}</span>` : ''}</td>
+    <td class="num"><span class="trow-r">${off ? `<span class="chip ok">Fait${t.arret && t.derniere && S.tf === 'arret' ? ' le ' + fmtD(t.derniere) : ''}</span>` : run ? '<span class="chip info">En cours</span>' : dueInfo(t).chip}${!off && !run && !t.arch ? `<button class="tick" data-act="do-tache" data-id="${t.id}" title="C’est fait" aria-label="C’est fait : ${esc(t.titre)}">${icon('check')}</button>` : ''}</span></td></tr>`;
 }
 VIEWS.taches = {
   shell: travauxShell,
@@ -181,9 +198,16 @@ VIEWS.taches = {
       f && !n && S.tf !== f
         ? ''
         : `<button role="tab" class="ychip ${tone}" data-act="tf" data-f="${f}" aria-selected="${(S.tf || '') === f}">${t} <small>${n || 0}</small></button>`;
+    const arr = base.filter(t => t.arret),
+      arrTodo = arr.filter(t => !arretFait(t)).length,
+      chipArr = arr.length || S.tf === 'arret' ? chip('arret', 'Arrêt', arrTodo || (S.tf === 'arret' ? 0 : '0')) : '';
     const chips = S.arch.taches
       ? ''
-      : `<div class="fchips" role="tablist" aria-label="Quand">${pourSelect()}<span class="ysep" aria-hidden="true"></span>${chip('', 'Tout', base.length)}${T_GRP.map(([k, l, tone]) => chip(k, k === 'vieux' ? 'Anciens retards' : l, cnt[k], tone)).join('')}</div>`;
+      : `<div class="fchips" role="tablist" aria-label="Quand">${pourSelect()}<span class="ysep" aria-hidden="true"></span>${chip('', 'Tout', base.length)}${T_GRP.filter(
+          g => g[0] !== 'arret'
+        )
+          .map(([k, l, tone]) => chip(k, k === 'vieux' ? 'Anciens retards' : l, cnt[k], tone))
+          .join('')}${chipArr}</div>${S.tf === 'arret' ? arretBar(rows) : ''}`;
     if (!rows.length)
       return (
         head +
@@ -197,13 +221,14 @@ VIEWS.taches = {
                 : `<p>Tout est à jour.</p><button class="btn" data-act="new-tache">${icon('plus')}Nouveau travail</button>`
             ))
       );
-    const grp = {};
-    rows.forEach(t => (grp[tKey(t)] ||= []).push(t));
+    const grp = {},
+      gk = t => (S.tf === 'arret' ? (arretFait(t) ? 'fait' : 'arret') : tKey(t));
+    rows.forEach(t => (grp[gk(t)] ||= []).push(t));
     const sec = (key, title) =>
       grp[key]?.length
         ? `<tbody><tr class="grp ${key === 'vieux' ? 'old' : ''}"><th colspan="2"><span>${title}</span> <span class="muted" style="font-family:var(--f-body);font-size:.8rem">${grp[key].length}</span></th></tr>${grp[key].map(t => tacheRow(t)).join('')}</tbody>`
         : '';
-    return `${head}${chips}<div class="tbl-wrap"><table class="tbl">${T_GRP.map(([k, l]) => sec(k, l)).join('')}${sec('fait', 'Faits')}</table></div>`;
+    return `${head}${chips}<div class="tbl-wrap"><table class="tbl">${T_GRP.map(([k, l]) => sec(k, k === 'arret' && S.tf === 'arret' ? 'À faire pendant l’arrêt' : l)).join('')}${sec('fait', 'Faits')}</table></div>`;
   },
   detail() {
     const t = get('taches', S.sel.taches);
@@ -216,7 +241,7 @@ VIEWS.taches = {
     const off = t.actif === false,
       di = dueInfo(t),
       RAP = {oui: 'avec rapport', non: 'sans rapport'};
-    return `${archBanner('taches', t)}<div class="pd-head"><span class="pd-id">${isPetit(t) ? 'Une seule fois' + (prioOf(t) !== 'normale' ? ' · priorité ' + PRIO[prioOf(t)][0].toLowerCase() : '') : esc(freqLabel(t.freq))}</span><div class="pd-tools"><button class="btn small" data-act="edit-tache" data-id="${t.id}">${icon('edit')}Modifier</button>${menu([t.arch ? ['unarch', 'Restaurer', 'archive', {col: 'taches', id: t.id}] : ['arch', 'Archiver', 'archive', {col: 'taches', id: t.id}], hardItem('taches', t.id)].filter(Boolean), 'Plus', 'more', 'small')}</div></div>
+    return `${archBanner('taches', t)}<div class="pd-head"><span class="pd-id">${isPetit(t) ? 'Une seule fois' + (prioOf(t) !== 'normale' ? ' · priorité ' + PRIO[prioOf(t)][0].toLowerCase() : '') : esc(freqLabel(t.freq))}${t.arret ? ' · pendant l’arrêt' : ''}</span><div class="pd-tools"><button class="btn small" data-act="edit-tache" data-id="${t.id}">${icon('edit')}Modifier</button>${menu([t.arch ? ['unarch', 'Restaurer', 'archive', {col: 'taches', id: t.id}] : ['arch', 'Archiver', 'archive', {col: 'taches', id: t.id}], hardItem('taches', t.id)].filter(Boolean), 'Plus', 'more', 'small')}</div></div>
       <h2 class="pd-title">${esc(t.titre)}</h2>
       ${k ? `<div class="equip-hero">${kksTag(k)}<span>${esc(k.designation || '')}</span></div>` : ''}
       <p class="pd-sub">${t.assign?.v ? `Pour <strong style="font-weight:600">${esc(assignLabel(t.assign))}</strong>` : '<span class="muted">Pour personne en particulier</span>'}${last ? ` · fait la dernière fois le ${fmtD(last)}` : ''}${RAP[t.rapport] ? ` · ${RAP[t.rapport]}` : ''}</p>
@@ -232,6 +257,12 @@ VIEWS.taches = {
       <section class="pd-sec"><h3>${icon('check')}Déjà fait</h3>${doneHTML(t)}</section>${byLine(t)}`;
   }
 };
+/* Bandeau de l'onglet Arrêt : dates et avancement */
+function arretBar(rows) {
+  const a = arretDates(),
+    done = rows.filter(arretFait).length;
+  return `<p class="arr-bar">${icon('calendar')}<span>${a.du ? `Arrêt du <b>${fmtD(a.du)}</b> au <b>${fmtD(a.au)}</b>` : 'Dates de l’arrêt pas encore fixées'} · ${rows.length - done} à faire · ${done} ${done > 1 ? 'faits' : 'fait'}</span><button class="btn small" data-act="arret-dates">${a.du ? 'Changer les dates' : 'Fixer les dates'}</button></p>`;
+}
 function newTacheDialog(kksId) {
   tacheDialog(null, kksId);
 }
@@ -247,7 +278,8 @@ function tacheDialog(t, kksId) {
     prochaine: '',
     actif: true,
     prio: 'normale',
-    rapport: 'oui'
+    rapport: 'oui',
+    arret: S.view === 'taches' && S.tf === 'arret'
   };
   const k = getKks(v.kksId);
   const assignItems = () => [
@@ -296,6 +328,7 @@ function tacheDialog(t, kksId) {
           <label>Pour quand ? (facultatif)<input name="pdate" type="date" value="${petit0 ? esc(v.prochaine || '') : ''}"></label></div>
         <div data-rec><label>${isNew || petit0 ? 'Première fois le' : 'Prochaine fois le'}<input name="prochaine" type="date" value="${esc(petit0 ? v.prochaine || todayISO() : v.prochaine)}"></label><p class="hint" data-fprev></p></div></fieldset>
       <label>Pour qui ?<input name="assign" data-id="${esc(aId)}" data-label="${esc(aId ? assignLabel(v.assign) : '')}" value="${esc(aId ? assignLabel(v.assign) : '')}" placeholder="Un corps de métier ou une personne"></label>
+      <label class="toggle"><input type="checkbox" name="arret" ${v.arret ? 'checked' : ''}> À faire pendant l’arrêt de l’usine (révision)</label>
       <details class="more" ${!isNew && (v.kksId || v.description || v.rapport === 'non' || (v.points || []).length) ? 'open' : ''}><summary>Plus de détails <span class="muted">(équipement, rapport, consignes, points à contrôler)</span></summary>
       <label>Équipement (repère KKS)<input name="kks" data-id="${k ? k.id : ''}" data-label="${k ? esc(kksLabel(k)) : ''}" value="${k ? esc(kksLabel(k)) : ''}" placeholder="Facultatif : code ou désignation"></label>
       <fieldset><legend>Faut-il un rapport ?</legend><div class="prio-pick rap-pick" role="radiogroup" aria-label="Rapport">${pill('rapport', 'oui', 'Oui', 'info', v.rapport || 'oui')}${pill('rapport', 'non', 'Non', 'info', v.rapport || 'oui')}</div>
@@ -305,15 +338,13 @@ function tacheDialog(t, kksId) {
     onOpen(f, d) {
       combo(f.elements.kks, {
         items: () =>
-          db.kks
-            .filter(live)
-            .map(x => ({
-              id: x.id,
-              key: x.code,
-              label: kksLabel(x),
-              search: x.code + ' ' + x.designation,
-              html: `<span class="kks">${esc(x.code)}</span> ${esc(x.designation)}`
-            }))
+          db.kks.filter(live).map(x => ({
+            id: x.id,
+            key: x.code,
+            label: kksLabel(x),
+            search: x.code + ' ' + x.designation,
+            html: `<span class="kks">${esc(x.code)}</span> ${esc(x.designation)}`
+          }))
       });
       combo(f.elements.assign, {items: assignItems});
       const u = () => {
@@ -368,23 +399,56 @@ function tacheDialog(t, kksId) {
         freq: {n, unite},
         prochaine,
         rapport,
+        arret: f.elements.arret.checked,
         ...(petit ? {kind: 'petit', prio: (f.querySelector('input[name=prio]:checked') || {}).value || 'normale'} : {kind: 'rec'})
       };
       tx(() => {
         if (isNew) {
           const x = {id: uid(), actif: true, ...data};
+          if (!x.arret) delete x.arret;
           db.taches.push(x);
           S.sel.taches = x.id;
-        } else Object.assign(t, data, petit && t.actif === false && isPetit(t) ? {} : {actif: true});
+        } else {
+          Object.assign(t, data, petit && t.actif === false && isPetit(t) ? {} : {actif: true});
+          if (!t.arret) delete t.arret;
+        }
       });
       S.view = 'taches';
-      S.tf = '';
+      if (S.tf !== 'arret' || !data.arret) S.tf = '';
       render();
       toast(isNew ? 'Travail ajouté' : 'Enregistré');
     }
   });
 }
+/* Liste de l'arrêt, par métier, avec une case à cocher */
+function arretSheetHTML() {
+  const a = arretDates(),
+    rows = filteredTaches(),
+    by = {};
+  for (const t of rows) (by[tMet(t) || 'z'] ||= []).push(t);
+  const ml = k => METIERS.find(m => m[0] === k)?.[1] || 'Autres';
+  const order = [...METIERS.map(m => m[0]), 'z'].filter(k => by[k]);
+  return `<article class="rpt"><header class="rpt-head"><div><div class="rpt-org">Tridel · Maintenance</div><h1>Travaux de l’arrêt</h1></div><div class="rpt-num"><div>${a.du ? `${fmtD(a.du)} – ${fmtD(a.au)}` : ''}</div><div>${rows.length} travaux</div></div></header>
+    ${
+      rows.length
+        ? `<table class="rpt-tbl"><thead><tr><th style="width:8mm"></th><th>Travail</th><th>Équipement</th><th>Pour</th><th>Fait le</th></tr></thead>${order
+            .map(
+              k =>
+                `<tbody><tr><th colspan="5" class="g">${esc(ml(k))} · ${by[k].length}</th></tr>${by[k]
+                  .map(t => {
+                    const kk = getKks(t.kksId),
+                      ok = arretFait(t);
+                    return `<tr><td><span class="box">${ok ? '✓' : ''}</span></td><td><strong>${esc(t.titre)}</strong>${t.description ? `<br><span style="font-size:8.5pt">${esc(t.description)}</span>` : ''}</td><td class="mono">${kk ? esc(kk.code) : ''}</td><td>${esc(assignLabel(t.assign))}</td><td>${ok && t.derniere ? fmtD(t.derniere) : ''}</td></tr>`;
+                  })
+                  .join('')}</tbody>`
+            )
+            .join('')}</table>`
+        : '<p>Aucun travail marqué « pendant l’arrêt ».</p>'
+    }
+    <footer class="rpt-foot">Imprimé le ${fmtDT(new Date().toISOString())} · TriFlow</footer></article>`;
+}
 function tachesSheetHTML() {
+  if (S.tf === 'arret') return arretSheetHTML();
   const rows = [
     ...baseTaches()
       .filter(t => t.actif !== false && isPetit(t) && (prioOf(t) === 'haute' || daysTo(t.prochaine) <= 7))
@@ -784,7 +848,15 @@ VIEWS.kks = {
         if (!pn.length) return '';
         const c = new Map();
         pn.forEach(i => i.cause && c.set(i.cause, (c.get(i.cause) || 0) + 1));
-        return `<p class="pannes ${pn.length >= 3 ? 'warn' : ''}">${icon('bolt')}<span><b>${pn.length} panne${pn.length > 1 ? 's' : ''}</b> en 12 mois${c.size ? ' · ' + [...c].sort((a, b) => b[1] - a[1]).map(([k, n]) => `${esc(k)}${n > 1 ? ' ×' + n : ''}`).join(', ') : ''}</span></p>`;
+        return `<p class="pannes ${pn.length >= 3 ? 'warn' : ''}">${icon('bolt')}<span><b>${pn.length} panne${pn.length > 1 ? 's' : ''}</b> en 12 mois${
+          c.size
+            ? ' · ' +
+              [...c]
+                .sort((a, b) => b[1] - a[1])
+                .map(([k, n]) => `${esc(k)}${n > 1 ? ' ×' + n : ''}`)
+                .join(', ')
+            : ''
+        }</span></p>`;
       })()}
       <section class="pd-sec"><h3>${icon('report')}Rapports <span class="muted">${ints.length || ''}</span></h3>${ints.length ? intTable(allI ? ints : ints.slice(0, 6), true) + (ints.length > 6 ? `<button class="link" data-act="k-all" data-id="${k.id}">${allI ? 'Réduire' : `Voir les ${ints.length} rapports`}</button>` : '') : '<p class="empty-line">Aucun rapport sur cet équipement.</p>'}</section>
       <section class="pd-sec"><h3>${icon('box')}Pièces de rechange <span class="muted">${ps.length || ''}</span></h3>
@@ -805,11 +877,13 @@ VIEWS.kks = {
 /* ---------- Signaler un problème (demande d'intervention) ----------
    N'importe qui : quoi, où (facultatif), quel métier, urgent ?, photo. Devient un petit travail marqué « Demande »,
    que le responsable du métier (Options › Rôles) ou un cadre accepte ou refuse. */
-const canValidate = t => canDel() || (db.reglages.resp || {})[t.assign?.type === 'groupe' ? t.assign.v : getPers(t.assign?.v)?.groupe] === meId();
+const canValidate = t =>
+  canDel() || (db.reglages.resp || {})[t.assign?.type === 'groupe' ? t.assign.v : getPers(t.assign?.v)?.groupe] === meId();
 function demandeHTML(t) {
   if (!t.demande) return '';
   const by = getPers(t.demande.by);
-  if (t.demande.ok) return `<p class="dem-line">${icon('check')}<span>Demande de ${esc(by ? persName(by) : 'quelqu’un')} le ${fmtD(t.demande.at.slice(0, 10))}, acceptée${getPers(t.demande.okBy) ? ' par ' + esc(persName(getPers(t.demande.okBy))) : ''}.</span></p>`;
+  if (t.demande.ok)
+    return `<p class="dem-line">${icon('check')}<span>Demande de ${esc(by ? persName(by) : 'quelqu’un')} le ${fmtD(t.demande.at.slice(0, 10))}, acceptée${getPers(t.demande.okBy) ? ' par ' + esc(persName(getPers(t.demande.okBy))) : ''}.</span></p>`;
   return `<div class="dem-box"><p><b>Demande à valider</b> · signalée par ${esc(by ? persName(by) : 'quelqu’un')} le ${fmtD(t.demande.at.slice(0, 10))}.</p>${
     canValidate(t) && !t.arch
       ? `<div class="dem-act"><button class="btn primary" data-act="dem-ok" data-id="${t.id}">${icon('check')}Accepter</button><button class="btn" data-act="arch" data-col="taches" data-id="${t.id}">Refuser</button></div>`
@@ -829,7 +903,18 @@ function signalDialog() {
       <fieldset><legend>Photo <span class="muted">(facultatif)</span></legend><div data-phwrap>${photoStrip([], {}, true)}</div></fieldset>`,
     onOpen(f, d) {
       d._photos = [];
-      combo(f.elements.kks, {items: () => db.kks.filter(live).map(x => ({id: x.id, key: x.code, label: kksLabel(x), search: x.code + ' ' + x.designation, html: `<span class="kks">${esc(x.code)}</span> ${esc(x.designation)}`}))});
+      combo(f.elements.kks, {
+        items: () =>
+          db.kks
+            .filter(live)
+            .map(x => ({
+              id: x.id,
+              key: x.code,
+              label: kksLabel(x),
+              search: x.code + ' ' + x.designation,
+              html: `<span class="kks">${esc(x.code)}</span> ${esc(x.designation)}`
+            }))
+      });
       d.addEventListener('change', async e => {
         const inp = e.target.closest('[data-photo-pick]');
         if (!inp || !inp.files?.length) return;

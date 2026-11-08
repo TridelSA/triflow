@@ -359,7 +359,19 @@ const tMet = t => metOf(t.assign?.type === 'personne' ? getPers(t.assign.v)?.gro
 const mdot = k => (k ? `<i class="mdot m-${k}" aria-hidden="true"></i>` : '');
 /* Quand ? par rapport à la semaine affichée */
 const pKey = (t, start, end) =>
-  !t.prochaine ? 'asap' : daysTo(t.prochaine) < -365 ? 'vieux' : t.prochaine < start ? 'retard' : t.prochaine <= end ? 'semaine' : 'plus';
+  t.arret && !arretFait(t)
+    ? arretOn(start, end)
+      ? 'semaine'
+      : 'arret'
+    : !t.prochaine
+      ? 'asap'
+      : daysTo(t.prochaine) < -365
+        ? 'vieux'
+        : t.prochaine < start
+          ? 'retard'
+          : t.prochaine <= end
+            ? 'semaine'
+            : 'plus';
 const P_URG = ['retard', 'semaine', 'asap'];
 /* Travaux pas encore placés cette semaine, pour les personnes affichées, à glisser dans une case */
 /* Avant d'imprimer : ce qui manque dans la semaine, puis « semaine prête » */
@@ -426,9 +438,10 @@ function planSideHTML(days, ppl) {
   const cnt = m => all.filter(t => (!m || tMet(t) === m) && P_URG.includes(pKey(t, start, end))).length;
   const chip = (k, lbl) =>
     `<button role="tab" class="ychip" data-act="plan-met" data-m="${k}" aria-selected="${met === k}">${mdot(k)}${lbl} <small>${cnt(k)}</small></button>`;
-  const sec = {retard: [], semaine: [], asap: [], plus: [], vieux: []};
+  const sec = {retard: [], semaine: [], asap: [], plus: [], arret: [], vieux: []};
   for (const t of ts) sec[pKey(t, start, end)].push(t);
-  for (const k of ['retard', 'semaine', 'plus', 'vieux']) sec[k].sort((a, b) => a.prochaine.localeCompare(b.prochaine) || petitSort(a, b));
+  for (const k of ['retard', 'semaine', 'plus', 'arret', 'vieux'])
+    sec[k].sort((a, b) => (a.prochaine || '').localeCompare(b.prochaine || '') || petitSort(a, b));
   sec.asap.sort(petitSort);
   const when = t => {
     if (!t.prochaine) return '';
@@ -457,6 +470,7 @@ function planSideHTML(days, ppl) {
     block('semaine', 'Cette semaine', 'week') +
     block('asap', 'Dès que possible', 'week') +
     block('plus', 'Plus tard', 'later', false) +
+    block('arret', 'Pour l’arrêt', 'later', false) +
     block('vieux', 'Anciens retards', 'old', false);
   return `<aside class="pside"><div class="ps-h"><div class="ps-top"><b>À planifier</b><button class="icon-btn" data-act="plan-side" aria-label="Fermer la liste" title="Fermer">×</button></div>
       <div class="ps-met" role="tablist" aria-label="Métier">${chip('', 'Tout')}${METIERS.map(m => chip(m[0], m[1])).join('')}</div>
