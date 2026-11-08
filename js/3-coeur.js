@@ -379,8 +379,9 @@ const jCtxLine = e => {
   return `<li class="jc j-${e.act}"><time>${fmtDT(e.at)}</time><div class="jc-b"><div class="jc-t"><b>${esc(tt)}</b><span class="jc-w">${icon('person')}${esc(e.nom || e.by || '?')}</span></div>${dd ? `<div class="jc-x">${esc(dd).replace(/ · /g, '<span class="jsep"> · </span>').replace(/ → /g, ' <span class="jar">→</span> ')}</div>` : ''}</div></li>`;
 };
 /* Bloc « Historique » en bas d'une fiche : chargé à la demande */
+/* Réservé aux cadres (les techniciens voient seulement « Modifié par ») */
 const jrnBlock = ref =>
-  CLOUD.on
+  CLOUD.on && canDel()
     ? `<section class="pd-sec"><h3>${icon('list')}Modifications</h3><div data-jrn="${esc(ref)}"><p class="empty-line">Chargement…</p></div></section>`
     : '';
 async function jrnRefresh() {

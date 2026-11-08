@@ -1022,6 +1022,87 @@ function cleanPieceNotes(d, p) {
   const n = cleanNotes(p.notes, codes);
   if (n !== p.notes) p.notes = n;
 }
+const CO_INTER = /^[ \t]*Intervenants? CareOffice\s*:\s*(.+)$/im;
+/* Une entreprise plutôt qu'une personne : un seul mot (« Ofatec »), une forme juridique, ou déjà dans les fournisseurs */
+const looksCompany = n => /\b(sa|ag|s[àa]rl|gmbh|ltd|sas|srl|co|cie|inc)\b\.?/i.test(n) || !/\s/.test(n.trim());
+function coInterMigrate(d) {
+  const n0 = s =>
+    String(s || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z ]/g, '')
+      .trim();
+  const PS = d.personnes.filter(p => p.nom).map(p => [p, n0(p.nom)]);
+  const who = name => {
+    const nn = n0(name);
+    const p = PS.find(([, pn]) => pn && (nn === pn || nn.startsWith(pn + ' ') || nn.endsWith(' ' + pn)));
+    if (p) return {type: 'personne', v: p[0].id, p: p[0]};
+    let f = fourMatch(name, d.listes.fournisseurs);
+    if (!f && looksCompany(name)) {
+      f = name.trim();
+      d.listes.fournisseurs.push(f);
+    }
+    return f ? {type: 'four', v: f} : null;
+  };
+  /* Retire la ligne ; garde les noms qu'on n'a pas su placer */
+  const strip = (txt, left) =>
+    String(txt || '')
+      .replace(CO_INTER, left.length ? `Intervenant CareOffice : ${left.join(', ')}` : '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  for (const t of d.taches) {
+    const m = CO_INTER.exec(t.description || '');
+    if (!m) continue;
+    const names = m[1].split(/\s*[,;]\s*/).filter(Boolean),
+      left = [];
+    for (const n of names) {
+      const w = t.assign?.v ? null : who(n);
+      if (w) t.assign = {type: w.type, v: w.v};
+      else left.push(n);
+    }
+    if (left.length < names.length) t.description = strip(t.description, left);
+  }
+  for (const i of d.interventions) {
+    i.intervenants = i.intervenants || [];
+    for (const f of ['constat', 'travaux']) {
+      const m = CO_INTER.exec(i[f] || '');
+      if (!m) continue;
+      const names = m[1].split(/\s*[,;]\s*/).filter(Boolean),
+        left = [];
+      for (const n of names) {
+        const w = who(n);
+        if (!w) {
+          left.push(n);
+          continue;
+        }
+        const id = w.type === 'four' ? 'four:' + w.v : w.v;
+        if (!i.intervenants.includes(id)) i.intervenants.push(id);
+        i.snap = i.snap || {};
+        if (!i.snap[id])
+          i.snap[id] = w.type === 'four' ? fourSnap(w.v) : {nom: w.p.nom, prenom: w.p.prenom || '', groupe: w.p.groupe || ''};
+      }
+      if (left.length < names.length) i[f] = strip(i[f], left);
+    }
+    /* Intervenant externe repris de CareOffice qui est en fait une entreprise → onglet Entreprises */
+    if (i.intervenants.some(id => String(id).startsWith('ext:'))) {
+      i.intervenants = [
+        ...new Set(
+          i.intervenants.map(id => {
+            const nom = String(id).startsWith('ext:') ? i.snap?.[id]?.nom || '' : '';
+            if (!nom || !looksCompany(nom)) return id;
+            const w = who(nom);
+            if (!w || w.type !== 'four') return id;
+            const nid = 'four:' + w.v;
+            i.snap[nid] = fourSnap(w.v);
+            delete i.snap[id];
+            return nid;
+          })
+        )
+      ];
+    }
+  }
+}
 function migrate(d) {
   const b = blank();
   for (const k in b) if (d[k] == null) d[k] = b[k];
@@ -1167,6 +1248,12 @@ function migrate(d) {
       i.intervenants = [...new Set(i.intervenants)];
     }
     d.meta.fourIntV = 1;
+  }
+  /* « Intervenant CareOffice : Ofatec » écrit dans le texte des travaux et rapports repris :
+     l'entreprise (ou la personne) va dans le bon champ (Pour qui ? / Intervenants) */
+  if (!d.meta.coInterV) {
+    coInterMigrate(d);
+    d.meta.coInterV = 1;
   }
   if (!d.meta.kksPartV && d.pieces.length) {
     linkPartialKks(d);

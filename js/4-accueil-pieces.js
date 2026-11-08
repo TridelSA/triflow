@@ -64,14 +64,31 @@ VIEWS.accueil = {
       <div class="bt-foot">${low.length ? `<button class="btn small" data-act="to-order">${icon('list')}Liste à commander</button>` : ''}<button class="btn small" data-act="quick-move" data-type="sortie">${icon('move')}Mouvement</button></div></section>`;
     /* Planning */
     const presOk = P && !P.loading && P.byNom.size,
-      ppl = db.personnes.filter(p => live(p) && p.actif !== false);
+      ap = accPlan(),
+      ppl = ap.ppl,
+      pids = new Set(ppl.map(p => p.id));
     const here = presOk ? ppl.filter(p => isDispo(presOf(p, today)?.code)).length : null;
     const nw = planWeek(),
       days = [0, 1, 2, 3, 4].map(n => isoAdd(nw, n)),
-      cnt = days.map(d => db.plan.filter(x => x.date === d).length),
+      cnt = days.map(d => db.plan.filter(x => x.date === d && (!ap.key || pids.has(x.who))).length),
       placed = cnt.reduce((a, b) => a + b, 0);
+    /* Aujourd'hui, pour les personnes choisies (Options › Connexion) : ce qui est noté, ou l'absence */
+    const todayRows = ap.key
+      ? ppl
+          .slice(0, 8)
+          .map(p => {
+            const it = db.plan
+                .filter(x => x.who === p.id && x.date === today)
+                .map(x => (x.tacheId ? get('taches', x.tacheId)?.titre : x.text) || ''),
+              pr = presOk ? presOf(p, today) : null,
+              abs = pr && pr.code && !isDispo(pr.code) ? (PCODE[pr.code] || [pr.code])[0] : '';
+            return `<li><span class="t">${esc(persName(p))}</span><span class="br-r ${abs ? 'muted' : ''}">${esc(abs || it.filter(Boolean).join(' · ') || '—')}</span></li>`;
+          })
+          .join('')
+      : '';
     const planning = `<section class="btile bt-l">${head('planning', 'calendar', 'Planning', 'l')}
       <div class="bt-n"><b>${here == null ? '–' : here}</b><span>${here == null ? 'présences en chargement' : plural(here, 'présent aujourd’hui', 'présents aujourd’hui')} · semaine ${isoWeek(nw)} : <strong>${placed}</strong> ${plural(placed, 'case remplie', 'cases remplies')}</span></div>
+      ${ap.key ? `<p class="bt-txt"><strong>${esc(ap.label)}</strong> · aujourd’hui</p>${todayRows ? `<ul class="bt-plist">${todayRows}</ul>` : '<p class="bt-empty">Personne.</p>'}` : ''}
       <div class="bt-week">${days.map((d, i) => `<div><span>${DAYS[i].slice(0, 3)}</span><b class="${cnt[i] ? 'on' : ''}">${cnt[i] || ''}</b></div>`).join('')}</div>
       <div class="bt-foot"><button class="btn small" data-act="nav" data-view="planning">${icon('calendar')}Préparer<span class="d-inline"> et imprimer</span></button></div></section>`;
     /* Rapports */
@@ -227,7 +244,7 @@ function filteredPieces() {
 VIEWS.pieces = {
   shell:
     () => `<header class="page-head"><h1>Pièces</h1><div class="tools">${searchBox('pieces', 'Rechercher une pièce…')}<button class="btn icon-only no-desk" data-act="scan" title="Scanner un QR code" aria-label="Scanner un QR code">${icon('scan')}</button><button class="btn primary" data-act="new-piece">${icon('plus')}Nouvelle pièce</button>
-    ${menu([['to-order', 'Pièces à commander', 'truck', {}], ['xl-pieces', 'Exporter en Excel', 'excel', {}], ['labels-list', 'Imprimer les étiquettes QR', 'qr', {}], '-', archItem('pieces'), ...(canDel() ? ['-', ['dups', 'Trouver les doublons', 'merge', {}], ['import-pieces', 'Importer depuis CareOffice', 'save', {}]] : [])])}</div></header>
+    ${menu([['to-order', 'Pièces à commander', 'truck', {}], ['xl-pieces', 'Exporter en Excel', 'excel', {}], ['labels-list', 'Imprimer les étiquettes QR', 'qr', {}], '-', archItem('pieces'), ...(canDel() ? ['-', ['dups', 'Trouver les doublons', 'merge', {}], ['import-pieces', 'Importer depuis CareOffice', 'save', {}], ['import-histo', 'Importer l’historique du stock (CareOffice)', 'save', {}]] : [])])}</div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list() {
     const rows = filteredPieces();

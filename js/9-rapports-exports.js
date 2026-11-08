@@ -66,7 +66,12 @@ function interventionDialog(it, kksId, tache, opts = {}) {
           constat: tache.description,
           travaux: '',
           duree: '',
-          intervenants: tache.assign?.type === 'personne' && getPers(tache.assign.v) ? [tache.assign.v] : [],
+          intervenants:
+            tache.assign?.type === 'personne' && getPers(tache.assign.v)
+              ? [tache.assign.v]
+              : tache.assign?.type === 'four' && tache.assign.v
+                ? ['four:' + tache.assign.v]
+                : [],
           pieces: []
         }
       : {
@@ -190,11 +195,13 @@ function interventionDialog(it, kksId, tache, opts = {}) {
         grid = $('[data-pgrid]', d);
       if (sel) {
         const want =
-          tache?.assign?.type === 'groupe'
-            ? tache.assign.v
-            : tache?.assign?.type === 'personne'
-              ? getPers(tache.assign.v)?.groupe || ''
-              : '';
+          tache?.assign?.type === 'four'
+            ? '__f'
+            : tache?.assign?.type === 'groupe'
+              ? tache.assign.v
+              : tache?.assign?.type === 'personne'
+                ? getPers(tache.assign.v)?.groupe || ''
+                : '';
         let tab = want && tabsP.some(x => x[0] === want) ? want : tabsP[0][0];
         const drawSel = () => {
           sel.innerHTML =

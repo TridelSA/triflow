@@ -816,6 +816,210 @@ function importTravauxDialog() {
     }
   });
 }
+/* ---------- Historique du stock repris de CareOffice (« Journal des écritures » de chaque article) ----------
+   Fichiers acceptés : export Excel (.xlsx) ou CSV du journal (colonnes « N° d'écriture », « Date d'écriture »,
+   « Type d'écriture », « Qté de la transaction », « Remarque », « Code article »…), ou le fichier JSON
+   historique-careoffice.json de la première reprise. CareOffice note les entrées en négatif : on remet le bon signe. */
+const CO_TYPES = {
+  6: ['Virement d’emplacement', 0],
+  8: ['Sortie aux déchets', -1],
+  11: ['Sortie sur rapport d’activité', -1],
+  13: ['Sortie sur rapport planifié', -1],
+  14: ['Sortie non planifiée', -1],
+  15: ['Entrée de marchandise', -1],
+  40: ['Inventaire', 0],
+  41: ['Perte sur inventaire', -1],
+  42: ['Plus-value sur inventaire', 1]
+};
+const coTypeOf = lbl => {
+  const n = norm(lbl).replace(/[’']/g, ' ').replace(/\s+/g, ' ').trim();
+  if (/^inventaire/.test(n)) return 40;
+  for (const [k, [l]] of Object.entries(CO_TYPES)) if (norm(l).replace(/[’']/g, ' ').replace(/\s+/g, ' ') === n) return +k;
+  return 0;
+};
+/* « 10.06.2026 10:42 », « 2026-06-10 10:42 » ou nombre Excel → « 2026-06-10T10:42 » */
+function coDate(v) {
+  if (v instanceof Date && !isNaN(v)) return new Date(v.getTime() - v.getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
+  if (typeof v === 'number' && v > 20000) return coDate(new Date(Math.round((v - 25569) * 864e5) + new Date().getTimezoneOffset() * 6e4));
+  const s = String(v || '').trim();
+  let m = s.match(/^(\d{1,2})[./](\d{1,2})[./](\d{2,4})(?:[ T,]+(\d{1,2}):(\d{2}))?/);
+  if (m) {
+    const y = m[3].length === 2 ? '20' + m[3] : m[3];
+    return `${y}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}T${(m[4] || '00').padStart(2, '0')}:${m[5] || '00'}`;
+  }
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/);
+  return m ? `${m[1]}-${m[2]}-${m[3]}T${m[4] || '00'}:${m[5] || '00'}` : '';
+}
+const coNum = v =>
+  typeof v === 'number'
+    ? v
+    : +String(v || '')
+        .replace(/['’\s]/g, '')
+        .replace(',', '.') || 0;
+/* Une ligne d'historique TriFlow : {d, q, t, lieu?, n? (sans signe), w?, no? (n° d'écriture)} */
+function coLine({no, d, ty, label, q, rem, lieu, who}) {
+  const T = CO_TYPES[ty],
+    neutral = !T || T[1] === 0;
+  const line = {d, q: neutral ? Math.abs(q) : T[1] < 0 ? -q : q, t: (T ? T[0] : label || 'Écriture') + (rem ? ' · ' + rem : '')};
+  if (neutral) line.n = 1;
+  if (lieu) line.lieu = lieu;
+  if (who) line.w = who;
+  if (no) line.no = String(no);
+  return line;
+}
+function coPathCode(path) {
+  let parts = String(path || '')
+    .split('/')
+    .map(x => x.trim().replace(/\//g, '-'))
+    .filter(Boolean);
+  if (parts[0] === 'Tridel') parts = parts.slice(1);
+  if (parts.length >= 2 && /^[A-Z]\d$/.test(parts[0])) {
+    const m = parts[1].match(/^(\d+)\b/);
+    if (m) return [`${parts[0]}.${m[1]}`, ...parts.slice(2)].join(' / ');
+  }
+  return parts.join(' / ');
+}
+/* Lignes lues → {ref: [lignes]} ; ref = ID ou code de l'article */
+function coJournalRows(rows) {
+  const out = [];
+  if (rows.length && 'ty' in rows[0] && 'a' in rows[0]) {
+    for (const h of rows) {
+      if (h.an || !h.a) continue;
+      out.push({
+        ref: String(h.a),
+        line: coLine({
+          no: h.no || h.n,
+          d: coDate(h.d),
+          ty: h.ty,
+          label: h.t,
+          q: coNum(h.q),
+          rem: h.des || h.rem,
+          lieu: coPathCode(h.l),
+          who: h.who
+        })
+      });
+    }
+    return out;
+  }
+  const key = (r, ...names) => {
+    for (const k of Object.keys(r)) {
+      const nk = norm(k)
+        .replace(/[’'°.]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (names.some(n => nk === n || nk.startsWith(n))) return r[k];
+    }
+    return '';
+  };
+  for (const r of rows) {
+    if (/^(oui|1|true|x)$/i.test(String(key(r, 'annule') || '').trim())) continue;
+    const ref = String(key(r, 'id article', 'code article', 'article', 'n article') || '').trim(),
+      label = String(key(r, 'type d ecriture', 'type') || '').trim(),
+      d = coDate(key(r, 'date d ecriture', 'date'));
+    if (!ref || !d || !label) continue;
+    out.push({
+      ref,
+      line: coLine({
+        no: key(r, 'n d ecriture', 'no d ecriture', 'numero'),
+        d,
+        ty: coTypeOf(label),
+        label,
+        q: coNum(key(r, 'qte de la transaction', 'quantite', 'qte')),
+        rem: String(key(r, 'remarque') || '').trim(),
+        lieu: coPathCode(key(r, 'lieu de stockage', 'emplacement', 'lieu')),
+        who: String(key(r, 'utilisateur', 'cree par', 'auteur') || '').trim()
+      })
+    });
+  }
+  return out;
+}
+let xlsxP = null;
+const loadXlsx = () =>
+  window.XLSX
+    ? Promise.resolve()
+    : xlsxP ||
+      (xlsxP = new Promise((ok, ko) => {
+        const sc = document.createElement('script');
+        sc.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+        sc.onload = ok;
+        sc.onerror = () => {
+          xlsxP = null;
+          ko(new Error('Lecture des fichiers Excel indisponible (pas de connexion ?).'));
+        };
+        document.head.append(sc);
+      }));
+async function coReadFile(file) {
+  const name = file.name.toLowerCase();
+  if (name.endsWith('.json')) {
+    const j = JSON.parse(await file.text());
+    return Array.isArray(j) ? j : j.rows || j.journal || [];
+  }
+  await loadXlsx();
+  const wb = name.endsWith('.csv')
+    ? XLSX.read(await file.text(), {type: 'string', raw: true})
+    : XLSX.read(await file.arrayBuffer(), {cellDates: true});
+  return wb.SheetNames.flatMap(n => XLSX.utils.sheet_to_json(wb.Sheets[n], {defval: '', raw: true}));
+}
+function importHistoDialog() {
+  const byRef = new Map();
+  for (const p of db.pieces) {
+    byRef.set(String(p.ref).toUpperCase(), p);
+    if (p.refFab && !byRef.has(String(p.refFab).toUpperCase())) byRef.set(String(p.refFab).toUpperCase(), p);
+  }
+  dialog({
+    title: 'Importer l’historique du stock (CareOffice)',
+    saveLabel: 'Importer',
+    wide: true,
+    body: `<p>Choisissez l’export du <b>Journal des écritures</b> de CareOffice (Excel ou CSV, un ou plusieurs articles), ou le fichier <span class="mono">historique-careoffice.json</span>. Chaque ligne est rattachée à sa pièce par l’ID ou le code de l’article. Une ligne déjà présente n’est pas ajoutée deux fois.</p>
+      <label>Fichier<input type="file" name="file" accept=".xlsx,.xls,.csv,.json"></label><p class="hint" data-prev></p>`,
+    onOpen(f, d) {
+      f.elements.file.addEventListener('change', async () => {
+        const prev = $('[data-prev]', d);
+        d._data = null;
+        try {
+          prev.textContent = 'Lecture…';
+          const rows = coJournalRows(await coReadFile(f.elements.file.files[0]));
+          const ok = rows.filter(r => byRef.has(r.ref.toUpperCase())),
+            miss = [...new Set(rows.filter(r => !byRef.has(r.ref.toUpperCase())).map(r => r.ref))];
+          d._data = ok;
+          prev.innerHTML = rows.length
+            ? `${nbs(rows.length, 'ligne lue', 'lignes lues')} · <b>${nbs(new Set(ok.map(r => r.ref.toUpperCase())).size, 'pièce trouvée', 'pièces trouvées')}</b>${miss.length ? ` · <span style="color:var(--bad)">${nbs(miss.length, 'article inconnu', 'articles inconnus')} : ${esc(miss.slice(0, 6).join(', '))}${miss.length > 6 ? '…' : ''}</span>` : ''}`
+            : '<span style="color:var(--bad)">Aucune ligne reconnue : vérifiez que le fichier contient les colonnes « Date d’écriture », « Type d’écriture », « Qté de la transaction » et « Code article ».</span>';
+        } catch (e) {
+          prev.innerHTML = `<span style="color:var(--bad)">${esc(e.message || e)}</span>`;
+        }
+      });
+    },
+    onSave(f, d) {
+      const rows = d._data;
+      if (!rows || !rows.length) throw new Error('Choisissez un fichier avec des lignes reconnues.');
+      const k = l => l.no || [l.d, l.q, l.t].join('|');
+      let add = 0;
+      const touched = new Set();
+      tx(() => {
+        for (const {ref, line} of rows) {
+          const p = byRef.get(ref.toUpperCase());
+          let h = db.histo.find(x => x.id === p.id);
+          if (!h) db.histo.push((h = {id: p.id, l: []}));
+          const have = new Set(h.l.map(k));
+          /* Ancienne reprise sans n° d'écriture : même date, quantité et type = même ligne */
+          const old = new Set(h.l.map(l => [l.d, l.q, l.t.split(' · ')[0]].join('|')));
+          if (have.has(k(line)) || old.has([line.d, line.q, line.t.split(' · ')[0]].join('|'))) continue;
+          h.l.push(line);
+          add++;
+          touched.add(h);
+        }
+        for (const h of touched) h.l.sort((a, b) => String(b.d).localeCompare(String(a.d)));
+      });
+      render();
+      toast(
+        add
+          ? `${nbs(add, 'ligne ajoutée', 'lignes ajoutées')} à ${nbs(touched.size, 'pièce', 'pièces')}`
+          : 'Rien de nouveau : tout était déjà là.'
+      );
+    }
+  });
+}
 function importPiecesDialog() {
   dialog({
     title: 'Importer des pièces depuis CareOffice',

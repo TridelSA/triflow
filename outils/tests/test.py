@@ -159,6 +159,37 @@ async def main():
         ok(await pg.evaluate("arretFait(db.taches.find(t => t.titre === 'Ramonage chaudière')) && /0 à faire · 1 fait/.test($('.arr-bar').textContent)"), 'arrêt : avancement à jour')
         await capture('ordi-travaux-arret')
         await pg.evaluate("tx(() => { delete db.reglages.arret; db.taches = db.taches.filter(t => t.titre !== 'Ramonage chaudière'); }); S.tf=''")
+        # Historique du stock repris de CareOffice (Journal des écritures)
+        ok(await pg.evaluate("""(() => { const r = coJournalRows([
+            {"N° d'écriture": 45195, "Date d'écriture": '10.06.2026 10:42', "Type d'écriture": 'Entrée de marchandise', "Qté de la transaction": -2, 'Remarque': '', 'Code article': '90001'},
+            {"N° d'écriture": 43499, "Date d'écriture": '30.09.2025 16:29', "Type d'écriture": 'Plus-value sur inventaire', "Qté de la transaction": 1, 'Remarque': '', 'Code article': '90001'},
+            {"N° d'écriture": 43498, "Date d'écriture": '30.09.2025 16:29', "Type d'écriture": 'Inventaire', "Qté de la transaction": 4, 'Remarque': '', 'Code article': '90001'}]);
+          return r.length === 3 && r[0].line.q === 2 && r[0].line.d === '2026-06-10T10:42' && r[1].line.q === 1 && r[2].line.n === 1 && r[2].line.q === 4; })()"""), 'CareOffice : écritures lues avec le bon signe')
+        hj = os.path.join(ICI, 'captures', 'histo-test.json')
+        open(hj, 'w', encoding='utf-8').write(json.dumps([{'a': '90001', 'ty': 15, 'q': -3, 'd': '2024-07-31 07:22', 'l': 'Tridel/E9/99 Magasin', 'who': 'Testeur', 'des': '', 'an': 0}]))
+        await pg.evaluate("importHistoDialog()"); await pg.set_input_files('dialog[open] input[name=file]', hj); await pg.wait_for_timeout(400)
+        await pg.click('dialog[open] button[type=submit]'); await pg.wait_for_timeout(500)
+        ok(await pg.evaluate("get('histo', 'p1')?.l.some(l => l.q === 3 && /Entrée de marchandise/.test(l.t))"), 'CareOffice : historique du stock importé')
+        await pg.evaluate("importHistoDialog()"); await pg.set_input_files('dialog[open] input[name=file]', hj); await pg.wait_for_timeout(400)
+        await pg.click('dialog[open] button[type=submit]'); await pg.wait_for_timeout(500)
+        ok(await pg.evaluate("get('histo', 'p1').l.filter(l => l.q === 3).length === 1"), 'CareOffice : pas de doublon à la 2e importation')
+        # « Intervenant CareOffice : Ofatec » → Pour qui ? / Intervenants (onglet Entreprises)
+        await pg.evaluate("""tx(() => { db.taches.push({id:'tco', titre:'Révision pompe', description:'Contrôler.\\n\\nIntervenant CareOffice : Ofatec', kksId:'', assign:{type:'groupe', v:''}, freq:{n:1, unite:'an'}, prochaine:isoAdd(todayISO(), 90), actif:true, kind:'rec'});
+          db.interventions.push({id:'ico', num:'R26-900', date:todayISO(), type:'', statut:'terminee', titre:'Révision', kksId:'', constat:'Intervenant CareOffice : Ofatec', travaux:'', intervenants:[], pieces:[]}); coInterMigrate(db); })""")
+        ok(await pg.evaluate("(t => t.assign.type === 'four' && t.assign.v === 'Ofatec' && t.description === 'Contrôler.' && db.listes.fournisseurs.includes('Ofatec'))(get('taches', 'tco'))"), 'CareOffice : intervenant entreprise rangé dans « Pour qui ? »')
+        ok(await pg.evaluate("(i => i.intervenants.includes('four:Ofatec') && !i.constat)(get('interventions', 'ico'))"), 'CareOffice : intervenant entreprise rangé dans le rapport')
+        await pg.evaluate("interventionDialog(null, null, get('taches', 'tco'))"); await pg.wait_for_timeout(300)
+        ok(await pg.evaluate("document.querySelector('dialog[open] [data-psel] [aria-selected=true]')?.textContent.includes('Entreprises') ?? true"), 'rapport depuis un travail d’entreprise : onglet Entreprises')
+        await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close()); tx(() => { db.taches = db.taches.filter(t => t.id !== 'tco'); db.interventions = db.interventions.filter(i => i.id !== 'ico'); })")
+        # Modifications : cadres seulement
+        ok(await pg.evaluate("(CLOUD.cadre = false, jrnBlock('x') === '') && (CLOUD.cadre = true, jrnBlock('x') !== '')"), 'Modifications : réservé aux cadres')
+        await pg.evaluate("delete CLOUD.cadre")
+        # Case Planning de l'accueil : qui afficher
+        await pg.evaluate("S.opt='connexion'; go('options')"); await pg.wait_for_timeout(300)
+        await pg.select_option('select[data-change=accPlan]', 'g:Électricien'); await pg.wait_for_timeout(300)
+        await pg.evaluate("go('accueil')"); await pg.wait_for_timeout(400)
+        ok(await pg.evaluate("accPlan().label === 'Électricien' && document.querySelectorAll('.bt-l .bt-plist li').length > 0"), 'accueil : planning d’un corps de métier choisi')
+        await pg.evaluate("tx(() => { delete db.reglages.accPlan; })")
         print('Pages (ordinateur)')
         for js, nom in [("go('accueil')", 'accueil'), ("S.sel.pieces=null; go('pieces')", 'pieces'), ("go('pieces','p1')", 'piece'),
                         ("go('taches','t2')", 'travaux-afaire'), ("S.statut='actives'; go('interventions')", 'travaux-encours'),
@@ -167,6 +198,7 @@ async def main():
                         ("S.opt='personnes'; go('options')", 'options-personnes')]:
             await aller(js, 'ordi-' + nom)
         ok(await pg.evaluate("S.pweek === planWeek()"), 'le planning s’ouvre sur la semaine suivante')
+        ok(await pg.evaluate("(n => n.getBoundingClientRect().left < innerWidth / 2)(document.querySelector('#nav'))"), 'ordinateur : menu à gauche du bandeau')
         ok(await pg.evaluate("(go('interventions'), !/\\(s\\)/.test(document.body.innerText))"), 'pas de « (s) » dans les textes')
         await aller("go('accueil')", 'ordi-accueil', 900)
         ok(await pg.evaluate("document.querySelectorAll('.bento > .btile').length === 5 && !document.querySelector('.kpis')"), 'accueil : une carte par page')

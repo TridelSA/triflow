@@ -1100,6 +1100,12 @@ button.hb-i:hover b{text-decoration:underline}
 .bt-n strong{color:var(--ink)}.bt-n strong.warn{color:var(--warn)}
 .bt-rows{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .bt-rows li{display:flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;border-radius:var(--r-lg);background:var(--sunk);min-width:0;min-height:30px}
+.bt-plist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;font-size:var(--t-md)}
+.bt-plist li{display:flex;justify-content:space-between;gap:10px;padding:5px 2px;border-bottom:1px solid var(--line)}
+.bt-plist li:last-child{border-bottom:0}
+.bt-plist .t{font-weight:600;white-space:nowrap}
+.bt-plist .br-r{text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acc-plan{margin-top:14px;max-width:360px}
 .br-l{all:unset;cursor:pointer;flex:1;min-width:0;display:flex;align-items:center;gap:9px;font-size:var(--t-md)}
 .br-l .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .br-l:hover .t{text-decoration:underline}
@@ -1465,3 +1471,9 @@ details.more > summary{flex-wrap:wrap;row-gap:0}
 /* Scanner (caméra) : téléphone et tablette seulement ; sur ordinateur, « Sortir une pièce » à la place */
 @media (min-width:981px){ .no-desk{display:none !important} }
 @media (max-width:980px){ .desk-only{display:none !important} }
+/* Ordinateur : menu à gauche, à côté du nom (plus posé sur le dessin de l'usine) ; aide « ? » à droite */
+@media (min-width:761px){
+  .hero-side{display:contents}
+  .hero-inner .nav{margin-left:28px}
+  .hero-inner .help-btn{order:3;margin-left:auto}
+}

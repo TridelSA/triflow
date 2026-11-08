@@ -301,9 +301,18 @@ function tacheDialog(t, kksId) {
         search: persName(p) + ' ' + (p.groupe || ''),
         html: esc(persName(p)),
         right: `<span class="muted">${esc(p.groupe || '')}</span>`
+      })),
+    ...db.listes.fournisseurs
+      .filter(n => !(db.listes.fournArch || []).includes(n))
+      .map(n => ({
+        id: 'f:' + n,
+        label: n,
+        search: 'entreprise ' + n,
+        html: esc(n),
+        right: '<span class="muted">Entreprise</span>'
       }))
   ];
-  const aId = v.assign?.v ? (v.assign.type === 'personne' ? 'p:' : 'g:') + v.assign.v : '';
+  const aId = v.assign?.v ? ({personne: 'p:', four: 'f:'}[v.assign.type] || 'g:') + v.assign.v : '';
   const pill = (name, k2, lbl, tone, cur) =>
     `<label class="prio-o ${tone}"><input type="radio" name="${name}" value="${k2}" ${cur === k2 ? 'checked' : ''}><span>${lbl}</span></label>`;
   dialog({
@@ -327,7 +336,7 @@ function tacheDialog(t, kksId) {
           .join('')}</div>
           <label>Pour quand ? (facultatif)<input name="pdate" type="date" value="${petit0 ? esc(v.prochaine || '') : ''}"></label></div>
         <div data-rec><label>${isNew || petit0 ? 'Première fois le' : 'Prochaine fois le'}<input name="prochaine" type="date" value="${esc(petit0 ? v.prochaine || todayISO() : v.prochaine)}"></label><p class="hint" data-fprev></p></div></fieldset>
-      <label>Pour qui ?<input name="assign" data-id="${esc(aId)}" data-label="${esc(aId ? assignLabel(v.assign) : '')}" value="${esc(aId ? assignLabel(v.assign) : '')}" placeholder="Un corps de métier ou une personne"></label>
+      <label>Pour qui ?<input name="assign" data-id="${esc(aId)}" data-label="${esc(aId ? assignLabel(v.assign) : '')}" value="${esc(aId ? assignLabel(v.assign) : '')}" placeholder="Un corps de métier, une personne ou une entreprise"></label>
       <label class="toggle"><input type="checkbox" name="arret" ${v.arret ? 'checked' : ''}> À faire pendant l’arrêt de l’usine (révision)</label>
       <details class="more" ${!isNew && (v.kksId || v.description || v.rapport === 'non' || (v.points || []).length) ? 'open' : ''}><summary>Plus de détails <span class="muted">(équipement, rapport, consignes, points à contrôler)</span></summary>
       <label>Équipement (repère KKS)<input name="kks" data-id="${k ? k.id : ''}" data-label="${k ? esc(kksLabel(k)) : ''}" value="${k ? esc(kksLabel(k)) : ''}" placeholder="Facultatif : code ou désignation"></label>
@@ -383,8 +392,8 @@ function tacheDialog(t, kksId) {
       let assign = {type: 'groupe', v: ''};
       if (ai.value.trim()) {
         const id = ai.dataset.id || '';
-        if (!id) throw new Error('Choisissez un corps de métier ou une personne dans la liste.');
-        assign = id.startsWith('g:') ? {type: 'groupe', v: id.slice(2)} : {type: 'personne', v: id.slice(2)};
+        if (!id) throw new Error('Choisissez un corps de métier, une personne ou une entreprise dans la liste.');
+        assign = {type: {g: 'groupe', p: 'personne', f: 'four'}[id[0]] || 'groupe', v: id.slice(2)};
       }
       const rapport = (f.querySelector('input[name=rapport]:checked') || {}).value || '';
       const data = {

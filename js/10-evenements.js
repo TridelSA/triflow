@@ -638,6 +638,7 @@ const ACT = {
   'edit-kks': d => kksDialog(getKks(d.id)),
   'import-kks': () => importKksDialog(),
   'import-pieces': () => importPiecesDialog(),
+  'import-histo': () => importHistoDialog(),
   'import-four': () => importFourDialog(),
   'four-open'(d) {
     S.fourOpen = S.fourOpen === d.name ? null : d.name;
@@ -948,6 +949,15 @@ document.addEventListener('change', e => {
       db.reglages.resp = {...(db.reglages.resp || {}), [g]: v || undefined};
     });
     toast(v ? `${persName(getPers(v))} : responsable ${g}` : `Plus de responsable ${g}`, '', true);
+    return;
+  }
+  if (c === 'accPlan') {
+    const e2 = (CLOUD.user?.email || 'local').toLowerCase(),
+      v = e.target.value;
+    tx(() => {
+      db.reglages.accPlan = {...(db.reglages.accPlan || {}), [e2]: v || undefined};
+    });
+    toast('Accueil : planning de ' + accPlan().label);
     return;
   }
   if (c === 'psort') {

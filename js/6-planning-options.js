@@ -222,6 +222,23 @@ function planPeople(withLeave = false) {
         coll.compare(a.nom, b.nom)
     );
 }
+/* Case Planning de l'accueil : qui afficher (choix personnel, Options › Connexion).
+   '' = comme le planning ; 'me' = moi ; 'team' = mon équipe ; 'g:Groupe' = un corps de métier */
+const accPlanKey = () => db.reglages.accPlan?.[(CLOUD.user?.email || 'local').toLowerCase()] || '';
+function accPlan() {
+  const key = accPlanKey(),
+    me = meId() && getPers(meId()),
+    all = db.personnes.filter(p => live(p) && p.actif !== false).sort(persSort);
+  if (key === 'me' && me) return {key, label: persName(me), ppl: [me]};
+  const g = key === 'team' ? me?.groupe : key.startsWith('g:') ? key.slice(2) : '';
+  if (g) return {key, label: key === 'team' ? `Mon équipe (${g})` : g, ppl: all.filter(p => p.groupe === g)};
+  return {key: '', label: 'Tout le monde', ppl: all};
+}
+function accPlanSelect() {
+  const k = accPlanKey(),
+    grps = db.listes.groupes.filter(g => db.personnes.some(p => p.groupe === g && p.actif !== false && live(p)));
+  return `<label>Case « Planning » de l’accueil<select data-change="accPlan">${opt('', 'Tout le monde', k)}${meId() ? opt('me', 'Moi', k) + opt('team', 'Mon équipe', k) : ''}<optgroup label="Un corps de métier">${grps.map(g => opt('g:' + g, g, k)).join('')}</optgroup></select></label>`;
+}
 /* Disponible ce jour-là (R, PIQ, EN, PI, CA, PO…) : case blanche, sans code */
 const isDispo = code => !!code && (DISPO.has(code) || ['on', 'piq'].includes((PCODE[code] || [])[1]));
 function planCell(who, iso, p) {
@@ -1580,7 +1597,7 @@ const respOf = id =>
     .map(([g]) => g);
 OPT.connexion = () => {
   const c = CLOUD.cfg();
-  return `<section class="opt-sec"><div class="head"><h2>Sur ce poste</h2></div><div class="pad"><p>${meId() ? `Vous êtes <strong>${esc(persName(getPers(meId())))}</strong>. ${NOFILTER_GRP.includes(getPers(meId()).groupe) ? 'Comme cadre / administration, vous voyez tout par défaut.' : 'À chaque ouverture, l’accueil, les tâches et les rapports sont filtrés sur vous et votre groupe ; le filtre se désactive avec « Tout le monde ». Les archives ne sont jamais filtrées.'}` : 'Personne n’est choisi : tout le monde voit tout.'}</p><div class="tools"><button class="btn" data-act="me">${icon('person')}${meId() ? 'Changer' : 'Choisir mon nom'}</button></div></div></section><section class="opt-sec"><div class="head"><h2>Base partagée</h2></div><div class="pad">
+  return `<section class="opt-sec"><div class="head"><h2>Sur ce poste</h2></div><div class="pad"><p>${meId() ? `Vous êtes <strong>${esc(persName(getPers(meId())))}</strong>. ${NOFILTER_GRP.includes(getPers(meId()).groupe) ? 'Comme cadre / administration, vous voyez tout par défaut.' : 'À chaque ouverture, l’accueil, les tâches et les rapports sont filtrés sur vous et votre groupe ; le filtre se désactive avec « Tout le monde ». Les archives ne sont jamais filtrées.'}` : 'Personne n’est choisi : tout le monde voit tout.'}</p><div class="tools"><button class="btn" data-act="me">${icon('person')}${meId() ? 'Changer' : 'Choisir mon nom'}</button></div><div class="acc-plan">${accPlanSelect()}</div></div></section><section class="opt-sec"><div class="head"><h2>Base partagée</h2></div><div class="pad">
     ${
       CLOUD.on
         ? `<p>Connecté en tant que <strong>${esc(CLOUD.user?.email || '')}</strong>. Les données sont partagées par tous les postes connectés.</p>
