@@ -595,7 +595,12 @@ async function startCloud() {
       return loginForm();
     }
     /* Accès autorisé ? (adresse @tridelsa.ch confirmée ou exception, voir outils/acces.sql) ; cadre ? */
-    const [acc, cad] = await Promise.all([CLOUD.sb.rpc('tf_ok').catch(() => ({})), CLOUD.sb.rpc('is_cadre').catch(() => ({}))]);
+    /* rpc() de Supabase renvoie un objet « thenable » sans .catch : on l'enveloppe dans une vraie promesse */
+    const rpcSafe = n =>
+      Promise.resolve()
+        .then(() => CLOUD.sb.rpc(n))
+        .catch(() => ({}));
+    const [acc, cad] = await Promise.all([rpcSafe('tf_ok'), rpcSafe('is_cadre')]);
     if (!acc.error && acc.data === false) {
       await IDB.del(CLOUD.cacheKey());
       await CLOUD.sb.auth.signOut();

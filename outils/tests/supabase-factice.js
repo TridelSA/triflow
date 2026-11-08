@@ -25,7 +25,9 @@ window.__srv = window.__srv || {rows:new Map(), handlers:[], session:null, rpcCa
       async upload(path, blob){ S.photos = S.photos || new Map(); S.photos.set(path, 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><rect width="40" height="30" fill="#9cd"/></svg>')); return {data:{path}, error:null}; },
       async createSignedUrls(paths){ return {data: paths.map(p => ({path:p, signedUrl:(S.photos && S.photos.get(p)) || ''})), error:null}; }
     }; }},
-    async rpc(name, args){
+    /* Comme le vrai Supabase : rpc() renvoie un objet « thenable », sans .catch */
+    rpc(name, args){ const p = this._rpc(name, args); return {then:(a, b) => p.then(a, b)}; },
+    async _rpc(name, args){
       if (S.offline) throw new TypeError('Failed to fetch');
       /* Accès (outils/acces.sql) : window.__noAccess = refusé ; is_cadre seulement si window.__cadre est défini */
       if (name === 'tf_ok') return {data: !window.__noAccess, error:null};
