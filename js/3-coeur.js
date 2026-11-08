@@ -434,28 +434,112 @@ function hideGate() {
   const g = $('#gate');
   if (g) g.hidden = true;
 }
-function loginForm(msg = '') {
-  showGate(`<p class="muted">Connectez-vous avec votre compte.</p>
+/* Connexion. Modes : 'login' (par défaut), 'signup' (créer mon compte), 'forgot' (mot de passe oublié),
+   'newpw' (nouveau mot de passe, après le lien reçu par e-mail). Inscription réservée aux adresses @tridelsa.ch :
+   la base le vérifie aussi (outils/acces.sql), ce contrôle-ci sert seulement à prévenir tout de suite. */
+const TF_DOMAINE = 'tridelsa.ch';
+const siteURL = () => location.origin + location.pathname;
+function loginForm(msg = '', mode = 'login', ok = '') {
+  const pwField = (name, lbl, ac) => `<label>${lbl}<input type="password" name="${name}" autocomplete="${ac}" required></label>`;
+  const T = {
+    login: ['Connectez-vous avec votre compte.', pwField('pw', 'Mot de passe', 'current-password'), 'Se connecter'],
+    signup: [
+      `Créez votre compte avec votre adresse <b>@${TF_DOMAINE}</b>. Vous recevrez un e-mail pour l’activer.`,
+      pwField('pw', 'Choisissez un mot de passe <span class="muted">(10 caractères minimum)</span>', 'new-password'),
+      'Créer mon compte'
+    ],
+    forgot: ['Indiquez votre adresse : vous recevrez un lien pour choisir un nouveau mot de passe.', '', 'Recevoir le lien'],
+    newpw: [
+      'Choisissez votre nouveau mot de passe.',
+      pwField('pw', 'Nouveau mot de passe <span class="muted">(10 caractères minimum)</span>', 'new-password') +
+        pwField('pw2', 'Encore une fois', 'new-password'),
+      'Enregistrer'
+    ]
+  }[mode];
+  const links =
+    mode === 'login'
+      ? `<p class="gate-links"><button type="button" class="link" data-mode="forgot">Mot de passe oublié ?</button><button type="button" class="link" data-mode="signup">Créer mon compte</button></p>`
+      : mode === 'newpw'
+        ? ''
+        : `<p class="gate-links"><button type="button" class="link" data-mode="login">← Retour à la connexion</button></p>`;
+  showGate(`<p class="muted">${T[0]}</p>
+    ${ok ? `<p class="gate-ok">${esc(ok)}</p>` : ''}
     <form id="login" class="gate-form" novalidate>
-      <label>Adresse e-mail<input type="email" name="email" autocomplete="username" required></label>
-      <label>Mot de passe<input type="password" name="pw" autocomplete="current-password" required></label>
+      ${mode === 'newpw' ? '' : `<label>Adresse e-mail<input type="email" name="email" autocomplete="username" required></label>`}
+      ${T[1]}
       <p class="dlg-err" ${msg ? '' : 'hidden'}>${esc(msg)}</p>
-      <button class="btn primary">Se connecter</button>
-    </form>
-    <p class="hint">Pas de compte ? Demandez-le au responsable de la GMAO.</p>`);
+      <button class="btn primary">${T[2]}</button>
+    </form>${links}`);
   const f = $('#login');
-  f.elements.email.focus();
+  (f.elements.email || f.elements.pw).focus();
+  $$('#gate [data-mode]').forEach(b => (b.onclick = () => loginForm('', b.dataset.mode)));
   f.addEventListener('submit', async e => {
     e.preventDefault();
-    const b = $('button', f);
+    const b = $('button', f),
+      email = (f.elements.email?.value || '').trim().toLowerCase(),
+      pw = f.elements.pw?.value || '';
+    const fail = m => loginForm(m, mode);
+    if (mode !== 'newpw' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail('Adresse e-mail invalide.');
+    if (mode === 'signup' && !email.endsWith('@' + TF_DOMAINE)) return fail(`TriFlow est réservé aux adresses @${TF_DOMAINE}.`);
+    if ((mode === 'signup' || mode === 'newpw') && pw.length < 10) return fail('Mot de passe trop court : 10 caractères minimum.');
+    if (mode === 'newpw' && pw !== f.elements.pw2.value) return fail('Les deux mots de passe ne sont pas pareils.');
     b.disabled = true;
-    b.textContent = 'Connexion…';
-    const {error} = await CLOUD.sb.auth.signInWithPassword({email: f.elements.email.value.trim(), password: f.elements.pw.value});
-    if (error) {
-      loginForm(/invalid/i.test(error.message) ? 'Adresse e-mail ou mot de passe incorrect.' : 'Connexion impossible : ' + error.message);
-      return;
+    b.textContent = 'Un instant…';
+    try {
+      if (mode === 'login') {
+        const {error} = await CLOUD.sb.auth.signInWithPassword({email, password: pw});
+        if (error)
+          return fail(
+            /invalid/i.test(error.message)
+              ? 'Adresse e-mail ou mot de passe incorrect.'
+              : /confirm/i.test(error.message)
+                ? 'Adresse pas encore confirmée : cliquez le lien reçu par e-mail.'
+                : 'Connexion impossible : ' + error.message
+          );
+        return startCloud();
+      }
+      if (mode === 'signup') {
+        const {error} = await CLOUD.sb.auth.signUp({email, password: pw, options: {emailRedirectTo: siteURL()}});
+        if (error) return fail(/registered|exists/i.test(error.message) ? 'Un compte existe déjà avec cette adresse.' : error.message);
+        return loginForm(
+          '',
+          'login',
+          `C’est presque fini : ouvrez l’e-mail envoyé à ${email} et cliquez le lien pour activer votre compte.`
+        );
+      }
+      if (mode === 'forgot') {
+        const {error} = await CLOUD.sb.auth.resetPasswordForEmail(email, {redirectTo: siteURL()});
+        if (error) return fail('Envoi impossible : ' + error.message);
+        return loginForm(
+          '',
+          'login',
+          `Si un compte existe pour ${email}, un e-mail vient de partir avec un lien pour choisir un nouveau mot de passe.`
+        );
+      }
+      const {error} = await CLOUD.sb.auth.updateUser({password: pw});
+      if (error) return fail('Enregistrement impossible : ' + error.message);
+      toast('Nouveau mot de passe enregistré');
+      startCloud();
+    } catch (x) {
+      fail('Pas de réseau : réessayez dans un moment.');
     }
-    startCloud();
+  });
+}
+/* Changer son mot de passe (Options › Connexion) */
+function passwordDialog() {
+  dialog({
+    title: 'Changer mon mot de passe',
+    saveLabel: 'Enregistrer',
+    body: `<label>Nouveau mot de passe <span class="muted">(10 caractères minimum)</span><input type="password" name="pw" autocomplete="new-password" required></label>
+      <label>Encore une fois<input type="password" name="pw2" autocomplete="new-password" required></label>`,
+    async onSave(f) {
+      const pw = val(f, 'pw');
+      if (pw.length < 10) throw new Error('Mot de passe trop court : 10 caractères minimum.');
+      if (pw !== val(f, 'pw2')) throw new Error('Les deux mots de passe ne sont pas pareils.');
+      const {error} = await CLOUD.sb.auth.updateUser({password: pw});
+      if (error) throw new Error('Enregistrement impossible : ' + error.message);
+      toast('Nouveau mot de passe enregistré');
+    }
   });
 }
 async function bootCloud() {
@@ -469,9 +553,17 @@ async function bootCloud() {
     );
     return;
   }
+  /* Retour d'un lien reçu par e-mail (activation du compte, nouveau mot de passe) : lu avant que Supabase n'efface l'adresse */
+  const h = location.hash,
+    recov = /type=recovery/.test(h),
+    linkErr = /error_code=|error_description=/.test(h);
   CLOUD.sb = window.supabase.createClient(c.url, c.key, {auth: {persistSession: true, autoRefreshToken: true, storageKey: 'gmao-auth'}});
   const {data} = await CLOUD.sb.auth.getSession();
+  if (linkErr || recov || /type=signup/.test(h)) history.replaceState(null, '', location.pathname + location.search);
+  if (linkErr) return loginForm('Ce lien n’est plus valable. Demandez-en un nouveau (« Mot de passe oublié ? ») ou connectez-vous.');
   if (!data.session) return loginForm();
+  if (recov) return loginForm('', 'newpw');
+  if (/type=signup/.test(h)) setTimeout(() => toast('Adresse confirmée : bienvenue dans TriFlow !'), 800);
   startCloud();
 }
 async function startCloud() {
@@ -502,6 +594,18 @@ async function startCloud() {
       CLOUD.warming = false;
       return loginForm();
     }
+    /* Accès autorisé ? (adresse @tridelsa.ch confirmée ou exception, voir outils/acces.sql) ; cadre ? */
+    const [acc, cad] = await Promise.all([CLOUD.sb.rpc('tf_ok').catch(() => ({})), CLOUD.sb.rpc('is_cadre').catch(() => ({}))]);
+    if (!acc.error && acc.data === false) {
+      await IDB.del(CLOUD.cacheKey());
+      await CLOUD.sb.auth.signOut();
+      CLOUD.user = null;
+      CLOUD.warming = false;
+      return loginForm(
+        `Cette adresse n’a pas accès à TriFlow : il faut une adresse @${TF_DOMAINE} confirmée. Sinon, demandez un accès à un cadre.`
+      );
+    }
+    if (!cad.error && typeof cad.data === 'boolean') CLOUD.cadre = cad.data;
     /* Des modifications faites hors ligne attendent : on les envoie d'abord */
     if (pend?.db) {
       await CLOUD.fromCacheKeep();
@@ -690,6 +794,8 @@ function personFromEmail(email) {
 /* Seuls les cadres peuvent supprimer définitivement (la base applique la même règle, voir outils/droits.sql) */
 function canDel() {
   if (!CLOUD.user) return true;
+  /* La base fait foi (liste des cadres de outils/acces.sql) ; sinon, ancienne règle d'après le planning */
+  if (typeof CLOUD.cadre === 'boolean') return CLOUD.cadre;
   return personFromEmail(CLOUD.user.email)?.groupe === 'Cadres';
 }
 function meId() {

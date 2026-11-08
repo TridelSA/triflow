@@ -714,6 +714,8 @@ dialog.dlg::backdrop{background:rgba(12,18,21,.55)}
 .gate-card h1{font-size:var(--t-2xl)}
 .gate-form{display:flex;flex-direction:column;gap:12px}
 .gate-form .dlg-err{margin:0}
+.gate-links{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0;font-size:var(--t-sm)}
+.gate-ok{margin:0;padding:10px 12px;border-radius:var(--r-md);background:var(--ok-soft);color:var(--ok);font-size:var(--t-md)}
 #sync{margin-left:6px}
 #sync[data-state="saving"]{color:var(--muted)}
 #sync[data-state="offline"],#sync[data-state="error"]{color:var(--bad);font-weight:600}

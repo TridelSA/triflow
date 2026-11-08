@@ -1,7 +1,7 @@
 // =====================================================================
 //  TriFlow — fonction Supabase « creer-utilisateur »
 //  Crée un compte TriFlow depuis l'application (bouton Options › Personnes › Créer un accès).
-//  Seuls les cadres peuvent l'utiliser (vérifié par la fonction is_cadre() de outils/droits.sql).
+//  Seuls les cadres peuvent l'utiliser (vérifié par la fonction is_cadre() de outils/acces.sql).
 //  La clé d'administration (service_role) reste dans Supabase : elle n'est jamais dans le site.
 //
 //  Installation (une seule fois) : Supabase › Edge Functions › Deploy a new function › Via Editor
@@ -46,6 +46,10 @@ Deno.serve(async (req) => {
   if (error) {
     const deja = /already|registered|exists/i.test(error.message);
     return reponse({ erreur: deja ? 'Un compte existe déjà avec cette adresse.' : error.message }, deja ? 409 : 400);
+  }
+  // 4. Adresse hors @tridelsa.ch créée par un cadre : on l'autorise (table tf_exceptions de outils/acces.sql)
+  if (!email.endsWith('@tridelsa.ch')) {
+    await admin.from('tf_exceptions').upsert({ email, note: 'créé depuis TriFlow' }, { onConflict: 'email', ignoreDuplicates: true });
   }
   return reponse({ ok: true, email });
 });

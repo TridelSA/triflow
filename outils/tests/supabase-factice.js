@@ -11,7 +11,11 @@ window.__srv = window.__srv || {rows:new Map(), handlers:[], session:null, rpcCa
       async getSession(){ return {data:{session:S.session}}; },
       async getUser(){ return {data:{user:S.session ? S.session.user : null}}; },
       async signInWithPassword({email, password}){ if (password !== 'secret') return {error:{message:'Invalid login credentials'}}; S.session = {user:{email, id:'u1'}}; localStorage.setItem('__mocksess', JSON.stringify(S.session)); return {data:{}, error:null}; },
-      async signOut(){ S.session = null; localStorage.removeItem('__mocksess'); }
+      async signOut(){ S.session = null; localStorage.removeItem('__mocksess'); },
+      async signUp({email, password}){ (S.mails = S.mails || []).push(['signup', email]); return {data:{}, error:null}; },
+      async resetPasswordForEmail(email){ (S.mails = S.mails || []).push(['reset', email]); return {data:{}, error:null}; },
+      async updateUser({password}){ S.newPw = password; return {data:{}, error:null}; },
+      onAuthStateChange(){ return {data:{subscription:{unsubscribe(){}}}}; }
     },
     from(){ return {select(cols){ const f = {c:null, ids:null, eqs:[], neq:null}; const pick = r => { const o = {}; for (const k of cols.split(',')) o[k] = k === 'data' ? JSON.parse(JSON.stringify(r.data)) : r[k]; return o; };
       const list = () => [...S.rows.values()].filter(r => (!f.c || r.collection === f.c) && (!f.neq || r.collection !== f.neq) && f.eqs.every(([k, v]) => String(r.data?.[k]) === String(v)) && (!f.ids || f.ids.includes(r.id))).sort((a, b) => (a.collection + '|' + a.id).localeCompare(b.collection + '|' + b.id));
@@ -21,8 +25,12 @@ window.__srv = window.__srv || {rows:new Map(), handlers:[], session:null, rpcCa
       async upload(path, blob){ S.photos = S.photos || new Map(); S.photos.set(path, 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><rect width="40" height="30" fill="#9cd"/></svg>')); return {data:{path}, error:null}; },
       async createSignedUrls(paths){ return {data: paths.map(p => ({path:p, signedUrl:(S.photos && S.photos.get(p)) || ''})), error:null}; }
     }; }},
-    async rpc(name, {changes}){
+    async rpc(name, args){
       if (S.offline) throw new TypeError('Failed to fetch');
+      /* Accès (outils/acces.sql) : window.__noAccess = refusé ; is_cadre seulement si window.__cadre est défini */
+      if (name === 'tf_ok') return {data: !window.__noAccess, error:null};
+      if (name === 'is_cadre') return window.__cadre === undefined ? {data:null, error:{message:'function is_cadre() does not exist'}} : {data: window.__cadre, error:null};
+      const {changes} = args;
       S.rpcCalls++;
       for (const c of changes){ const k = c.c + '|' + c.id; const cur = S.rows.get(k); if ((cur ? cur.rev : 0) !== (c.rev || 0)) return {error:{message:'GMAO_CONFLIT ' + k}}; }
       for (const c of changes){ const k = c.c + '|' + c.id; const cur = S.rows.get(k);

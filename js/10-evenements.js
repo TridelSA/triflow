@@ -676,6 +676,7 @@ const ACT = {
     render();
   },
   'new-pers': () => persDialog(),
+  password: () => passwordDialog(),
   async logout() {
     await IDB.del(CLOUD.cacheKey());
     await CLOUD.sb.auth.signOut();

@@ -1584,7 +1584,7 @@ OPT.connexion = () => {
     ${
       CLOUD.on
         ? `<p>Connecté en tant que <strong>${esc(CLOUD.user?.email || '')}</strong>. Les données sont partagées par tous les postes connectés.</p>
-      <div class="tools"><button class="btn" data-act="logout">Se déconnecter</button></div>`
+      <div class="tools"><button class="btn" data-act="password">Changer mon mot de passe</button><button class="btn" data-act="logout">Se déconnecter</button></div>`
         : `<p>Pour l’instant, les données sont enregistrées <strong>dans ce navigateur seulement</strong>. Pour les partager entre tous les postes et téléphones, renseignez la base Supabase.</p>`
     }</div></section>
   ${

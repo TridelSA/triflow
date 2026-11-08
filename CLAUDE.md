@@ -58,7 +58,7 @@ Chaque fiche = `(collection, id, data jsonb, rev)`. Collections : `pieces`, `sal
 - **Rôles** : cadres = groupe « Cadres » reconnu par l'e-mail ; responsable par groupe dans `reglages.resp` (droits à définir plus tard, Options › Rôles).
 - **Planning** : s'ouvre sur la semaine suivante (`planWeek()`), une case = une personne × un jour ; un seul texte par case ; tâches glissées ou « cliquer puis cliquer la case ».
 
-Scripts SQL (à lancer à la main dans Supabase, jamais depuis le site) : `outils/supabase.sql` (table et droits de base), `outils/droits.sql` (suppression réservée aux cadres, journal protégé). Fonction Supabase : `outils/supabase-fonction/creer-utilisateur.ts`.
+Scripts SQL (à lancer à la main dans Supabase, jamais depuis le site) : `outils/supabase.sql` (table et droits de base), `outils/droits.sql` (suppression réservée aux cadres, journal protégé), `outils/photos.sql`, `outils/acces.sql` (accès réservé aux adresses @tridelsa.ch confirmées ou à la table `tf_exceptions` ; cadres = table `tf_cadres`, lue par `is_cadre()` → `CLOUD.cadre` → `canDel()`). Fonction Supabase : `outils/supabase-fonction/creer-utilisateur.ts`.
 
 ## Interdits
 - **Le dépôt est public** : jamais de données réelles (pièces, rapports, personnes, planning, exports CareOffice), jamais de clé `service_role` ni de mot de passe. La clé présente dans `index.html` est la clé publique : c'est normal.
@@ -82,8 +82,7 @@ Vérification rapide de syntaxe : `node --check js/<fichier>.js`.
 Commit sur `main` avec un message en français qui dit ce qui change pour l'utilisateur, puis `git push`. Ensuite, résumer à Thomas en quelques lignes ce qui a changé et où le voir.
 
 ## Reste à faire côté Thomas (ne pas refaire, rappeler si utile)
-- Lancer `outils/droits.sql` et installer la fonction `creer-utilisateur` dans Supabase.
-- Lancer `outils/photos.sql` dans Supabase (seau privé « photos ») pour activer les photos des pièces et des rapports.
+- Mise en place de l'accès réservé à @tridelsa.ch : README §2 « Accès réservé à Tridel » (désactiver l'inscription en attendant, lancer `outils/droits.sql`, `outils/photos.sql` puis `outils/acces.sql`, installer `creer-utilisateur`, SMTP, URL du site, modèles d'e-mails, rouvrir l'inscription).
 - Ajouter les secrets GitHub de la sauvegarde (`TRIFLOW_EMAIL`, `TRIFLOW_PASSWORD`, `BACKUP_PASSWORD`).
 - Vérifier la région du projet Supabase (idéalement Zurich).
 - Idées en attente : lien Microsoft To Do / Teams (rappels), droits par rôle.
