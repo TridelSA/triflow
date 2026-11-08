@@ -82,7 +82,7 @@ Vérification rapide de syntaxe : `node --check js/<fichier>.js`.
 Commit sur `main` avec un message en français qui dit ce qui change pour l'utilisateur, puis `git push`. Ensuite, résumer à Thomas en quelques lignes ce qui a changé et où le voir.
 
 ## Reste à faire côté Thomas (ne pas refaire, rappeler si utile)
-- Mise en place de l'accès réservé à @tridelsa.ch : README §2 « Accès réservé à Tridel » (désactiver l'inscription en attendant, lancer `outils/droits.sql`, `outils/photos.sql` puis `outils/acces.sql`, installer `creer-utilisateur`, SMTP, URL du site, modèles d'e-mails, rouvrir l'inscription).
+- Accès réservé à @tridelsa.ch (README §2) : inscription fermée et scripts SQL lancés (novembre 2026). Reste : installer `creer-utilisateur`, SMTP, URL du site, modèles d'e-mails, puis rouvrir l'inscription.
 - Ajouter les secrets GitHub de la sauvegarde (`TRIFLOW_EMAIL`, `TRIFLOW_PASSWORD`, `BACKUP_PASSWORD`).
 - Vérifier la région du projet Supabase (idéalement Zurich).
 - Idées en attente : lien Microsoft To Do / Teams (rappels), droits par rôle.
