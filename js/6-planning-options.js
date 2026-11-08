@@ -309,15 +309,15 @@ VIEWS.planning = {
           const n = planSideCount(days, ppl);
           return n ? ` <span class="badge">${n}</span>` : '';
         })()}</button>
-        ${mon !== planWeek() ? `<button class="btn small" data-act="pweek" data-n="0">Semaine prochaine</button>` : `<button class="btn small" data-act="pweek" data-n="-7">Cette semaine</button>`}
+        ${mon !== planWeek() ? `<button class="btn" data-act="pweek" data-n="0">Semaine prochaine</button>` : `<button class="btn" data-act="pweek" data-n="-7">Cette semaine</button>`}
         <button class="btn primary" data-act="plan-print" data-f="a3" title="Imprimer la semaine sur une feuille A3 paysage">${icon('printer')}Imprimer A3</button>${(() => {
           const r = db.reglages.planPret?.[mon];
           return r
             ? `<span class="chip ok plan-ready" title="Imprimée le ${fmtDT(r.at)}">${icon('check')}Prête${getPers(r.by) ? ' · ' + esc(getPers(r.by).nom) : ''}</span>`
             : '';
         })()}
-        <button class="btn" data-act="plan-hide">${icon('person')}Personnes affichées</button></div></header>
-      <div class="ptip-row"><p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez dans une case et tapez le travail à faire : <b>Entrée</b> valide, <b>Tab</b> passe au jour suivant. Le petit <b>⋯</b> permet de lier un travail ou de remplir plusieurs jours.</p>${planLegend()}</div>
+        ${menu([['plan-hide', 'Personnes affichées', 'person', {}]])}</div></header>
+      <div class="ptip-row"><p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez une case et tapez le travail : <b>Entrée</b> valide, <b>Tab</b> passe au jour suivant, <b>⋯</b> pour plus de choix.</p>${planLegend()}</div>
       <div class="pwrap ${S.pside ? '' : 'noside'}"><div class="wkgrid-wrap"><table class="wkgrid"><thead><tr><th></th>${days.map((d, i) => `<th class="${d === today ? 'today' : ''}">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>${S.pside ? planSideHTML(days, ppl) : ''}</div>
       ${
         conge.length
@@ -389,12 +389,12 @@ function planCheckDialog() {
     l
       .slice(0, 12)
       .map(p => esc(p.nom))
-      .join(', ') + (l.length > 12 ? ` et ${l.length - 12} autre(s)` : '');
+      .join(', ') + (l.length > 12 ? ` et ${nbs(l.length - 12, 'autre', 'autres')}` : '');
   const titles = l =>
     l
       .slice(0, 5)
       .map(t => `<li>${mdot(tMet(t))}${esc(t.titre)}</li>`)
-      .join('') + (l.length > 5 ? `<li class="muted">et ${l.length - 5} autre(s)</li>` : '');
+      .join('') + (l.length > 5 ? `<li class="muted">et ${nbs(l.length - 5, 'autre', 'autres')}</li>` : '');
   const row = (ok, tone, txt, more = '') =>
     `<div class="pc-row ${ok ? 'ok' : tone}"><span class="pc-i">${ok ? icon('check') : '!'}</span><div><b>${txt}</b>${more}</div></div>`;
   dialog({
@@ -462,7 +462,7 @@ function planSideHTML(days, ppl) {
     const l = sec[key];
     if (!l.length) return '';
     const shown = l.slice(0, 120);
-    return `<details class="ps-g ${cls}" ${open ? 'open' : ''}><summary><span>${title}</span><b>${l.length}</b></summary>${shown.map(t => card(t, cls)).join('')}${l.length > shown.length ? `<p class="list-note">${l.length - shown.length} autre(s) : filtrez.</p>` : ''}</details>`;
+    return `<details class="ps-g ${cls}" ${open ? 'open' : ''}><summary><span>${title}</span><b>${l.length}</b></summary>${shown.map(t => card(t, cls)).join('')}${l.length > shown.length ? `<p class="list-note">${nbs(l.length - shown.length, 'autre', 'autres')} : filtrez.</p>` : ''}</details>`;
   };
   const pk = S.ppick && get('taches', S.ppick);
   const body =
@@ -584,7 +584,7 @@ function orderDialog() {
     wide: true,
     saveLabel: 'Imprimer',
     body: rows.length
-      ? `<p class="hint">${rows.length} pièce(s) sous leur stock minimum, regroupées par fournisseur. La quantité proposée ramène le stock au minimum.</p>${orderHTML(rows, false)}<div class="tools"><button type="button" class="btn small" data-ord-xl>${icon('excel')}Exporter (Excel)</button></div>`
+      ? `<p class="hint">${nbs(rows.length, 'pièce', 'pièces')} sous leur stock minimum, regroupées par fournisseur. La quantité proposée ramène le stock au minimum.</p>${orderHTML(rows, false)}<div class="tools"><button type="button" class="btn small" data-ord-xl>${icon('excel')}Exporter (Excel)</button></div>`
       : '<p>Aucune pièce sous son stock minimum.</p>',
     onOpen(f, d) {
       d.addEventListener('click', e => {
@@ -1136,7 +1136,7 @@ function planDialog(who, date, item, pre = '') {
         for (const w of ws) for (const dd of ds) db.plan.push({id: uid(), date: dd, who: w, ...(tid ? {tacheId: tid} : {}), text});
       });
       render();
-      toast(`${ws.length * ds.length} case(s) remplie(s)`, '', true);
+      toast(`${nbs(ws.length * ds.length, 'case remplie', 'cases remplies')}`, '', true);
     }
   });
 }
@@ -1344,7 +1344,7 @@ OPT.fournisseurs = () => {
               return `<tr class="four-row ${open ? 'open' : ''}" data-act="four-open" data-name="${esc(n)}" tabindex="0"><td><span class="fr-n"><span class="chev ${open ? 'open' : ''}">${icon('chev')}</span>${esc(n)}</span></td><td class="num qty">${c || ''}</td></tr>
       ${
         open
-          ? `<tr class="four-sub"><td colspan="2"><div class="four-tools"><button class="btn small" data-act="four-pieces" data-name="${esc(n)}">${icon('box')}Ouvrir dans Pièces</button>${rc.get(n) || 0 ? `<button class="btn small" data-act="four-ints" data-name="${esc(n)}">${icon('report')}${rc.get(n)} rapport(s)</button>` : ''}<button class="btn small" data-act="edit-four" data-name="${esc(n)}">${icon('edit')}Renommer</button><button class="btn small ghost" data-act="four-arch" data-name="${esc(n)}">${icon('archive')}Archiver</button></div>
+          ? `<tr class="four-sub"><td colspan="2"><div class="four-tools"><button class="btn small" data-act="four-pieces" data-name="${esc(n)}">${icon('box')}Ouvrir dans Pièces</button>${rc.get(n) || 0 ? `<button class="btn small" data-act="four-ints" data-name="${esc(n)}">${icon('report')}${nbs(rc.get(n), 'rapport', 'rapports')}</button>` : ''}<button class="btn small" data-act="edit-four" data-name="${esc(n)}">${icon('edit')}Renommer</button><button class="btn small ghost" data-act="four-arch" data-name="${esc(n)}">${icon('archive')}Archiver</button></div>
         ${
           ps.length
             ? `<div class="four-list">${ps
@@ -1355,7 +1355,7 @@ OPT.fournisseurs = () => {
                 })
                 .join(
                   ''
-                )}${ps.length > 200 ? `<p class="list-note">${ps.length - 200} autre(s) : « Ouvrir dans Pièces » pour tout voir.</p>` : ''}</div>`
+                )}${ps.length > 200 ? `<p class="list-note">${nbs(ps.length - 200, 'autre', 'autres')} : « Ouvrir dans Pièces » pour tout voir.</p>` : ''}</div>`
             : '<p class="empty-line" style="padding:8px 0">Aucune pièce reliée.</p>'
         }</td></tr>`
           : ''
@@ -1451,7 +1451,7 @@ function importFourDialog() {
         try {
           const j = JSON.parse(await f.elements.file.files[0].text());
           d._data = j;
-          $('[data-prev]', d).textContent = `${(j.fournisseurs || []).length} fournisseur(s).`;
+          $('[data-prev]', d).textContent = `${nbs((j.fournisseurs || []).length, 'fournisseur', 'fournisseurs')}.`;
         } catch (e) {
           d._data = null;
           $('[data-prev]', d).textContent = 'Fichier illisible.';
@@ -1481,7 +1481,7 @@ function importFourDialog() {
         np = linkFournisseurs();
       });
       render();
-      toast(`${add} fournisseur(s) ajouté(s) · ${np} pièce(s) reliée(s)`);
+      toast(`${nbs(add, 'fournisseur ajouté', 'fournisseurs ajoutés')} · ${nbs(np, 'pièce reliée', 'pièces reliées')}`);
     }
   });
 }

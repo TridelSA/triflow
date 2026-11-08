@@ -628,7 +628,7 @@ function importLieuxDialog() {
         const salles = new Set(ok.map(c => normCode(c.local)).filter(code => !findSalle(code)));
         $('[data-prev]', d).innerHTML =
           ok.length || bad.length
-            ? `${nw.length} nouvel(s) emplacement(s)${salles.size ? `, ${salles.size} nouveau(x) local(aux)` : ''}.${bad.length ? ` <span style="color:var(--bad)">${bad.length} ligne(s) non reconnue(s) : ${esc(bad.slice(0, 5).join(' · '))}${bad.length > 5 ? '…' : ''}</span>` : ''}`
+            ? `${nbs(nw.length, 'nouvel emplacement', 'nouveaux emplacements')}${salles.size ? `, ${nbs(salles.size, 'nouveau local', 'nouveaux locaux')}` : ''}.${bad.length ? ` <span style="color:var(--bad)">${nbs(bad.length, 'ligne non reconnue', 'lignes non reconnues')} : ${esc(bad.slice(0, 5).join(' · '))}${bad.length > 5 ? '…' : ''}</span>` : ''}`
             : '';
       };
       f.addEventListener('input', u);
@@ -656,7 +656,9 @@ function importLieuxDialog() {
         }
       });
       render();
-      toast(`${nl} emplacement(s) et ${ns} local(aux) créés${bad.length ? ` · ${bad.length} ligne(s) ignorée(s)` : ''}`);
+      toast(
+        `${nbs(nl, 'emplacement', 'emplacements')} et ${nbs(ns, 'local', 'locaux')} créés${bad.length ? ` · ${nbs(bad.length, 'ligne ignorée', 'lignes ignorées')}` : ''}`
+      );
     }
   });
 }
@@ -691,7 +693,7 @@ function importTravauxDialog() {
           const j = JSON.parse(await f.elements.file.files[0].text());
           d._data = j;
           $('[data-prev]', d).textContent =
-            `${(j.rapports || []).length} rapport(s) et ${(j.taches || []).length} tâche(s), dont ${(j.taches || []).filter(t => t.freq.unite !== 'once').length} récurrente(s).`;
+            `${nbs((j.rapports || []).length, 'rapport', 'rapports')} et ${nbs((j.taches || []).length, 'tâche', 'tâches')}, dont ${nbs((j.taches || []).filter(t => t.freq.unite !== 'once').length, 'récurrente', 'récurrentes')}.`;
         } catch (e) {
           d._data = null;
           $('[data-prev]', d).textContent = 'Fichier illisible.';
@@ -809,7 +811,7 @@ function importTravauxDialog() {
       S.statut = 'toutes';
       render();
       toast(
-        `${nr} rapport(s) et ${nt} tâche(s) importés${nu ? ` · ${nu} rapport(s) complété(s) avec leur texte` : ''}${(j.taches || []).some(t => t.arch) ? ' · les tâches arrêtées dans CareOffice sont dans les archives' : ''}`
+        `${nbs(nr, 'rapport', 'rapports')} et ${nbs(nt, 'tâche', 'tâches')} importés${nu ? ` · ${nbs(nu, 'rapport complété', 'rapports complétés')} avec leur texte` : ''}${(j.taches || []).some(t => t.arch) ? ' · les tâches arrêtées dans CareOffice sont dans les archives' : ''}`
       );
     }
   });
@@ -826,8 +828,11 @@ function importPiecesDialog() {
         try {
           const j = JSON.parse(await f.elements.file.files[0].text());
           d._data = j;
-          $('[data-prev]', d).textContent =
-            `${(j.pieces || []).length} pièce(s), ${(j.pieces || []).reduce((a, p) => a + (p.stock || []).length, 0)} ligne(s) de stock, ${(j.newKks || []).length} repère(s) KKS à créer, historique de ${Object.keys(j.histo || {}).length} pièce(s).`;
+          $('[data-prev]', d).textContent = `${nbs((j.pieces || []).length, 'pièce', 'pièces')}, ${nbs(
+            (j.pieces || []).reduce((a, p) => a + (p.stock || []).length, 0),
+            'ligne',
+            'lignes'
+          )} de stock, ${nbs((j.newKks || []).length, 'repère', 'repères')} KKS à créer, historique de ${nbs(Object.keys(j.histo || {}).length, 'pièce', 'pièces')}.`;
         } catch (e) {
           d._data = null;
           $('[data-prev]', d).textContent = 'Fichier illisible.';
@@ -919,7 +924,7 @@ function importPiecesDialog() {
       tx(() => linkPartialKks(db));
       render();
       toast(
-        `${add} pièce(s) ajoutée(s), ${upd} mise(s) à jour · ${db.lieux.length - nl0} emplacement(s) et ${nk} repère(s) KKS créés${nh ? ` · historique de ${nh} pièce(s)` : ''}`
+        `${nbs(add, 'pièce ajoutée', 'pièces ajoutées')}, ${nbs(upd, 'mise', 'mises')} à jour · ${nbs(db.lieux.length - nl0, 'emplacement', 'emplacements')} et ${nbs(nk, 'repère', 'repères')} KKS créés${nh ? ` · historique de ${nbs(nh, 'pièce', 'pièces')}` : ''}`
       );
     }
   });
@@ -958,7 +963,7 @@ function seriesDialog(salleId) {
         try {
           const nw = build(f).filter(x => !findLieu(lieuCode(x)));
           $('[data-prev]', d).innerHTML =
-            `${nw.length} nouvel(s) emplacement(s)${nw.length ? ` : <span class="plate">${esc(lieuCode(nw[0]))}</span>${nw.length > 1 ? ` … <span class="plate">${esc(lieuCode(nw[nw.length - 1]))}</span>` : ''}` : ''}`;
+            `${nbs(nw.length, 'nouvel emplacement', 'nouveaux emplacements')}${nw.length ? ` : <span class="plate">${esc(lieuCode(nw[0]))}</span>${nw.length > 1 ? ` … <span class="plate">${esc(lieuCode(nw[nw.length - 1]))}</span>` : ''}` : ''}`;
         } catch (e) {
           $('[data-prev]', d).textContent = e.message;
         }
@@ -973,7 +978,7 @@ function seriesDialog(salleId) {
       if (list.length > 500) throw new Error('Plus de 500 emplacements d’un coup : réduisez la série.');
       tx(() => list.forEach(x => db.lieux.push({id: uid(), ...x})));
       render();
-      toast(`${list.length} emplacement(s) créé(s)`);
+      toast(`${nbs(list.length, 'emplacement créé', 'emplacements créés')}`);
     }
   });
 }
@@ -1042,7 +1047,7 @@ function pieceLabelsDialog(ids) {
           const w = val(f, 'which');
           $$('[data-w]', d).forEach(el => (el.hidden = el.dataset.w !== w));
           try {
-            $('[data-count]', d).textContent = `${choose(f).length} étiquette(s)`;
+            $('[data-count]', d).textContent = `${nbs(choose(f).length, 'étiquette', 'étiquettes')}`;
           } catch (e) {
             $('[data-count]', d).textContent = '';
           }
@@ -1343,7 +1348,9 @@ async function photoUpload(file, prefix) {
   const {error} = await CLOUD.sb.storage.from('photos').upload(path, blob, {contentType: 'image/jpeg', upsert: false});
   if (error)
     throw new Error(
-      /bucket|not found/i.test(error.message || '') ? 'Les photos ne sont pas encore activées (outils/photos.sql).' : error.message || 'Envoi impossible.'
+      /bucket|not found/i.test(error.message || '')
+        ? 'Les photos ne sont pas encore activées (outils/photos.sql).'
+        : error.message || 'Envoi impossible.'
     );
   return {path, at: new Date().toISOString(), by: meId() || ''};
 }

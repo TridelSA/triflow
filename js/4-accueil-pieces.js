@@ -7,7 +7,10 @@ const VIEWS = {};
 
 /* ---------- Accueil ---------- */
 /* « BONNANT » → « Bonnant » pour le bonjour */
-const niceName = n => String(n || '').toLowerCase().replace(/(^|[\s'-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
+const niceName = n =>
+  String(n || '')
+    .toLowerCase()
+    .replace(/(^|[\s'-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
 /* Accueil « une carte par page » : chaque carte résume une page (Travaux, Pièces, Planning, Rapports, Options) et y emmène. */
 const MOIS_L = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 VIEWS.accueil = {
@@ -18,15 +21,12 @@ VIEWS.accueil = {
     if (!P) loadPresence(Y);
     const go = (v, t = 'Ouvrir') => `<button class="bt-go" data-act="nav" data-view="${v}">${t} ›</button>`;
     const head = (v, ic, t, cls) => `<div class="bt-h"><span class="bt-i ${cls}">${icon(ic)}</span><h2>${t}</h2>${go(v)}</div>`;
-    const plural = (n, a, b) => (n > 1 ? b : a);
     /* Travaux */
     const T = db.taches.filter(t => live(t) && t.actif !== false && !openRun(t));
     const ret = T.filter(t => tKey(t) === 'retard').sort(urgSort),
       sem = T.filter(t => tKey(t) === 'semaine').sort(urgSort);
     const hau = T.filter(t => isPetit(t) && prioOf(t) === 'haute' && !['retard', 'semaine'].includes(tKey(t))).sort(petitSort);
     const O = db.interventions.filter(i => live(i) && i.statut !== 'terminee').sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-    const tot = Math.max(1, ret.length + sem.length + O.length),
-      pc = n => ((n / tot) * 100).toFixed(1) + '%';
     const trow = (t, tone) => {
       const k = getKks(t.kksId);
       return `<li class="${tone}"><button class="br-l" data-act="goto" data-view="taches" data-id="${t.id}"><i class="d"></i><span class="t">${esc(t.titre)}</span>${k ? `<span class="kk">${esc(k.code)}</span>` : ''}</button><span class="br-r">${dueInfo(t).chip}</span><button class="tick" data-act="do-tache" data-id="${t.id}" title="C’est fait" aria-label="C’est fait : ${esc(t.titre)}">${icon('check')}</button></li>`;
@@ -36,7 +36,6 @@ VIEWS.accueil = {
     const rows = [...ret.map(t => trow(t, 'bad')), ...sem.map(t => trow(t, 'warn')), ...hau.map(t => trow(t, 'hi'))].slice(0, 5);
     const travaux = `<section class="btile bt-w">${head('taches', 'check', 'Travaux', 'w')}
       <div class="bt-n"><b class="${ret.length ? 'bad' : ''}">${ret.length}</b><span>en retard · <strong class="${sem.length ? 'warn' : ''}">${sem.length}</strong> cette semaine · <strong>${O.length}</strong> ${plural(O.length, 'rapport en cours', 'rapports en cours')}</span></div>
-      <div class="bt-seg" aria-hidden="true"><i class="bad" style="width:${pc(ret.length)}"></i><i class="warn" style="width:${pc(sem.length)}"></i><i class="ok" style="width:${pc(O.length)}"></i></div>
       ${
         rows.length || O.length
           ? `<ul class="bt-rows">${rows.join('')}${O.slice(0, Math.max(1, 6 - rows.length))
@@ -132,7 +131,12 @@ VIEWS.accueil = {
         h = all.filter(t => isPetit(t) && prioOf(t) === 'haute' && !['retard', 'semaine'].includes(tKey(t))).sort(petitSort);
       const sub = (t, tone) => {
         const k = getKks(t.kksId),
-          d = tone === 'bad' ? lateLbl(-daysTo(t.prochaine)) + ' de retard' : tone === 'warn' ? DAYN[(new Date(t.prochaine + 'T12:00:00').getDay() + 6) % 7].toLowerCase() : 'Haute priorité';
+          d =
+            tone === 'bad'
+              ? lateLbl(-daysTo(t.prochaine)) + ' de retard'
+              : tone === 'warn'
+                ? DAYN[(new Date(t.prochaine + 'T12:00:00').getDay() + 6) % 7].toLowerCase()
+                : 'Haute priorité';
         return (k ? `<span class="kk">${esc(k.code)}</span> · ` : '') + esc(d);
       };
       const row = (t, tone) =>
@@ -256,7 +260,7 @@ VIEWS.pieces = {
               `<p>Essayez un autre mot, ou scannez l’étiquette.</p><button class="btn" data-act="scan">${icon('scan')}Scanner</button>`
             ))
       );
-    const more = `${chips}<div class="list-bar"><span class="muted">${num(rows.length)} pièce(s)</span><span class="lb-r lb-sort"><label>Trier<select class="mini" data-change="psort" aria-label="Trier les pièces">${[
+    const more = `${chips}<div class="list-bar"><span class="muted">${nbs(rows.length, 'pièce', 'pièces')}</span><span class="lb-r lb-sort"><label>Trier<select class="mini" data-change="psort" aria-label="Trier les pièces">${[
       ['iddesc', 'Par ID (décroissant)'],
       ['id', 'Par ID (croissant)'],
       ['alpha', 'Alphabétique'],
@@ -476,7 +480,7 @@ function dupDialog() {
           }
           try {
             mergePieces(keep, others);
-            toast(`Fusionné dans l’ID ${keep.ref} · ${others.length} pièce(s) archivée(s)`, '', true);
+            toast(`Fusionné dans l’ID ${keep.ref} · ${nbs(others.length, 'pièce archivée', 'pièces archivées')}`, '', true);
           } catch (x) {
             toast(x.message, 'bad');
           }
@@ -633,7 +637,7 @@ VIEWS.lieux = {
       const ss = db.salles.filter(x => x.arch),
         ls = db.lieux.filter(l => l.arch && live(getSalle(l.salleId))).sort(lieuSort);
       if (!ss.length && !ls.length) return empty('Aucun emplacement archivé', '');
-      return `<div class="plist">${ss.map(x => `<div class="prow arch-row"><span class="pm"><span class="pdes"><span class="plate">${esc(salleCode(x))}</span> ${esc(x.nom || '')}</span><span class="ploc"><span class="muted">Local archivé le ${fmtD(x.arch)} · ${db.lieux.filter(l => l.salleId === x.id).length} emplacement(s)</span></span></span><button class="btn small" data-act="unarch" data-col="salles" data-id="${x.id}">Restaurer</button></div>`).join('')}
+      return `<div class="plist">${ss.map(x => `<div class="prow arch-row"><span class="pm"><span class="pdes"><span class="plate">${esc(salleCode(x))}</span> ${esc(x.nom || '')}</span><span class="ploc"><span class="muted">Local archivé le ${fmtD(x.arch)} · ${nbs(db.lieux.filter(l => l.salleId === x.id).length, 'emplacement', 'emplacements')}</span></span></span><button class="btn small" data-act="unarch" data-col="salles" data-id="${x.id}">Restaurer</button></div>`).join('')}
         ${ls.map(l => `<div class="prow arch-row"><span class="pm"><span class="pdes"><span class="plate">${esc(lieuCode(l))}</span></span><span class="ploc"><span class="muted">Archivé le ${fmtD(l.arch)}</span></span></span><button class="btn small" data-act="unarch" data-col="lieux" data-id="${l.id}">Restaurer</button></div>`).join('')}</div>`;
     }
     const q = norm(S.q.lieux),
@@ -664,7 +668,7 @@ VIEWS.lieux = {
       }
       const full = ls.filter(l => contentsOf(l.id).some(x => x.qte > 0)).length,
         pct = ls.length ? Math.round((full / ls.length) * 100) : 0;
-      out.push(`<div class="room ${s.statut ? 'is-stat' : ''}"><div class="room-head">${s.statut ? `<span class="stat">${icon('out')}${esc(salleCode(s))}</span>` : `<span class="plate">${esc(salleCode(s))}</span>`}<strong>${esc(s.nom)}</strong><span class="fill" title="${full} case(s) occupée(s) sur ${ls.length}"><span class="fill-bar"><i style="width:${pct}%"></i></span><span class="muted">${full}/${ls.length} occupées</span></span></div>
+      out.push(`<div class="room ${s.statut ? 'is-stat' : ''}"><div class="room-head">${s.statut ? `<span class="stat">${icon('out')}${esc(salleCode(s))}</span>` : `<span class="plate">${esc(salleCode(s))}</span>`}<strong>${esc(s.nom)}</strong><span class="fill" title="${nbs(full, 'case occupée', 'cases occupées')} sur ${ls.length}"><span class="fill-bar"><i style="width:${pct}%"></i></span><span class="muted">${full}/${ls.length} occupées</span></span></div>
         ${lieuTree(ls, 'select', S.sel.lieux)}
         ${!ls.length ? '<p class="empty-line">Aucun emplacement dans cette salle.</p>' : ''}</div>`);
     }

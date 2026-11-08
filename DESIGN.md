@@ -33,11 +33,28 @@ colors:
   muted-dark: "#8A9B91"
   line-dark: "#26332B"
   accent-dark: "#2AA468"
+  hero-a-dark: "#08140D"
+  hero-b-dark: "#143A1D"
+  hero-c-dark: "#24592E"
+  # point d'état de la connexion, sur le bandeau vert
+  dot-ok: "#6FD08A"
+  dot-wait: "#F2C14E"
+  dot-bad: "#FF6B5E"
+  # métiers (planning, À planifier)
+  m-elec: "#E3A008"
+  m-auto: "#7C5CD6"
+  m-meca: "#D2622E"
+  m-intend: "#2E8FC2"
   # bouton « ? » posé sur le bandeau
   hero-glass: "rgba(8, 28, 16, 0.55)"
   # feuilles imprimées (rapport, étiquettes, planning A3)
   print-ink: "#000000"
   print-muted: "#555555"
+  print-soft: "#444444"
+  print-faint: "#999999"
+  print-guide: "#C8C8C8"
+  print-plate: "#F5D66E"
+  print-blue: "#0000FF"
 typography:
   display:
     fontFamily: "Space Grotesk, Segoe UI, system-ui, sans-serif"
@@ -49,10 +66,26 @@ typography:
     lineHeight: 1.5
   mono:
     fontFamily: "IBM Plex Mono, ui-monospace, Consolas, monospace"
+  print-planning:
+    fontFamily: "Calibri, Arial, sans-serif"
   h1:
     fontSize: "1.7rem"
   h2:
     fontSize: "1.4rem"
+  number:
+    fontSize: "2rem"
+  number-big:
+    fontSize: "2.5rem"
+  title-big:
+    fontSize: "1.55rem"
+  title:
+    fontSize: "1.1rem"
+  title-section:
+    fontSize: "1.4rem"
+  text:
+    fontSize: "0.95rem"
+  tabbar:
+    fontSize: "0.64rem"
   label:
     fontSize: "0.8rem"
     fontWeight: 700

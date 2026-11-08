@@ -1167,7 +1167,10 @@ function addStock(p, lieuId, delta, motif, ref = '') {
     p.stock.push(s);
   }
   const next = round(s.qte + delta);
-  if (next < 0) throw new Error(`Stock insuffisant : ${p.ref} en ${lieuCode(l)}, ${num(s.qte)} ${p.unite} disponible(s).`);
+  if (next < 0)
+    throw new Error(
+      `Stock insuffisant : ${p.ref} en ${lieuCode(l)}, ${num(s.qte)} ${p.unite} ${plural(s.qte, 'disponible', 'disponibles')}.`
+    );
   s.qte = next;
   if (delta) db.mouvements.unshift({id: uid(), date: new Date().toISOString(), pieceId: p.id, lieuId, qte: round(delta), motif, ref});
 }

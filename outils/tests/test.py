@@ -150,6 +150,7 @@ async def main():
                         ("S.opt='personnes'; go('options')", 'options-personnes')]:
             await aller(js, 'ordi-' + nom)
         ok(await pg.evaluate("S.pweek === planWeek()"), 'le planning s’ouvre sur la semaine suivante')
+        ok(await pg.evaluate("(go('interventions'), !/\\(s\\)/.test(document.body.innerText))"), 'pas de « (s) » dans les textes')
         await aller("go('accueil')", 'ordi-accueil', 900)
         ok(await pg.evaluate("document.querySelectorAll('.bento > .btile').length === 5 && !document.querySelector('.kpis')"), 'accueil : une carte par page')
         ok(await pg.evaluate("/Graissage/.test(document.querySelector('.bt-w')?.textContent || '')"), 'accueil : travaux urgents dans la carte Travaux')

@@ -103,6 +103,9 @@ const norm = s =>
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 const round = n => Math.round(n * 1000) / 1000;
 const num = n => (Math.round((+n || 0) * 100) / 100).toLocaleString('fr-CH');
+/* Singulier ou pluriel (0 et 1 au singulier) : plural(n, 'pièce', 'pièces') ; nbs() ajoute le nombre : « 3 pièces » */
+const plural = (n, a, b) => (Math.abs(+n) > 1 ? b : a);
+const nbs = (n, a, b) => `${num(n)} ${plural(n, a, b)}`;
 function todayISO() {
   const d = new Date();
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
@@ -798,7 +801,18 @@ const PLANNING_STAFF = [
   ['UMUHIRE', 'Cadres'],
   ['ZERMATTEN', 'Cadres']
 ];
-const PANNES_DEF = ['Usure', 'Encrassement / bouchage', 'Fuite', 'Défaut électrique', 'Capteur / mesure', 'Casse mécanique', 'Surchauffe', 'Réglage / paramètre', 'Erreur d’utilisation', 'Autre'];
+const PANNES_DEF = [
+  'Usure',
+  'Encrassement / bouchage',
+  'Fuite',
+  'Défaut électrique',
+  'Capteur / mesure',
+  'Casse mécanique',
+  'Surchauffe',
+  'Réglage / paramètre',
+  'Erreur d’utilisation',
+  'Autre'
+];
 const STATUTS = {ouverte: ['Ouverte', 'bad'], encours: ['En cours', 'info'], terminee: ['Terminée', 'ok']};
 const LEGACY_TYPES = {corrective: 'Corrective', preventive: 'Préventive', amelioration: 'Amélioration', controle: 'Contrôle'};
 

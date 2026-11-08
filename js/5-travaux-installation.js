@@ -597,7 +597,7 @@ VIEWS.interventions = {
         <span class="pm"><span class="pdes">${esc(i.titre || '(sans titre)')}</span>${k?.code || k?.designation ? `<span class="requip">${k.code ? `<span class="kks">${esc(k.code)}</span>` : ''}<span class="rq">${esc(k.designation || '')}</span></span>` : ''}<span class="ploc">${i.type ? `<span>${esc(i.type)}</span>` : ''}${who ? `<span class="muted rwho">${esc(who)}</span>` : ''}</span></span>
         ${i.statut !== 'terminee' ? statutChip(i.statut) : ''}</button>`;
     };
-    return `${head}${chips}${yrs ? '' : `<div class="list-bar"><span class="muted">${rows.length} ${openOnly ? 'rapport(s) en cours' : 'élément(s)'}</span></div>`}
+    return `${head}${chips}${yrs ? '' : `<div class="list-bar"><span class="muted">${openOnly ? nbs(rows.length, 'rapport en cours', 'rapports en cours') : nbs(rows.length, 'rapport', 'rapports')}</span></div>`}
       <div class="rlist">${groups.map(g => `<div class="rmonth"><span>${g.k ? MO[+g.k.slice(5, 7) - 1] + ' ' + g.k.slice(0, 4) : 'Sans date'}</span><small>${mcount.get(g.k) || g.list.length}</small></div>${g.list.map(row).join('')}`).join('')}
       ${rows.length > shown.length ? `<p class="list-note"><button class="link" data-act="rmore" data-k="${esc(y + norm(S.q.interventions))}">Afficher les ${rows.length - shown.length} autres</button></p>` : ''}</div>`;
   },
@@ -633,14 +633,14 @@ VIEWS.interventions = {
       <dl class="pd-info rep">
         ${k ? '' : '<dt>Équipement</dt><dd>—</dd>'}
         ${T ? `<dt>Tâche</dt><dd>${get('taches', i.tacheId) ? `<button class="link" data-act="goto" data-view="taches" data-id="${i.tacheId}">${esc(T.titre)}</button>` : esc(T.titre)} <span class="muted">· ${esc(T.freq)}</span></dd>` : ''}
-        <dt>Intervenants</dt><dd>${pills ? `<span class="pps">${pills}</span>` : '—'}</dd></dl>
+        ${pills ? `<dt>Intervenants</dt><dd><span class="pps">${pills}</span></dd>` : ''}</dl>
       ${i.constat ? `<section class="pd-sec"><h3>${icon('report')}Constat / demande</h3><p class="pre">${esc(i.constat)}</p></section>` : ''}
       ${i.travaux ? `<section class="pd-sec"><h3>${icon('wrench')}Travaux réalisés</h3>${travauxHTML(i.travaux)}</section>` : ''}
       ${(i.points || []).length ? `<section class="pd-sec"><h3>${icon('check')}Points contrôlés <span class="muted">${i.points.filter(p => p.ok).length} / ${i.points.length}</span></h3><ul class="pts-list done">${i.points.map(p => `<li class="${p.ok ? 'ok' : 'no'}">${p.ok ? '✓' : '—'} ${esc(p.t)}</li>`).join('')}</ul></section>` : ''}
       <section class="pd-sec"><h3>${icon('camera')}Photos <span class="muted">${(i.photos || []).length || ''}</span></h3>${photoStrip(i.photos, {col: 'interventions', id: i.id})}</section>
-      ${byLine(i)}${
+      ${
         i.pieces.length
-          ? `<section class="block"><h3>Pièces utilisées</h3><div class="tbl-wrap"><table class="tbl compact"><tbody>${i.pieces
+          ? `<section class="pd-sec"><h3>${icon('box')}Pièces utilisées <span class="muted">${i.pieces.length}</span></h3><div class="tbl-wrap"><table class="tbl compact"><tbody>${i.pieces
               .map(x => {
                 const p = getPiece(x.pieceId),
                   s = lineInfo(x, i);
@@ -648,7 +648,7 @@ VIEWS.interventions = {
               })
               .join('')}</tbody></table></div></section>`
           : ''
-      }`;
+      }${byLine(i)}`;
   }
 };
 
@@ -747,7 +747,7 @@ VIEWS.kks = {
     if (S.arch.kks) {
       const ar = db.kks.filter(k => k.arch).sort(kksSort);
       return ar.length
-        ? `<p class="list-note">${ar.length} équipement(s) archivé(s)</p>${kksRows(ar)}`
+        ? `<p class="list-note">${nbs(ar.length, 'équipement archivé', 'équipements archivés')}</p>${kksRows(ar)}`
         : empty('Aucun équipement archivé', '');
     }
     const q = norm(S.q.kks);
@@ -761,7 +761,7 @@ VIEWS.kks = {
         )
         .sort(kksSort);
       if (!rows.length) return empty('Rien ne correspond', '');
-      return `<p class="list-note">${rows.length} équipement(s)${rows.length > 300 ? ', les 300 premiers affichés' : ''}</p>${kksRows(rows.slice(0, 300))}`;
+      return `<p class="list-note">${nbs(rows.length, 'équipement', 'équipements')}${rows.length > 300 ? ', les 300 premiers affichés' : ''}</p>${kksRows(rows.slice(0, 300))}`;
     }
     const k = getKks(S.sel.kks);
     if (k && S.sysAuto !== k.id) {
@@ -839,7 +839,7 @@ VIEWS.kks = {
       <div class="pd-head"><span class="kks big">${esc(k.code)}</span><div class="pd-tools"><button class="btn small" data-act="edit-kks" data-id="${k.id}">${icon('edit')}Modifier</button>${menu([['new-tache', 'Nouveau travail sur cet équipement', 'check', {kks: k.id}], '-', k.arch ? ['unarch', 'Restaurer l’équipement', 'archive', {col: 'kks', id: k.id}] : ['arch', 'Archiver l’équipement', 'archive', {col: 'kks', id: k.id}]], 'Plus', 'more', 'small')}</div></div>
       <h2 class="pd-title">${esc(k.designation)}</h2>
       <p class="pd-sub">${sysEff(k.code) ? `<button class="link" data-act="sys-sel" data-sys="${sysEff(k.code)}">${esc(sysLabel(k.code))}</button>` : '<span class="muted">Sans système</span>'}${k.aic ? ` · AIC <span class="aic">${esc(k.aic)}</span>` : ''}</p>
-      <div class="kstats">${stat(ps.length, 'pièce(s) de rechange', ps.length ? `${inStock} en stock` : '', ps.length && !inStock ? 'bad' : '')}${stat(ints.length, 'rapport(s)', ints[0] ? `dernier le ${fmtD(ints[0].date)}` : '')}${stat(ts.length, 'tâche(s)', nxt ? `prochaine le ${fmtD(nxt.prochaine)}` : '', nxt && daysTo(nxt.prochaine) < 0 ? 'bad' : '')}</div>
+      <div class="kstats">${stat(ps.length, plural(ps.length, 'pièce de rechange', 'pièces de rechange'), ps.length ? `${inStock} en stock` : '', ps.length && !inStock ? 'bad' : '')}${stat(ints.length, plural(ints.length, 'rapport', 'rapports'), ints[0] ? `dernier le ${fmtD(ints[0].date)}` : '')}${stat(ts.length, plural(ts.length, 'travail', 'travaux'), nxt ? `prochaine le ${fmtD(nxt.prochaine)}` : '', nxt && daysTo(nxt.prochaine) < 0 ? 'bad' : '')}</div>
       <div class="kacts"><button class="btn primary" data-act="new-int" data-kks="${k.id}">${icon('report')}Nouveau rapport</button><button class="btn" data-act="new-tache" data-kks="${k.id}">${icon('check')}Nouveau travail</button></div>
       ${ts.length ? `<section class="pd-sec"><h3>${icon('repeat')}Tâches</h3><div class="tbl-wrap"><table class="tbl compact"><tbody>${ts.map(t => tacheRow(t, false)).join('')}</tbody></table></div></section>` : ''}
       ${(() => {
@@ -905,15 +905,13 @@ function signalDialog() {
       d._photos = [];
       combo(f.elements.kks, {
         items: () =>
-          db.kks
-            .filter(live)
-            .map(x => ({
-              id: x.id,
-              key: x.code,
-              label: kksLabel(x),
-              search: x.code + ' ' + x.designation,
-              html: `<span class="kks">${esc(x.code)}</span> ${esc(x.designation)}`
-            }))
+          db.kks.filter(live).map(x => ({
+            id: x.id,
+            key: x.code,
+            label: kksLabel(x),
+            search: x.code + ' ' + x.designation,
+            html: `<span class="kks">${esc(x.code)}</span> ${esc(x.designation)}`
+          }))
       });
       d.addEventListener('change', async e => {
         const inp = e.target.closest('[data-photo-pick]');

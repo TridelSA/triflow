@@ -153,7 +153,7 @@ const ACT = {
     render();
     toast(
       r.nl
-        ? `${r.nl} lien(s) pièce ↔ KKS ajouté(s)${r.nc ? ` · ${r.nc} repère(s) KKS créé(s)` : ''}`
+        ? `${nbs(r.nl, 'lien pièce ↔ KKS ajouté', 'liens pièce ↔ KKS ajoutés')}${r.nc ? ` · ${nbs(r.nc, 'repère KKS créé', 'repères KKS créés')}` : ''}`
         : 'Aucun nouveau repère KKS trouvé dans les pièces',
       '',
       !!r.nl
@@ -545,12 +545,14 @@ const ACT = {
     const ids = new Set(db.lieux.filter(l => l.salleId === s.id).map(l => l.id));
     const n = db.pieces.filter(p => p.stock.some(x => ids.has(x.lieuId) && x.qte > 0)).length;
     if (n) {
-      toast(`Impossible : ${n} pièce(s) sont encore rangées dans ${salleCode(s)}. Déplacez-les d’abord.`);
+      toast(
+        `Impossible : ${n > 1 ? `${n} pièces sont encore rangées` : '1 pièce est encore rangée'} dans ${salleCode(s)}. Déplacez-les d’abord.`
+      );
       return;
     }
     confirmDialog(
       `Supprimer ${esc(salleCode(s))}`,
-      `Le local ${esc(salleCode(s))}${ids.size ? ` et ses ${ids.size} emplacement(s) vides seront supprimés` : ' sera supprimé'}.`,
+      `Le local ${esc(salleCode(s))}${ids.size ? ` et ses ${ids.size > 1 ? `${ids.size} emplacements vides seront supprimés` : 'son emplacement vide sera supprimé'}` : ' sera supprimé'}.`,
       'Supprimer',
       () => {
         tx(() => {
@@ -666,7 +668,7 @@ const ACT = {
       np = linkFournisseurs();
     });
     render();
-    toast(`${np} pièce(s) reliée(s) à au moins un fournisseur`);
+    toast(`${nbs(np, 'pièce reliée', 'pièces reliées')} à au moins un fournisseur`);
   },
   'import-travaux': () => importTravauxDialog(),
   'int-all'() {

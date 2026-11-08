@@ -169,17 +169,21 @@ function interventionDialog(it, kksId, tache, opts = {}) {
           toast(er.message, 'bad');
         }
       });
-      d.addEventListener('click', e => {
-        const b = e.target.closest('[data-act="photo-open"]');
-        if (!b || b.dataset.col) return;
-        e.stopPropagation();
-        e.preventDefault();
-        const path = b.dataset.path;
-        photoViewer(path, () => {
-          d._photos = d._photos.filter(x => x.path !== path);
-          phDraw();
-        });
-      }, true);
+      d.addEventListener(
+        'click',
+        e => {
+          const b = e.target.closest('[data-act="photo-open"]');
+          if (!b || b.dataset.col) return;
+          e.stopPropagation();
+          e.preventDefault();
+          const path = b.dataset.path;
+          photoViewer(path, () => {
+            d._photos = d._photos.filter(x => x.path !== path);
+            phDraw();
+          });
+        },
+        true
+      );
       d._pers = new Set(v.intervenants);
       d._snap = snapFor;
       const sel = $('[data-psel]', d),
@@ -546,7 +550,7 @@ function reportHTML(i) {
             .join('')}</tbody></table>`
         : '<p>Aucune pièce consommée.</p>'
     }
-    <div class="rpt-sign"><div><span>Intervenant(s)</span><div class="sigbox"></div><small>Nom, date, signature</small></div><div><span>Responsable</span><div class="sigbox"></div><small>Nom, date, visa</small></div></div>
+    <div class="rpt-sign"><div><span>Intervenants</span><div class="sigbox"></div><small>Nom, date, signature</small></div><div><span>Responsable</span><div class="sigbox"></div><small>Nom, date, visa</small></div></div>
     <footer class="rpt-foot">Imprimé le ${fmtDT(new Date().toISOString())} · TriFlow</footer></article>`;
 }
 
@@ -645,7 +649,9 @@ function importKksDialog() {
         }
       });
       render();
-      toast(`${add} équipement(s) ajouté(s), ${upd} mis à jour${sys ? `, ${sys} nom(s) de système` : ''}`);
+      toast(
+        `${nbs(add, 'équipement ajouté', 'équipements ajoutés')}, ${upd} mis à jour${sys ? `, ${nbs(sys, 'nom', 'noms')} de système` : ''}`
+      );
     }
   });
 }
@@ -908,7 +914,7 @@ function xlPieces() {
     ]);
   }
   downloadXlsx(xlName(S.arch.pieces ? 'pieces-archivees' : 'pieces'), 'Pièces', out);
-  toast(`${rows.length} pièce(s) exportée(s)`);
+  toast(`${nbs(rows.length, 'pièce exportée', 'pièces exportées')}`);
 }
 function xlInts() {
   const rows = filteredInts(),
@@ -951,7 +957,7 @@ function xlInts() {
     ]);
   }
   downloadXlsx(xlName('rapports'), 'Rapports', out);
-  toast(`${rows.length} rapport(s) exporté(s)`);
+  toast(`${nbs(rows.length, 'rapport exporté', 'rapports exportés')}`);
 }
 function xlTaches() {
   const rows = filteredTaches(),
@@ -970,7 +976,7 @@ function xlTaches() {
     ]);
   }
   downloadXlsx(xlName('taches'), 'Tâches', out);
-  toast(`${rows.length} tâche(s) exportée(s)`);
+  toast(`${nbs(rows.length, 'tâche exportée', 'tâches exportées')}`);
 }
 function xlKks() {
   const q = norm(S.q.kks),
@@ -986,7 +992,7 @@ function xlKks() {
   for (const i of db.interventions) if (live(i) && i.kksId) ni.set(i.kksId, (ni.get(i.kksId) || 0) + 1);
   for (const k of rows) out.push([k.code, k.designation, k.aic || '', sysLabel(k.code) || '', np.get(k.id) || 0, ni.get(k.id) || 0]);
   downloadXlsx(xlName(cur ? 'installation-' + cur : 'installation'), cur ? 'Installation ' + cur : 'Installation', out);
-  toast(`${rows.length} équipement(s) exporté(s)`);
+  toast(`${nbs(rows.length, 'équipement exporté', 'équipements exportés')}`);
 }
 function exportStock() {
   const rows = [
