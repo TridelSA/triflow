@@ -170,6 +170,7 @@ async def main():
         ok(await pg.evaluate("(go('interventions'), !/\\(s\\)/.test(document.body.innerText))"), 'pas de « (s) » dans les textes')
         await aller("go('accueil')", 'ordi-accueil', 900)
         ok(await pg.evaluate("document.querySelectorAll('.bento > .btile').length === 5 && !document.querySelector('.kpis')"), 'accueil : une carte par page')
+        ok(await pg.evaluate("![...document.querySelectorAll('[data-act=scan]')].some(b => b.offsetParent) && !!document.querySelector('.md-scan.desk-only')?.offsetParent"), 'ordinateur : pas de Scanner, « Sortir une pièce » à la place')
         ok(await pg.evaluate("/Graissage/.test(document.querySelector('.bt-w')?.textContent || '')"), 'accueil : travaux urgents dans la carte Travaux')
         ok(await pg.evaluate("/Aujourd/.test(document.querySelector('#hband')?.textContent || '') && document.querySelector('#hsub')?.textContent === 'Accueil'"), 'en-tête : nom de la page et bandeau du jour')
         await pg.evaluate("document.querySelector('.bt-l .bt-go').click()"); await pg.wait_for_timeout(300)

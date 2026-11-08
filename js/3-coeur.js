@@ -890,7 +890,7 @@ const HELP = [
     'scan',
     'Trouver une pièce',
     [
-      '<b>Scanner</b> (au centre en bas sur téléphone, ou à côté de la recherche sur ordinateur) : une pièce scannée ouvre la fenêtre Sortir / Entrer.',
+      '<b>Scanner</b> (au centre en bas sur téléphone) : une pièce scannée ouvre la fenêtre Sortir / Entrer. Sur ordinateur : bouton <b>Sortir une pièce</b> de l’accueil.',
       'Sinon, tapez un mot, un ID, une référence ou un KKS dans la recherche des Pièces.',
       'La fiche indique où elle est rangée, sur quels équipements elle va et dans quels rapports elle a servi.'
     ]

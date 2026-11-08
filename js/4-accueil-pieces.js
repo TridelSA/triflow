@@ -118,7 +118,7 @@ VIEWS.accueil = {
           ? `<button class="md-it task" data-act="goto" data-view="taches" data-id="${t.id}">${mdot(tMet(t))}${esc(t.titre)}</button>`
           : `<span class="md-it">${esc(x.text)}</span>`;
       };
-      myday = `<section class="myday"><div class="md-h"><div><p class="md-k">Ma journée</p><h2>Bonjour ${esc(mp.prenom || niceName(mp.nom || persName(mp)))}</h2></div><span class="md-btns"><button class="btn" data-act="signal">${icon('bell')}Signaler un problème</button><button class="md-scan" data-act="scan">${icon('scan')}<span>Scanner une pièce</span></button></span></div>
+      myday = `<section class="myday"><div class="md-h"><div><p class="md-k">Ma journée</p><h2>Bonjour ${esc(mp.prenom || niceName(mp.nom || persName(mp)))}</h2></div><span class="md-btns"><button class="btn" data-act="signal">${icon('bell')}Signaler un problème</button><button class="md-scan no-desk" data-act="scan">${icon('scan')}<span>Scanner une pièce</span></button><button class="md-scan desk-only" data-act="quick-move" data-type="sortie">${icon('out')}<span>Sortir une pièce</span></button></span></div>
         <div class="md-plan"><span class="md-l">${icon('calendar')}Au planning</span>${absent ? '<span class="md-it abs">Pas au planning aujourd’hui</span>' : items.length ? items.map(it).join('') : '<span class="muted">Rien de noté pour aujourd’hui.</span>'}</div>
         ${mrows.length ? `<ul class="bt-rows">${mrows.slice(0, 5).join('')}</ul>${mrows.length > 5 ? `<button class="link" data-act="pour-set-go" data-v="p:${me}">Voir mes ${mrows.length} travaux</button>` : ''}` : '<p class="bt-empty">Aucun travail urgent pour vous. </p>'}</section>
         <h2 class="ov-h">Vue d’ensemble</h2>`;
@@ -226,7 +226,7 @@ function filteredPieces() {
 }
 VIEWS.pieces = {
   shell:
-    () => `<header class="page-head"><h1>Pièces</h1><div class="tools">${searchBox('pieces', 'Rechercher une pièce…')}<button class="btn icon-only" data-act="scan" title="Scanner un QR code" aria-label="Scanner un QR code">${icon('scan')}</button><button class="btn primary" data-act="new-piece">${icon('plus')}Nouvelle pièce</button>
+    () => `<header class="page-head"><h1>Pièces</h1><div class="tools">${searchBox('pieces', 'Rechercher une pièce…')}<button class="btn icon-only no-desk" data-act="scan" title="Scanner un QR code" aria-label="Scanner un QR code">${icon('scan')}</button><button class="btn primary" data-act="new-piece">${icon('plus')}Nouvelle pièce</button>
     ${menu([['to-order', 'Pièces à commander', 'truck', {}], ['xl-pieces', 'Exporter en Excel', 'excel', {}], ['labels-list', 'Imprimer les étiquettes QR', 'qr', {}], '-', archItem('pieces'), ...(canDel() ? ['-', ['dups', 'Trouver les doublons', 'merge', {}], ['import-pieces', 'Importer depuis CareOffice', 'save', {}]] : [])])}</div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list() {
@@ -257,7 +257,7 @@ VIEWS.pieces = {
           ? empty('Aucune pièce archivée', '')
           : empty(
               'Aucune pièce ne correspond',
-              `<p>Essayez un autre mot, ou scannez l’étiquette.</p><button class="btn" data-act="scan">${icon('scan')}Scanner</button>`
+              `<p>Essayez un autre mot, ou scannez l’étiquette.</p><button class="btn no-desk" data-act="scan">${icon('scan')}Scanner</button>`
             ))
       );
     const more = `${chips}<div class="list-bar"><span class="muted">${nbs(rows.length, 'pièce', 'pièces')}</span><span class="lb-r lb-sort"><label>Trier<select class="mini" data-change="psort" aria-label="Trier les pièces">${[
