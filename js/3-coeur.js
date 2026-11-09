@@ -1699,7 +1699,7 @@ const S = {
   sysExp: new Set(),
   sysAuto: null,
   grpOpen: new Set(),
-  opt: 'lieux',
+  opt: 'compte',
   arch: {}
 };
 

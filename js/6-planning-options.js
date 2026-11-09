@@ -237,7 +237,7 @@ function accPlan() {
 function accPlanSelect() {
   const k = accPlanKey(),
     grps = db.listes.groupes.filter(g => db.personnes.some(p => p.groupe === g && p.actif !== false && live(p)));
-  return `<label>Case « Planning » de l’accueil<select data-change="accPlan">${opt('', 'Tout le monde', k)}${meId() ? opt('me', 'Moi', k) + opt('team', 'Mon équipe', k) : ''}<optgroup label="Un corps de métier">${grps.map(g => opt('g:' + g, g, k)).join('')}</optgroup></select></label>`;
+  return `<label>Planning de l’accueil : afficher<select data-change="accPlan">${opt('', 'Tout le monde', k)}${meId() ? opt('me', 'Moi', k) + opt('team', 'Mon équipe', k) : ''}<optgroup label="Un corps de métier">${grps.map(g => opt('g:' + g, g, k)).join('')}</optgroup></select></label>`;
 }
 /* Disponible ce jour-là (R, PIQ, EN, PI, CA, PO…) : case blanche, sans code */
 const isDispo = code => !!code && (DISPO.has(code) || ['on', 'piq'].includes((PCODE[code] || [])[1]));
@@ -1230,19 +1230,53 @@ function planSheetHTML() {
     <p class="xf">Imprimé le ${fmtDT(new Date().toISOString())} · TriFlow</p></article>`;
 }
 
-const OPT_SECS = [
-  ['historique', 'Historique', 'list'],
-  ['roles', 'Rôles', 'person'],
-  ['lieux', 'Emplacements', 'shelf'],
-  ['personnes', 'Personnes', 'person'],
-  ['fournisseurs', 'Fournisseurs', 'truck'],
-  ['listes', 'Listes', 'list'],
-  ['etiquettes', 'Étiquettes & QR', 'qr'],
-  ['donnees', 'Sauvegarde', 'save'],
-  ['connexion', 'Connexion', 'person']
+/* Options rangées par groupes. '@kks' = lien vers la page Installation. Administration : cadres seulement. */
+const OPT_GROUPS = [
+  ['Moi', [['compte', 'Mon compte', 'person']]],
+  [
+    'L’usine',
+    [
+      ['@kks', 'Installation', 'plant'],
+      ['lieux', 'Emplacements', 'shelf'],
+      ['etiquettes', 'Étiquettes & QR', 'qr']
+    ]
+  ],
+  [
+    'L’équipe',
+    [
+      ['personnes', 'Personnes', 'person'],
+      ['roles', 'Rôles', 'tag'],
+      ['fournisseurs', 'Fournisseurs', 'truck']
+    ]
+  ],
+  ['Réglages', [['listes', 'Listes', 'list']]],
+  [
+    'Administration',
+    [
+      ['historique', 'Historique', 'list'],
+      ['donnees', 'Sauvegarde', 'save']
+    ],
+    true
+  ]
 ];
+const optGroups = () => OPT_GROUPS.filter(g => !g[2] || canDel());
+/* Anciennes adresses de pages (liens, réglages gardés) */
+const OPT_ALIAS = {accueil: 'compte', connexion: 'compte', kks: 'historique'};
+function optCur() {
+  let k = OPT_ALIAS[S.opt] || S.opt;
+  if (!optGroups().some(g => g[1].some(x => x[0] === k))) k = 'compte';
+  return (S.opt = k);
+}
 const OPT = {};
-if (typeof S !== 'undefined' && S.opt === 'kks') S.opt = 'historique';
+/* Mon compte = qui je suis, mon accueil, connexion */
+OPT.compte = () => {
+  const c = OPT.connexion(),
+    i = c.indexOf('<section class="opt-sec"><div class="head"><h2>Connexion</h2>');
+  return i < 0 ? OPT.accueil() + c : c.slice(0, i) + OPT.accueil() + c.slice(i);
+};
+/* Mon accueil : réglages personnels de la page d'accueil */
+OPT.accueil = () =>
+  `<section class="opt-sec"><div class="head"><h2>Ma page d’accueil</h2></div><div class="pad"><p class="hint">Choisissez les personnes affichées dans la case <b>Planning</b> de votre page d’accueil. Ce réglage ne change que votre accueil.</p><div class="acc-plan">${accPlanSelect()}</div></div></section>`;
 OPT.lieux = () => {
   const salles = db.salles.filter(live).sort((a, b) => !!a.statut - !!b.statut || coll.compare(salleCode(a), salleCode(b))),
     sArch = db.salles.filter(x => x.arch);
@@ -1597,7 +1631,7 @@ const respOf = id =>
     .map(([g]) => g);
 OPT.connexion = () => {
   const c = CLOUD.cfg();
-  return `<section class="opt-sec"><div class="head"><h2>Sur ce poste</h2></div><div class="pad"><p>${meId() ? `Vous êtes <strong>${esc(persName(getPers(meId())))}</strong>. ${NOFILTER_GRP.includes(getPers(meId()).groupe) ? 'Comme cadre / administration, vous voyez tout par défaut.' : 'À chaque ouverture, l’accueil, les tâches et les rapports sont filtrés sur vous et votre groupe ; le filtre se désactive avec « Tout le monde ». Les archives ne sont jamais filtrées.'}` : 'Personne n’est choisi : tout le monde voit tout.'}</p><div class="tools"><button class="btn" data-act="me">${icon('person')}${meId() ? 'Changer' : 'Choisir mon nom'}</button></div><div class="acc-plan">${accPlanSelect()}</div></div></section><section class="opt-sec"><div class="head"><h2>Base partagée</h2></div><div class="pad">
+  return `<section class="opt-sec"><div class="head"><h2>Qui je suis</h2></div><div class="pad"><p>${meId() ? `Vous êtes <strong>${esc(persName(getPers(meId())))}</strong>. ${NOFILTER_GRP.includes(getPers(meId()).groupe) ? 'Comme cadre / administration, vous voyez tout par défaut.' : 'À chaque ouverture, l’accueil, les tâches et les rapports sont filtrés sur vous et votre groupe ; le filtre se désactive avec « Tout le monde ». Les archives ne sont jamais filtrées.'}` : 'Personne n’est choisi : tout le monde voit tout.'}</p><div class="tools"><button class="btn" data-act="me">${icon('person')}${meId() ? 'Changer' : 'Choisir mon nom'}</button></div></div></section><section class="opt-sec"><div class="head"><h2>Connexion</h2></div><div class="pad">
     ${
       CLOUD.on
         ? `<p>Connecté en tant que <strong>${esc(CLOUD.user?.email || '')}</strong>. Les données sont partagées par tous les postes connectés.</p>
@@ -1653,8 +1687,22 @@ OPT.donnees =
   }`;
 VIEWS.options = {
   shell: () => `<header class="page-head"><h1>Options</h1></header>
-    <div class="opt"><nav class="opt-nav" aria-label="Sections des options"><button data-act="nav" data-view="kks" title="Fiche de chaque équipement : rapports, tâches et pièces">${icon('plant')}Installation</button>${OPT_SECS.map(([k, t, ic]) => `<button data-act="opt" data-sec="${k}" aria-current="${S.opt === k}">${icon(ic)}${t}</button>`).join('')}</nav>
-    <div class="opt-body">${(OPT[S.opt] || OPT[(S.opt = OPT_SECS[0][0])])()}</div></div>`,
+    <div class="opt"><nav class="opt-nav" aria-label="Sections des options">${(() => {
+      const cur = optCur();
+      return optGroups()
+        .map(
+          ([g, items]) =>
+            `<p class="opt-grp">${esc(g)}</p>${items
+              .map(([k, t, ic]) =>
+                k === '@kks'
+                  ? `<button data-act="nav" data-view="kks" title="Fiche de chaque équipement : rapports, travaux et pièces">${icon(ic)}${t}</button>`
+                  : `<button data-act="opt" data-sec="${k}" aria-current="${cur === k}">${icon(ic)}${t}</button>`
+              )
+              .join('')}`
+        )
+        .join('');
+    })()}</nav>
+    <div class="opt-body">${OPT[optCur()]()}</div></div>`,
   list: () => '',
   detail: () => ''
 };

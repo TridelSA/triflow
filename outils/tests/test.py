@@ -185,7 +185,8 @@ async def main():
         ok(await pg.evaluate("(CLOUD.cadre = false, jrnBlock('x') === '') && (CLOUD.cadre = true, jrnBlock('x') !== '')"), 'Modifications : réservé aux cadres')
         await pg.evaluate("delete CLOUD.cadre")
         # Case Planning de l'accueil : qui afficher
-        await pg.evaluate("S.opt='connexion'; go('options')"); await pg.wait_for_timeout(300)
+        await pg.evaluate("S.opt='accueil'; go('options')"); await pg.wait_for_timeout(300)
+        await capture('ordi-options-accueil')
         await pg.select_option('select[data-change=accPlan]', 'g:Électricien'); await pg.wait_for_timeout(300)
         await pg.evaluate("go('accueil')"); await pg.wait_for_timeout(400)
         ok(await pg.evaluate("accPlan().label === 'Électricien' && document.querySelectorAll('.bt-l .bt-plist li').length > 0"), 'accueil : planning d’un corps de métier choisi')
