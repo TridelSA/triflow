@@ -1521,3 +1521,4 @@ details.more > summary{flex-wrap:wrap;row-gap:0}
 .qrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .qrow input[type=date]{width:auto;flex:1;min-width:150px}
 .grid2.rq{align-items:start;gap:14px}
+.prefs-t th{text-align:left;font-weight:600;color:var(--muted);width:45%}

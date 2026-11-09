@@ -1251,6 +1251,13 @@ function migrate(d) {
   }
   /* « Intervenant CareOffice : Ofatec » écrit dans le texte des travaux et rapports repris :
      l'entreprise (ou la personne) va dans le bon champ (Pour qui ? / Intervenants) */
+  /* Réglages personnels : tout est rangé par compte dans reglages.comptes */
+  if (!d.meta.prefV) {
+    for (const [e, v] of Object.entries(d.reglages.accPlan || {}))
+      if (v) d.reglages.comptes = {...(d.reglages.comptes || {}), [e]: {...(d.reglages.comptes?.[e] || {}), accPlan: v}};
+    delete d.reglages.accPlan;
+    d.meta.prefV = 1;
+  }
   if (!d.meta.coInterV) {
     coInterMigrate(d);
     d.meta.coInterV = 1;

@@ -190,7 +190,10 @@ async def main():
         await pg.select_option('select[data-change=accPlan]', 'g:Électricien'); await pg.wait_for_timeout(300)
         await pg.evaluate("go('accueil')"); await pg.wait_for_timeout(400)
         ok(await pg.evaluate("accPlan().label === 'Électricien' && document.querySelectorAll('.bt-l .bt-plist li').length > 0"), 'accueil : planning d’un corps de métier choisi')
-        await pg.evaluate("tx(() => { delete db.reglages.accPlan; })")
+        ok(await pg.evaluate("db.reglages.comptes[meKey()].accPlan === 'g:Électricien' && !db.reglages.accPlan"), 'réglages du compte : gardés avec le compte (tous les appareils)')
+        await pg.evaluate("S.opt='compte'; go('options')"); await pg.wait_for_timeout(300)
+        ok(await pg.evaluate("[...document.querySelectorAll('.prefs-t th')].some(th => /Planning de l.accueil/.test(th.textContent)) && /Électricien/.test($('.prefs-t').textContent)"), 'Mon compte : tableau des réglages')
+        await pg.evaluate("setPref('accPlan', '')")
         print('Pages (ordinateur)')
         for js, nom in [("go('accueil')", 'accueil'), ("S.sel.pieces=null; go('pieces')", 'pieces'), ("go('pieces','p1')", 'piece'),
                         ("go('taches','t2')", 'travaux-afaire'), ("S.statut='actives'; go('interventions')", 'travaux-encours'),

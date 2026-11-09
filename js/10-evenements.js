@@ -65,6 +65,7 @@ const ACT = {
     try {
       localStorage.setItem('tf-pside', S.pside ? '1' : '0');
     } catch (e) {}
+    setPref('pside', S.pside);
     render();
   },
   'plan-hide': () => planHideDialog(),
@@ -952,11 +953,7 @@ document.addEventListener('change', e => {
     return;
   }
   if (c === 'accPlan') {
-    const e2 = (CLOUD.user?.email || 'local').toLowerCase(),
-      v = e.target.value;
-    tx(() => {
-      db.reglages.accPlan = {...(db.reglages.accPlan || {}), [e2]: v || undefined};
-    });
+    setPref('accPlan', e.target.value);
     toast('Accueil : planning de ' + accPlan().label);
     return;
   }

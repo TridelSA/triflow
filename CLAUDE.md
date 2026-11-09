@@ -43,6 +43,7 @@ Pas d'outil de compilation : `index.html` (squelette) charge `css/triflow.css` p
 - Fiches vivantes : `live(x)` (non archivées). Personnes : `getPers`, `persName`, `meId()` (moi), `personFromEmail()`.
 - Messages : `toast(texte, 'bad'?, true /* bouton Annuler */)`.
 - Icônes : `icon('nom')` (liste dans `const ICONS`).
+- **Réglages personnels = attachés au compte, jamais à l'appareil** : `pref('nom', défaut)` pour lire, `setPref('nom', valeur)` pour écrire (rangés dans `reglages.comptes[e-mail]`, donc identiques sur tous les appareils de la personne), et une ligne dans `PREFS` pour qu'ils apparaissent dans le tableau *Options › Mon compte › Mes réglages*. `localStorage` seulement comme copie de secours (hors ligne, avant la connexion).
 
 ## Skills de design (dans `.claude/skills/`)
 - **impeccable** (Paul Bakaus, Apache 2.0) : concevoir, auditer, peaufiner l'interface. Lancer d'abord `.claude/skills/impeccable/scripts/impeccable context --target index.html`. TriFlow est en mode **Operate** (outil de travail : lisibilité et précision avant l'effet). Contexte produit dans `PRODUCT.md`, choix visuels dans `DESIGN.md`. Après une modification d'affichage : `impeccable detect --json css/triflow.css js/<fichier>.js`.

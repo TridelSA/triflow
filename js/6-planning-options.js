@@ -224,7 +224,7 @@ function planPeople(withLeave = false) {
 }
 /* Case Planning de l'accueil : qui afficher (choix personnel, Options › Connexion).
    '' = comme le planning ; 'me' = moi ; 'team' = mon équipe ; 'g:Groupe' = un corps de métier */
-const accPlanKey = () => db.reglages.accPlan?.[(CLOUD.user?.email || 'local').toLowerCase()] || '';
+const accPlanKey = () => pref('accPlan', '');
 function accPlan() {
   const key = accPlanKey(),
     me = meId() && getPers(meId()),
@@ -1268,11 +1268,30 @@ function optCur() {
   return (S.opt = k);
 }
 const OPT = {};
+/* Tableau des réglages du compte : libellé et valeur lisible de chaque réglage connu */
+const PREFS = {
+  accPlan: ['Planning de l’accueil', () => accPlan().label],
+  pside: ['Liste « À planifier » du planning', v => (v ? 'Ouverte' : 'Fermée')],
+  bienvenue: ['Message de bienvenue', () => 'Déjà vu']
+};
+OPT.prefs = () => {
+  const p = myPrefs(),
+    me = db.reglages.moi?.[meKey()] && getPers(db.reglages.moi[meKey()]);
+  const rows = [
+    ['Qui je suis', me ? persName(me) : '—'],
+    ...Object.entries(PREFS).map(([k, [l, f]]) => [l, k in p ? f(p[k]) : '<span class="muted">par défaut</span>']),
+    ...Object.keys(p)
+      .filter(k => !PREFS[k])
+      .map(k => [esc(k), esc(JSON.stringify(p[k]))])
+  ];
+  return `<section class="opt-sec"><div class="head"><h2>Mes réglages</h2></div><div class="pad"><p class="hint">Ils sont gardés avec votre compte (<b>${esc(meKey())}</b>) : vous les retrouvez sur tous les appareils où vous êtes connecté.</p>
+    <table class="tbl compact prefs-t"><tbody>${rows.map(([l, v]) => `<tr><th>${l}</th><td>${l === 'Qui je suis' ? esc(v) : v}</td></tr>`).join('')}</tbody></table></div></section>`;
+};
 /* Mon compte = qui je suis, mon accueil, connexion */
 OPT.compte = () => {
   const c = OPT.connexion(),
     i = c.indexOf('<section class="opt-sec"><div class="head"><h2>Connexion</h2>');
-  return i < 0 ? OPT.accueil() + c : c.slice(0, i) + OPT.accueil() + c.slice(i);
+  return (i < 0 ? OPT.accueil() + c : c.slice(0, i) + OPT.accueil() + c.slice(i)) + OPT.prefs();
 };
 /* Mon accueil : réglages personnels de la page d'accueil */
 OPT.accueil = () =>

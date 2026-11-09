@@ -185,7 +185,8 @@ function jDescribe(col, id, o, n) {
               systemes: 'noms des systèmes KKS',
               qrBase: 'adresse des QR codes',
               labelFmt: 'format des étiquettes',
-              arret: 'dates de l’arrêt'
+              arret: 'dates de l’arrêt',
+              comptes: 'réglages personnels'
             }[kk] || kk
           );
     }
@@ -627,6 +628,7 @@ async function startCloud() {
     CLOUD.warming = false;
     db = migrate(d);
     if (empty) db.meta.demo = false;
+    S.pside = pref('pside', S.pside);
     CLOUD.auto = true;
     hideGate();
     if (!cached) applyHash();
@@ -941,6 +943,22 @@ function helpDialog(open = 0) {
     onSave() {}
   });
 }
+/* ---------- Réglages personnels : un tableau par compte (adresse e-mail), dans config › reglages.comptes ----------
+   Ils suivent la personne sur tous les appareils où elle est connectée. Ajouter un réglage :
+   1) le lire avec pref('nom', défaut), 2) l'écrire avec setPref('nom', valeur), 3) le décrire dans PREFS (Options › Mon compte). */
+const meKey = () => String(CLOUD.user?.email || 'local').toLowerCase();
+const myPrefs = () => db.reglages.comptes?.[meKey()] || {};
+const pref = (k, def) => myPrefs()[k] ?? def;
+function setPref(k, v) {
+  if (JSON.stringify(myPrefs()[k]) === JSON.stringify(v)) return;
+  tx(() => {
+    const all = (db.reglages.comptes = {...(db.reglages.comptes || {})}),
+      m = {...(all[meKey()] || {})};
+    if (v === undefined || v === null || v === '') delete m[k];
+    else m[k] = v;
+    all[meKey()] = m;
+  });
+}
 function maybeWelcome() {
   let seen = null;
   try {
@@ -948,10 +966,11 @@ function maybeWelcome() {
   } catch (e) {
     return;
   }
-  if (seen || document.querySelector('dialog[open]') || (CLOUD.cfg().url && !CLOUD.on)) return;
+  if (seen || pref('bienvenue') || document.querySelector('dialog[open]') || (CLOUD.cfg().url && !CLOUD.on)) return;
   try {
     localStorage.setItem('tf-welcome', '1');
   } catch (e) {}
+  setPref('bienvenue', 1);
   const me = meId() && getPers(meId()),
     all = me && NOFILTER_GRP.includes(me.groupe || '');
   const first = me
