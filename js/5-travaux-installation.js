@@ -266,6 +266,11 @@ function arretBar(rows) {
 function newTacheDialog(kksId) {
   tacheDialog(null, kksId);
 }
+/* Pastille de choix (bouton radio stylé) et pastille interrupteur (case à cocher) : grandes zones à toucher */
+const sp = (name, value, label, cur, cls = '') =>
+  `<label class="sp ${cls}"><input type="radio" name="${name}" value="${esc(value)}" ${String(cur) === String(value) ? 'checked' : ''}><span>${label}</span></label>`;
+const tchip = (name, label, on) =>
+  `<label class="tchip"><input type="checkbox" name="${name}" ${on ? 'checked' : ''}><span>${label}</span></label>`;
 function tacheDialog(t, kksId) {
   const isNew = !t,
     petit0 = t ? isPetit(t) : true;
@@ -313,35 +318,48 @@ function tacheDialog(t, kksId) {
       }))
   ];
   const aId = v.assign?.v ? ({personne: 'p:', four: 'f:'}[v.assign.type] || 'g:') + v.assign.v : '';
-  const pill = (name, k2, lbl, tone, cur) =>
-    `<label class="prio-o ${tone}"><input type="radio" name="${name}" value="${k2}" ${cur === k2 ? 'checked' : ''}><span>${lbl}</span></label>`;
+  /* Pastilles « Pour qui ? » : les corps de métier, moi, puis « Autre… » (recherche : personne ou entreprise) */
+  const me = meId() && getPers(meId());
+  const whoPills = [
+    ...db.listes.groupes
+      .filter(g => metOf(g) && db.personnes.some(p => p.groupe === g && p.actif !== false && live(p)))
+      .map(g => ['g:' + g, `${mdot(metOf(g))}${esc(g)}`]),
+    ...(me ? [['p:' + me.id, 'Moi']] : [])
+  ];
+  const whoCur = !aId ? '' : whoPills.some(w => w[0] === aId) ? aId : 'other';
+  const quand0 = petit0 ? (v.prochaine ? 'date' : 'asap') : 'rec';
   dialog({
     title: isNew ? 'Nouveau travail' : 'Modifier le travail',
-    body: `<label>Quoi ?<input name="titre" value="${esc(v.titre)}" required placeholder="ex. Changer le néon de l’atelier, graisser les paliers…"></label>
-      <fieldset><legend>Ça revient ?</legend>
-        <div class="freq"><select name="unite" aria-label="Ça revient ?">${[
-          ['once', 'Non, une seule fois'],
-          ['jour', 'Oui, tous les … jours'],
-          ['semaine', 'Oui, toutes les … semaines'],
-          ['mois', 'Oui, tous les … mois'],
-          ['an', 'Oui, tous les … ans']
+    cls: 'tdlg',
+    body: `<input class="t-title" name="titre" value="${esc(v.titre)}" required placeholder="Quel travail ? ex. Changer le néon de l’atelier" aria-label="Quel travail ?" autocomplete="off">
+      <p class="t-sum" data-sum aria-live="polite"></p>
+      <div class="fgrp"><span class="fl">${icon('calendar')}Quand ?</span>
+        <div class="pills" role="radiogroup" aria-label="Quand ?">${sp('quand', 'asap', 'Dès que possible', quand0)}${sp('quand', 'date', 'À une date', quand0)}${sp('quand', 'rec', `${icon('repeat')}Ça revient`, quand0)}</div>
+        <div class="sub" data-q="date"><div class="qd">${[
+          ['0', 'Aujourd’hui'],
+          ['1', 'Demain'],
+          ['mon', 'Lundi prochain']
         ]
-          .map(([a, b]) => opt(a, b, petit0 ? 'once' : v.freq.unite))
-          .join('')}</select>
-        <input name="n" type="number" min="1" step="1" value="${esc(v.freq.n || 1)}" aria-label="Intervalle" data-n></div>
-        <div data-once><p class="hint" style="margin:10px 0 6px">Urgence</p><div class="prio-pick" role="radiogroup" aria-label="Priorité">${Object.entries(
-          PRIO
-        )
-          .map(([k2, [lbl, tone]]) => pill('prio', k2, lbl, tone, prioOf(v)))
-          .join('')}</div>
-          <label>Pour quand ? (facultatif)<input name="pdate" type="date" value="${petit0 ? esc(v.prochaine || '') : ''}"></label></div>
-        <div data-rec><label>${isNew || petit0 ? 'Première fois le' : 'Prochaine fois le'}<input name="prochaine" type="date" value="${esc(petit0 ? v.prochaine || todayISO() : v.prochaine)}"></label><p class="hint" data-fprev></p></div></fieldset>
-      <label>Pour qui ?<input name="assign" data-id="${esc(aId)}" data-label="${esc(aId ? assignLabel(v.assign) : '')}" value="${esc(aId ? assignLabel(v.assign) : '')}" placeholder="Un corps de métier, une personne ou une entreprise"></label>
-      <label class="toggle"><input type="checkbox" name="arret" ${v.arret ? 'checked' : ''}> À faire pendant l’arrêt de l’usine (révision)</label>
-      <details class="more" ${!isNew && (v.kksId || v.description || v.rapport === 'non' || (v.points || []).length) ? 'open' : ''}><summary>Plus de détails <span class="muted">(équipement, rapport, consignes, points à contrôler)</span></summary>
-      <label>Équipement (repère KKS)<input name="kks" data-id="${k ? k.id : ''}" data-label="${k ? esc(kksLabel(k)) : ''}" value="${k ? esc(kksLabel(k)) : ''}" placeholder="Facultatif : code ou désignation"></label>
-      <fieldset><legend>Faut-il un rapport ?</legend><div class="prio-pick rap-pick" role="radiogroup" aria-label="Rapport">${pill('rapport', 'oui', 'Oui', 'info', v.rapport || 'oui')}${pill('rapport', 'non', 'Non', 'info', v.rapport || 'oui')}</div>
-        </fieldset>
+          .map(([k2, l]) => `<button type="button" class="qd-b" data-pd="${k2}">${l}</button>`)
+          .join('')}</div><input name="pdate" type="date" value="${petit0 ? esc(v.prochaine || '') : ''}" aria-label="Date"></div>
+        <div class="sub" data-q="rec" data-rec><div class="freq2"><span>Tous les</span><input name="n" type="number" min="1" step="1" value="${esc(v.freq.n || 1)}" aria-label="Intervalle" data-n><div class="pills" role="radiogroup" aria-label="Unité">${[
+          ['jour', 'jours'],
+          ['semaine', 'semaines'],
+          ['mois', 'mois'],
+          ['an', 'ans']
+        ]
+          .map(([k2, l]) => sp('unite', k2, l, petit0 ? 'mois' : v.freq.unite))
+          .join('')}</div></div>
+          <label>${isNew || petit0 ? 'Première fois le' : 'Prochaine fois le'}<input name="prochaine" type="date" value="${esc(petit0 ? v.prochaine || todayISO() : v.prochaine)}"></label><p class="hint" data-fprev></p></div>
+      </div>
+      <div class="fgrp" data-once><span class="fl">${icon('bell')}Urgence</span><div class="pills" role="radiogroup" aria-label="Urgence">${['basse', 'normale', 'haute'].map(k2 => sp('prio', k2, PRIO[k2][0], prioOf(v), 'p-' + k2)).join('')}</div></div>
+      <div class="fgrp"><span class="fl">${icon('person')}Pour qui ?</span>
+        <div class="pills" role="radiogroup" aria-label="Pour qui ?">${sp('who', '', 'N’importe qui', whoCur)}${whoPills.map(([k2, l]) => sp('who', k2, l, whoCur)).join('')}${sp('who', 'other', 'Autre…', whoCur)}</div>
+        <div class="sub" data-q="other"><input name="assign" data-id="${esc(whoCur === 'other' ? aId : '')}" data-label="${esc(whoCur === 'other' ? assignLabel(v.assign) : '')}" value="${esc(whoCur === 'other' ? assignLabel(v.assign) : '')}" placeholder="Tapez un nom : personne, équipe ou entreprise" aria-label="Personne, équipe ou entreprise"></div>
+      </div>
+      <div class="fgrp"><span class="fl">${icon('plant')}Équipement <span class="muted">· facultatif</span></span><input name="kks" data-id="${k ? k.id : ''}" data-label="${k ? esc(kksLabel(k)) : ''}" value="${k ? esc(kksLabel(k)) : ''}" placeholder="Code KKS ou nom de l’équipement" aria-label="Équipement"></div>
+      <div class="tchips">${tchip('arret', `${icon('flame')}Pendant l’arrêt`, v.arret)}${tchip('norap', `${icon('report')}Sans rapport`, v.rapport === 'non')}</div>
+      <details class="more" ${!isNew && (v.description || (v.points || []).length) ? 'open' : ''}><summary>${icon('chev')}Consignes et points à contrôler</summary>
       <label>Ce qu’il faut faire<textarea name="description" rows="3" placeholder="Consignes… (facultatif)">${esc(v.description)}</textarea></label>
       <label>Points à contrôler <span class="muted">(un par ligne : ils deviennent des cases à cocher dans le rapport)</span><textarea name="points" rows="3" placeholder="ex. Niveau d’huile&#10;Serrage des bornes&#10;Bruit anormal">${esc((v.points || []).join('\n'))}</textarea></label></details>`,
     onOpen(f, d) {
@@ -356,30 +374,65 @@ function tacheDialog(t, kksId) {
           }))
       });
       combo(f.elements.assign, {items: assignItems});
+      const rv = n => f.querySelector(`input[name="${n}"]:checked`)?.value || '';
+      /* Dates rapides */
+      d.addEventListener('click', e => {
+        const b = e.target.closest('[data-pd]');
+        if (!b) return;
+        const k2 = b.dataset.pd,
+          dow = (new Date(todayISO() + 'T12:00').getDay() + 6) % 7;
+        f.elements.pdate.value = k2 === 'mon' ? isoAdd(todayISO(), 7 - dow) : isoAdd(todayISO(), +k2);
+        u();
+      });
       const u = () => {
-        const un = val(f, 'unite'),
-          once = un === 'once',
+        const q = rv('quand'),
+          rec = q === 'rec',
+          un = rv('unite') || 'mois',
           n = Math.max(1, +val(f, 'n') || 1),
-          p = val(f, 'prochaine');
-        $('[data-n]', d).hidden = once;
-        $('[data-once]', d).hidden = !once;
-        $('[data-rec]', d).hidden = once;
+          p = val(f, 'prochaine'),
+          who = rv('who');
+        for (const el of $$('[data-q]', d)) el.hidden = el.dataset.q !== q && el.dataset.q !== who;
+        $('[data-once]', d).hidden = rec;
+        for (const b of $$('[data-pd]', d)) {
+          const dow = (new Date(todayISO() + 'T12:00').getDay() + 6) % 7;
+          b.classList.toggle(
+            'on',
+            f.elements.pdate.value === (b.dataset.pd === 'mon' ? isoAdd(todayISO(), 7 - dow) : isoAdd(todayISO(), +b.dataset.pd))
+          );
+        }
         $('[data-fprev]', d).textContent =
-          once || !p
-            ? ''
-            : `${freqLabel({n, unite: un})} : ${fmtD(p)}, puis ${fmtD(addFreq(p, n, un))}, ${fmtD(addFreq(addFreq(p, n, un), n, un))}…`;
+          !rec || !p ? '' : `${fmtD(p)}, puis ${fmtD(addFreq(p, n, un))}, ${fmtD(addFreq(addFreq(p, n, un), n, un))}…`;
+        /* Résumé en une phrase : ce qui va être créé */
+        const whoL = who === 'other' ? f.elements.assign.value.trim() : who ? (who.startsWith('p:') ? 'moi' : who.slice(2)) : '';
+        const pd = val(f, 'pdate');
+        const when = rec ? freqLabel({n, unite: un}).toLowerCase() : q === 'date' && pd ? 'pour le ' + fmtD(pd) : 'dès que possible';
+        const prio = rv('prio');
+        const kk = f.elements.kks.value.trim().split(' ')[0];
+        const bits = [
+          whoL ? `Pour <b>${esc(whoL)}</b>` : 'Pour <b>n’importe qui</b>',
+          `<b>${esc(when)}</b>`,
+          !rec && prio === 'haute' ? '<b class="hot">urgent</b>' : '',
+          kk ? `sur <b class="mono">${esc(kk)}</b>` : '',
+          f.elements.arret.checked ? 'pendant l’arrêt' : '',
+          f.elements.norap.checked ? 'sans rapport' : ''
+        ].filter(Boolean);
+        $('[data-sum]', d).innerHTML = bits.join(' · ');
       };
       f.addEventListener('input', u);
       f.addEventListener('change', u);
       u();
+      if (isNew) setTimeout(() => f.elements.titre.focus(), 30);
     },
     del: isNew ? null : archDel('taches', t, () => HARD.taches(t)),
     onSave(f) {
+      const rv = n2 => f.querySelector(`input[name="${n2}"]:checked`)?.value || '';
       const titre = val(f, 'titre'),
-        unite = val(f, 'unite'),
-        petit = unite === 'once',
+        quand = rv('quand'),
+        petit = quand !== 'rec',
+        unite = petit ? 'once' : rv('unite') || 'mois',
         n = petit ? 1 : Math.max(1, Math.round(+val(f, 'n') || 1)),
-        prochaine = petit ? val(f, 'pdate') : val(f, 'prochaine');
+        prochaine = quand === 'date' ? val(f, 'pdate') : quand === 'rec' ? val(f, 'prochaine') : '';
+      if (quand === 'date' && !prochaine) throw new Error('Choisissez la date, ou « Dès que possible ».');
       if (!titre) throw new Error('Indiquez le travail.');
       if (!petit && !/^\d{4}-\d{2}-\d{2}$/.test(prochaine)) throw new Error('Indiquez la date de la première fois.');
       let kk = null;
@@ -388,14 +441,16 @@ function tacheDialog(t, kksId) {
         kk = getKks(ki.dataset.id) || findKks(ki.value);
         if (!kk) throw new Error('Repère KKS inconnu : choisissez-le dans la liste.');
       }
-      const ai = f.elements.assign;
-      let assign = {type: 'groupe', v: ''};
-      if (ai.value.trim()) {
-        const id = ai.dataset.id || '';
-        if (!id) throw new Error('Choisissez un corps de métier, une personne ou une entreprise dans la liste.');
-        assign = {type: {g: 'groupe', p: 'personne', f: 'four'}[id[0]] || 'groupe', v: id.slice(2)};
+      const ai = f.elements.assign,
+        who = rv('who');
+      let assign = {type: 'groupe', v: ''},
+        id = who === 'other' ? '' : who;
+      if (who === 'other' && ai.value.trim()) {
+        id = ai.dataset.id || '';
+        if (!id) throw new Error('Choisissez une personne, une équipe ou une entreprise dans la liste.');
       }
-      const rapport = (f.querySelector('input[name=rapport]:checked') || {}).value || '';
+      if (id) assign = {type: {g: 'groupe', p: 'personne', f: 'four'}[id[0]] || 'groupe', v: id.slice(2)};
+      const rapport = f.elements.norap.checked ? 'non' : v.rapport === 'non' ? 'oui' : (v.rapport ?? 'oui');
       const data = {
         titre,
         description: val(f, 'description'),
@@ -409,7 +464,7 @@ function tacheDialog(t, kksId) {
         prochaine,
         rapport,
         arret: f.elements.arret.checked,
-        ...(petit ? {kind: 'petit', prio: (f.querySelector('input[name=prio]:checked') || {}).value || 'normale'} : {kind: 'rec'})
+        ...(petit ? {kind: 'petit', prio: rv('prio') || 'normale'} : {kind: 'rec'})
       };
       tx(() => {
         if (isNew) {

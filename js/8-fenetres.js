@@ -3,10 +3,10 @@
 /* =====================================================================
    DIALOGUES
    ===================================================================== */
-function dialog({title, body, onSave, saveLabel = 'Enregistrer', wide = false, del = null, onOpen = null, info = false}) {
+function dialog({title, body, onSave, saveLabel = 'Enregistrer', wide = false, del = null, onOpen = null, info = false, cls = ''}) {
   closeSearch();
   const d = document.createElement('dialog');
-  d.className = 'dlg' + (wide ? ' wide' : '');
+  d.className = 'dlg' + (wide ? ' wide' : '') + (cls ? ' ' + cls : '');
   d.innerHTML = `<form novalidate><header><h2>${title}</h2><button type="button" class="icon-btn" data-close aria-label="Fermer">×</button></header>
     <div class="dlg-body">${body}</div><p class="dlg-err" hidden></p>
     <footer>${del ? `<button type="button" class="btn ${del.soft ? 'ghost' : 'danger-ghost'} left" data-del>${del.soft ? icon('archive') : ''}${del.label}</button>` : ''}${info ? '' : '<button type="button" class="btn" data-close>Annuler</button>'}<button type="submit" class="btn primary">${saveLabel}</button></footer></form>`;

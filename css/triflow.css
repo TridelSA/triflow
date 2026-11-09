@@ -1480,3 +1480,44 @@ details.more > summary{flex-wrap:wrap;row-gap:0}
   .hero-inner .nav{margin-left:28px}
   .hero-inner .help-btn{order:3;margin-left:auto}
 }
+/* ---------- Fenêtres « travail » et « rapport » : pastilles de choix, gros champ titre, résumé en une phrase ---------- */
+.t-title{font-size:var(--t-lg);font-weight:600;padding:12px 14px;min-height:50px;border-width:1.5px}
+.t-title:focus{border-color:var(--accent)}
+.t-sum{margin:-4px 0 0;padding:9px 12px;border-radius:var(--r-md);background:var(--sunk);color:var(--muted);font-size:var(--t-md);line-height:1.45}
+.t-sum b{color:var(--ink);font-weight:600}
+.t-sum .hot{color:var(--bad)}
+.fgrp{display:flex;flex-direction:column;gap:8px}
+.fl{display:flex;align-items:center;gap:7px;font-size:var(--t-md);font-weight:600;color:var(--muted)}
+.fl .ico{width:16px;height:16px}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.sp{display:inline-flex !important;flex-direction:row !important;align-items:center;margin:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.sp input,.tchip input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.sp span,.tchip span{display:inline-flex;align-items:center;gap:6px;min-height:40px;box-sizing:border-box;padding:8px 14px;border:1.5px solid var(--line);border-radius:var(--r-pill);background:var(--surface);color:var(--ink);font-size:var(--t-md);font-weight:600;transition:background-color .15s,border-color .15s,color .15s,transform .12s ease-out}
+.sp span .ico,.tchip span .ico{width:15px;height:15px}
+.sp:hover span,.tchip:hover span{border-color:var(--accent-line)}
+.sp:active span,.tchip:active span{transform:scale(.97)}
+.sp:has(input:checked) span{background:var(--accent);border-color:var(--accent);color:#fff}
+.sp:has(input:checked) span .mdot{box-shadow:0 0 0 2px #fff}
+.sp.p-haute:has(input:checked) span{background:var(--bad);border-color:var(--bad)}
+.sp.p-basse:has(input:checked) span{background:var(--muted);border-color:var(--muted)}
+.sp:has(input:focus-visible) span,.tchip:has(input:focus-visible) span{outline:2px solid var(--accent);outline-offset:2px}
+.sub{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:var(--r-md);background:var(--sunk)}
+.sub[hidden]{display:none}
+.qd{display:flex;flex-wrap:wrap;gap:6px}
+.qd-b{all:unset;cursor:pointer;padding:6px 12px;border-radius:var(--r-pill);background:var(--surface);border:1px solid var(--line);font-size:var(--t-md);font-weight:600;color:var(--ink)}
+.qd-b.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.qd-b:focus-visible{outline:2px solid var(--accent)}
+.freq2{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-weight:600;font-size:var(--t-md)}
+.freq2 input[name=n]{width:64px;text-align:center}
+.freq2 .sp span{min-height:36px;padding:6px 12px}
+.tchips{display:flex;flex-wrap:wrap;gap:8px}
+.tchip{display:inline-flex !important;flex-direction:row !important;margin:0;cursor:pointer}
+.tchip span{color:var(--muted);border-style:dashed}
+.tchip:has(input:checked) span{border-style:solid;border-color:var(--info);background:var(--info-soft);color:var(--info)}
+@media (max-width:760px){
+  .sp span,.tchip span{min-height:44px}
+}
+@media (prefers-reduced-motion:reduce){ .sp span,.tchip span{transition:none} .sp:active span,.tchip:active span{transform:none} }
+.qrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.qrow input[type=date]{width:auto;flex:1;min-width:150px}
+.grid2.rq{align-items:start;gap:14px}

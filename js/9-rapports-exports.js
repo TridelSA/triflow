@@ -133,14 +133,22 @@ function interventionDialog(it, kksId, tache, opts = {}) {
     title: isNew ? 'Nouveau rapport' : `Rapport ${esc(v.num)}`,
     wide: true,
     body: `${T ? `<p class="task-note">${icon('repeat')}<span>Tâche « ${esc(T.titre)} » · ${esc(freqLabel(T.freq))}${T.actif !== false ? ` · prévue le ${fmtD(T.prochaine)}` : ''}. ${it?.tacheFait ? '' : 'Elle passera à l’échéance suivante quand ce rapport sera « Terminé ».'}</span></p>` : ''}
-      <label>Quoi ?<input name="titre" value="${esc(v.titre)}" required placeholder="ex. Fuite garniture pompe alimentaire"></label>
-      <label>Où ? · équipement (KKS)<input name="kks" list="dl-kks" value="${k ? esc(kksLabel(k)) : ''}" placeholder="Code ou désignation" autocomplete="off"></label>
+      <input class="t-title" name="titre" value="${esc(v.titre)}" required placeholder="Quoi ? ex. Fuite garniture pompe alimentaire" aria-label="Quoi ?" autocomplete="off">
+      <label>Sur quel équipement ?<input name="kks" list="dl-kks" value="${k ? esc(kksLabel(k)) : ''}" placeholder="Code ou désignation" autocomplete="off"></label>
       <label>Ce qui a été fait<span class="dict-wrap"><textarea name="travaux" rows="4" placeholder="Décrivez l’intervention…">${esc(v.travaux)}</textarea>${HAS_DICT ? `<button type="button" class="dict" data-dict="travaux" title="Dicter" aria-label="Dicter le texte">${icon('mic')}</button>` : ''}</span></label>
-      <div class="grid2"><label>Date<input name="date" type="date" value="${esc(v.date)}" required></label><label>Statut<select name="statut">${Object.entries(
-        STATUTS
-      )
-        .map(([a, b]) => opt(a, b[0], v.statut))
-        .join('')}</select></label></div>
+      <div class="grid2 rq">      <div class="fgrp"><span class="fl">${icon('calendar')}Quand ?</span><div class="qrow"><div class="qd">${[
+        ['0', 'Aujourd’hui'],
+        ['-1', 'Hier'],
+        ['-2', 'Avant-hier']
+      ]
+        .map(([k2, l]) => `<button type="button" class="qd-b" data-rd="${k2}">${l}</button>`)
+        .join('')}</div><input name="date" type="date" value="${esc(v.date)}" required aria-label="Date"></div></div>
+      <div class="fgrp"><span class="fl">${icon('check')}Où en est-on ?</span><div class="pills" role="radiogroup" aria-label="État">${sp('statut', 'terminee', `${icon('check')}C’est terminé`, v.statut)}${sp('statut', 'encours', 'En cours', v.statut)}${sp('statut', 'ouverte', 'Pas commencé', v.statut)}</div></div></div>
+      ${
+        db.listes.types.length >= 2 && db.listes.types.length <= 10
+          ? `<div class="fgrp"><span class="fl">${icon('tag')}Type</span><div class="pills" role="radiogroup" aria-label="Type">${db.listes.types.map(x => sp('type', x, esc(x), v.type || db.listes.types[0])).join('')}</div></div>`
+          : ''
+      }
       <fieldset><legend>Intervenants</legend>${
         people.length
           ? `<div class="chips" data-psel></div>
@@ -153,13 +161,28 @@ function interventionDialog(it, kksId, tache, opts = {}) {
           ? `<fieldset class="pts-f"><legend>Points contrôlés</legend><div class="pts">${pts.map((p, i) => `<label class="pt"><input type="checkbox" name="pt" value="${i}" ${p.ok ? 'checked' : ''}><span>${esc(p.t)}</span></label>`).join('')}</div><input type="hidden" name="ptlist" value="${esc(JSON.stringify(pts.map(p => p.t)))}"></fieldset>`
           : '';
       })()}
-      <details class="more" ${!isNew && (v.constat || v.pieces.length || v.cause) ? 'open' : ''}><summary>${icon('chev')}Plus de détails <span class="muted">type, cause, constat, pièces utilisées</span></summary>
-      <div class="grid2"><label>Type<select name="type">${optList(db.listes.types, v.type)}</select></label><label>Cause (si panne)<select name="cause"><option value="">—</option>${(db.listes.pannes || []).map(x => opt(x, x, v.cause || '')).join('')}${v.cause && !(db.listes.pannes || []).includes(v.cause) ? opt(v.cause, v.cause, v.cause) : ''}</select></label></div>
+      <details class="more" ${!isNew && (v.constat || v.pieces.length || v.cause) ? 'open' : ''}><summary>${icon('chev')}Plus de détails <span class="muted">cause, constat, photos, pièces utilisées</span></summary>
+      ${
+        db.listes.types.length >= 2 && db.listes.types.length <= 10
+          ? ''
+          : `<label>Type<select name="type">${optList(db.listes.types, v.type)}</select></label>`
+      }
+      <div class="fgrp"><span class="fl">${icon('bolt')}Cause <span class="muted">· si c’était une panne</span></span><div class="pills" role="radiogroup" aria-label="Cause">${sp('cause', '', 'Aucune', v.cause || '')}${[...new Set([...(db.listes.pannes || []), ...(v.cause ? [v.cause] : [])])].map(x => sp('cause', x, esc(x), v.cause || '')).join('')}</div></div>
       <label>Constat / demande<span class="dict-wrap"><textarea name="constat" rows="3">${esc(v.constat)}</textarea>${HAS_DICT ? `<button type="button" class="dict" data-dict="constat" title="Dicter" aria-label="Dicter le texte">${icon('mic')}</button>` : ''}</span></label>
       <fieldset><legend>Photos</legend><div data-phwrap>${photoStrip(v.photos || [], {}, true)}</div></fieldset>
       <fieldset><legend>Pièces consommées</legend><div class="pl-sugg" hidden></div><div class="plines"></div><div class="tools"><button type="button" class="btn ghost small" data-addline>${icon('plus')}Ajouter une pièce</button></div><p class="hint">Les quantités sont retirées du stock à l’enregistrement ; modifier ou supprimer une ligne remet la différence en stock.</p></fieldset></details>`,
     del: isNew ? null : archDel('interventions', it, () => HARD.interventions(it)),
     onOpen(f, d) {
+      const rdMark = () =>
+        $$('[data-rd]', d).forEach(b => b.classList.toggle('on', f.elements.date.value === isoAdd(todayISO(), +b.dataset.rd)));
+      d.addEventListener('click', e => {
+        const b = e.target.closest('[data-rd]');
+        if (!b) return;
+        f.elements.date.value = isoAdd(todayISO(), +b.dataset.rd);
+        rdMark();
+      });
+      f.elements.date.addEventListener('input', rdMark);
+      rdMark();
       d._photos = [...(v.photos || [])];
       const phDraw = () => {
         $('[data-phwrap]', d).innerHTML = photoStrip(d._photos, {}, true);
