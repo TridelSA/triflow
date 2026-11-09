@@ -84,6 +84,5 @@ Commit sur `main` avec un message en français qui dit ce qui change pour l'util
 
 ## Reste à faire côté Thomas (ne pas refaire, rappeler si utile)
 - Accès réservé à @tridelsa.ch (README §2) : inscription fermée et scripts SQL lancés (novembre 2026). Reste : installer `creer-utilisateur`, SMTP, URL du site, modèles d'e-mails, puis rouvrir l'inscription.
-- Ajouter les secrets GitHub de la sauvegarde (`TRIFLOW_EMAIL`, `TRIFLOW_PASSWORD`, `BACKUP_PASSWORD`).
 - Vérifier la région du projet Supabase (idéalement Zurich).
 - Idées en attente : lien Microsoft To Do / Teams (rappels), droits par rôle.
