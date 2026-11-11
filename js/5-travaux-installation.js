@@ -335,14 +335,14 @@ function tacheDialog(t, kksId) {
       <p class="t-sum" data-sum aria-live="polite"></p>
       <div class="fgrp"><span class="fl">${icon('calendar')}Quand ?</span>
         <div class="pills" role="radiogroup" aria-label="Quand ?">${sp('quand', 'asap', 'Dès que possible', quand0)}${sp('quand', 'date', 'À une date', quand0)}${sp('quand', 'rec', `${icon('repeat')}Ça revient`, quand0)}</div>
-        <div class="sub" data-q="date"><div class="qd">${[
+        <div class="dsub" data-q="date"><div class="qd">${[
           ['0', 'Aujourd’hui'],
           ['1', 'Demain'],
           ['mon', 'Lundi prochain']
         ]
           .map(([k2, l]) => `<button type="button" class="qd-b" data-pd="${k2}">${l}</button>`)
           .join('')}</div><input name="pdate" type="date" value="${petit0 ? esc(v.prochaine || '') : ''}" aria-label="Date"></div>
-        <div class="sub" data-q="rec" data-rec><div class="freq2"><span>Tous les</span><input name="n" type="number" min="1" step="1" value="${esc(v.freq.n || 1)}" aria-label="Intervalle" data-n><div class="pills" role="radiogroup" aria-label="Unité">${[
+        <div class="dsub" data-q="rec" data-rec><div class="freq2"><span>Tous les</span><input name="n" type="number" min="1" step="1" value="${esc(v.freq.n || 1)}" aria-label="Intervalle" data-n><div class="pills" role="radiogroup" aria-label="Unité">${[
           ['jour', 'jours'],
           ['semaine', 'semaines'],
           ['mois', 'mois'],
@@ -355,7 +355,7 @@ function tacheDialog(t, kksId) {
       <div class="fgrp" data-once><span class="fl">${icon('bell')}Urgence</span><div class="pills" role="radiogroup" aria-label="Urgence">${['basse', 'normale', 'haute'].map(k2 => sp('prio', k2, PRIO[k2][0], prioOf(v), 'p-' + k2)).join('')}</div></div>
       <div class="fgrp"><span class="fl">${icon('person')}Pour qui ?</span>
         <div class="pills" role="radiogroup" aria-label="Pour qui ?">${sp('who', '', 'N’importe qui', whoCur)}${whoPills.map(([k2, l]) => sp('who', k2, l, whoCur)).join('')}${sp('who', 'other', 'Autre…', whoCur)}</div>
-        <div class="sub" data-q="other"><input name="assign" data-id="${esc(whoCur === 'other' ? aId : '')}" data-label="${esc(whoCur === 'other' ? assignLabel(v.assign) : '')}" value="${esc(whoCur === 'other' ? assignLabel(v.assign) : '')}" placeholder="Tapez un nom : personne, équipe ou entreprise" aria-label="Personne, équipe ou entreprise"></div>
+        <div class="dsub" data-q="other"><input name="assign" data-id="${esc(whoCur === 'other' ? aId : '')}" data-label="${esc(whoCur === 'other' ? assignLabel(v.assign) : '')}" value="${esc(whoCur === 'other' ? assignLabel(v.assign) : '')}" placeholder="Tapez un nom : personne, équipe ou entreprise" aria-label="Personne, équipe ou entreprise"></div>
       </div>
       <div class="fgrp"><span class="fl">${icon('plant')}Équipement <span class="muted">· facultatif</span></span><input name="kks" data-id="${k ? k.id : ''}" data-label="${k ? esc(kksLabel(k)) : ''}" value="${k ? esc(kksLabel(k)) : ''}" placeholder="Code KKS ou nom de l’équipement" aria-label="Équipement"></div>
       <div class="tchips">${tchip('arret', `${icon('flame')}Pendant l’arrêt`, v.arret)}${tchip('norap', `${icon('report')}Sans rapport`, v.rapport === 'non')}</div>

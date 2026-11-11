@@ -1501,8 +1501,8 @@ details.more > summary{flex-wrap:wrap;row-gap:0}
 .sp.p-haute:has(input:checked) span{background:var(--bad);border-color:var(--bad)}
 .sp.p-basse:has(input:checked) span{background:var(--muted);border-color:var(--muted)}
 .sp:has(input:focus-visible) span,.tchip:has(input:focus-visible) span{outline:2px solid var(--accent);outline-offset:2px}
-.sub{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:var(--r-md);background:var(--sunk)}
-.sub[hidden]{display:none}
+.dsub{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:var(--r-md);background:var(--sunk)}
+.dsub[hidden]{display:none}
 .qd{display:flex;flex-wrap:wrap;gap:6px}
 .qd-b{all:unset;cursor:pointer;padding:6px 12px;border-radius:var(--r-pill);background:var(--surface);border:1px solid var(--line);font-size:var(--t-md);font-weight:600;color:var(--ink)}
 .qd-b.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
@@ -1522,3 +1522,80 @@ details.more > summary{flex-wrap:wrap;row-gap:0}
 .qrow input[type=date]{width:auto;flex:1;min-width:150px}
 .grid2.rq{align-items:start;gap:14px}
 .prefs-t th{text-align:left;font-weight:600;color:var(--muted);width:45%}
+
+/* =====================================================================
+   Refonte visuelle (novembre 2026) — d'après le skill taste (Leonxlnx, MIT), adapté à un outil de travail :
+   interface neutre et calme, une seule couleur d'accent (le vert Tridel), noir doux, titres en
+   minuscules (plus de capitales espacées), chiffres alignés, cartes qui se soulèvent au survol,
+   retour au toucher sur tout ce qui se clique.
+   ===================================================================== */
+:root{
+  --bg:#F2F4F1; --surface:#FFFFFF; --sunk:#EDF1EC; --ink:#131A15; --muted:#59665E; --line:#E0E6E0;
+  --accent-soft:#E6F2EA;
+  --sh-1:0 1px 2px rgba(19,26,21,.05);
+  --sh-2:0 1px 2px rgba(19,26,21,.04),0 12px 28px -18px rgba(19,26,21,.22);
+  --sh-lift:0 1px 2px rgba(19,26,21,.05),0 18px 36px -18px rgba(19,26,21,.28);
+  /* Cartes de l'accueil : plus de violet ; des teintes calmes autour du vert */
+  --tile-r:#E4F0EE; --tile-r-ink:#1E6B66;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0E1310; --surface:#161E19; --sunk:#121915; --ink:#E8EEE9; --muted:#93A399; --line:#253129;
+  --sh-1:none; --sh-2:0 0 0 1px rgba(255,255,255,.02); --sh-lift:0 0 0 1px rgba(255,255,255,.06);
+  --tile-r:#13302D; --tile-r-ink:#7FD1C8;
+}}
+body{font-feature-settings:"cv11","ss01";text-rendering:optimizeLegibility}
+.num,.n,.qty,.bt-n b,.pd-qty .n,.ychip small,.badge{font-variant-numeric:tabular-nums}
+
+/* Titres de rubrique : en minuscules, plus de capitales espacées */
+h3,.gres h4,.tbl th,.rack-head,.opt-grp,.wkgrid tr.pg th,.pmg,.matl-h,.rmonth,.rrow .rday small,.pd-sec h3,.ktype,
+.plegend .lg b,.ps-g > summary,.bt-h h2,.bt-week div,.md-k,.md-l,.ov-h,.mh-lbl,.hb-t{
+  text-transform:none !important;letter-spacing:0 !important}
+h3,.pd-sec h3,.bt-h h2,.ov-h,.mh-lbl{font-size:var(--t-sm);font-weight:600;color:var(--muted)}
+.tbl th{font-size:var(--t-sm);font-weight:600}
+.opt-grp{font-size:var(--t-sm);font-weight:600}
+.bt-h h2{font-size:var(--t-base);font-weight:650;color:var(--ink)}
+.md-k{font-size:var(--t-sm);font-weight:650;color:var(--accent)}
+.hb-t{font-size:var(--t-xs);font-weight:700}
+
+/* Titres de page : plus présents */
+.page-head h1{font-size:var(--t-3xl);letter-spacing:-.02em}
+.pd-title{letter-spacing:-.015em}
+
+/* Surfaces : une seule bordure fine, une ombre douce */
+.pane,.opt-sec{border-color:var(--line);box-shadow:var(--sh-1)}
+.btile{box-shadow:var(--sh-2);transition:box-shadow .2s ease,transform .2s ease}
+@media (hover:hover){
+  .btile:hover{box-shadow:var(--sh-lift);transform:translateY(-2px)}
+  .mh-card:hover{transform:translateY(-2px)}
+}
+
+/* Boutons : une hauteur, un poids ; le principal est le seul bouton plein */
+.btn{min-height:40px;padding:7px 16px;border-radius:var(--r-md);font-weight:600;transition:background-color .15s,border-color .15s,color .15s,transform .12s ease-out,box-shadow .15s}
+.btn:hover{border-color:color-mix(in srgb,var(--ink) 30%,transparent)}
+.btn.primary{box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 1px 2px rgba(19,26,21,.18)}
+.btn.primary:hover{background:color-mix(in srgb,var(--accent) 88%,#000);border-color:color-mix(in srgb,var(--accent) 88%,#000)}
+.btn:focus-visible,.ychip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Listes : ligne survolée discrète, ligne choisie sur fond vert pâle */
+.tbl tr[data-act] td{transition:background-color .12s}
+.tbl tr.sel td{background:var(--accent-soft)}
+
+/* Pastilles de filtre : un peu plus d'air */
+.ychip{padding:6px 13px;transition:background-color .15s,color .15s,transform .12s ease-out}
+.ychip:active{transform:scale(.97)}
+.ychip:not([aria-selected=true]):not([aria-pressed=true]):hover{color:var(--ink);background:color-mix(in srgb,var(--sunk) 70%,var(--line))}
+
+/* Champs : bordure plus nette au survol, anneau vert au focus */
+input:not([type=checkbox]):not([type=radio]),select,textarea{border-radius:var(--r-md);transition:border-color .15s,box-shadow .15s}
+input:not([type=checkbox]):not([type=radio]):hover,select:hover,textarea:hover{border-color:color-mix(in srgb,var(--ink) 25%,transparent)}
+input:not([type=checkbox]):not([type=radio]):focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+
+/* Fenêtres : coins plus doux, en-tête aéré */
+.dlg{border-radius:var(--r-xl)}
+.dlg header h2{letter-spacing:-.01em}
+
+@media (prefers-reduced-motion:reduce){
+  .btile,.btn,.ychip,.tbl tr[data-act] td{transition:none}
+  .btile:hover,.mh-card:hover{transform:none}
+}
+@media (max-width:760px){ .page-head h1{font-size:var(--t-2xl)} }
