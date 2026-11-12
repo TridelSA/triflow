@@ -862,6 +862,10 @@ document.addEventListener('click', e => {
   const fn = ACT[t.dataset.act];
   if (!fn) return;
   e.preventDefault();
+  if (CLOUD.loading && t.dataset.act !== 'help') {
+    toast('Un instant : les données arrivent…');
+    return;
+  }
   if (t.dataset.act !== 'menu') closeMenus();
   try {
     fn(t.dataset, t);

@@ -425,12 +425,22 @@ function showGate(html) {
 /* Chargement : la page prend déjà sa forme (blocs gris) au lieu d'un écran vide */
 function showSkeleton() {
   hideGate();
+  /* Le menu prend déjà sa place et la page du jour est marquée ; on dit clairement que les données arrivent */
+  document.body.dataset.view = S.view;
+  $$('#nav button').forEach(b => b.setAttribute('aria-current', b.dataset.view === S.view ? 'page' : 'false'));
   const b = (w, h = 14) => `<i class="sk" style="width:${w};height:${h}px"></i>`;
   const card = n =>
     `<div class="btile sk-card">${b('40%', 18)}${b('22%', 40)}${Array.from({length: n}, () => b('100%', 34)).join('')}</div>`;
   $('#main').innerHTML =
-    `<div class="bento" aria-busy="true" aria-label="Chargement">${card(4)}${card(1)}${card(1)}${card(2)}${card(1)}</div>`;
+    `<div class="loadcard" role="status" aria-live="polite"><span class="spin" aria-hidden="true"></span><div><b>Chargement des données…</b><span data-loadtxt>Connexion à la base</span><i class="lbar"><i data-loadbar></i></i><small>La première fois sur un appareil, cela peut prendre un moment. Ensuite, TriFlow s’ouvre tout de suite.</small></div></div><div class="bento" aria-busy="true" aria-label="Chargement">${card(4)}${card(1)}${card(1)}${card(2)}${card(1)}</div>`;
   $('#main').dataset.view = '';
+}
+/* Avancement du premier chargement (appelé par CLOUD.fetchAll) */
+function loadProgress(n, total) {
+  const t = $('[data-loadtxt]'),
+    b = $('[data-loadbar]');
+  if (t) t.textContent = total ? `${num(n)} fiches sur ${num(total)}` : `${num(n)} fiches reçues`;
+  if (b && total) b.style.width = Math.min(100, Math.round((n / total) * 100)) + '%';
 }
 function hideGate() {
   const g = $('#gate');
@@ -442,6 +452,7 @@ function hideGate() {
 const TF_DOMAINE = 'tridelsa.ch';
 const siteURL = () => location.origin + location.pathname;
 function loginForm(msg = '', mode = 'login', ok = '') {
+  CLOUD.loading = false;
   const pwField = (name, lbl, ac) => `<label>${lbl}<input type="password" name="${name}" autocomplete="${ac}" required></label>`;
   const T = {
     login: ['Connectez-vous avec votre compte.', pwField('pw', 'Mot de passe', 'current-password'), 'Se connecter'],
@@ -569,6 +580,7 @@ async function bootCloud() {
   startCloud();
 }
 async function startCloud() {
+  CLOUD.loading = true;
   showSkeleton();
   try {
     const {data: ss} = await CLOUD.sb.auth.getSession();
@@ -576,6 +588,7 @@ async function startCloud() {
     const cached = CLOUD.user ? await CLOUD.fromCache() : null;
     if (cached) {
       db = migrate(cached);
+      CLOUD.loading = false;
       CLOUD.warming = true;
       hideGate();
       applyHash();
@@ -624,6 +637,7 @@ async function startCloud() {
       toast('Modifications faites hors ligne envoyées.');
     }
     const {d, empty} = await CLOUD.loadAll();
+    CLOUD.loading = false;
     CLOUD.on = true;
     CLOUD.warming = false;
     db = migrate(d);
@@ -646,6 +660,7 @@ async function startCloud() {
     if (empty && localStorage.getItem(KEY))
       toast('La base est vide : vous pouvez y envoyer les données de ce navigateur depuis Options › Connexion.');
   } catch (e) {
+    CLOUD.loading = false;
     showGate(
       `<p>Chargement impossible : ${esc(e.message || e)}</p><button class="btn primary" onclick="location.reload()">Réessayer</button>`
     );
@@ -661,6 +676,7 @@ async function netOk() {
   }
 }
 async function goOffline(pend) {
+  CLOUD.loading = false;
   const base = await CLOUD.fromCacheKeep();
   db = migrate(pend?.db || base);
   CLOUD.on = true;

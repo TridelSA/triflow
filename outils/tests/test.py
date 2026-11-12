@@ -277,6 +277,20 @@ async def main():
         for js, nom in [("go('accueil')", 'accueil'), ("S.sel.pieces=null; go('pieces')", 'pieces'), ("S.sel.taches=null; go('taches')", 'travaux'), ("S.sel.interventions=null; S.statut='terminee'; go('interventions')", 'travaux-fait'),
                         ("go('interventions','i1')", 'rapport'), ("go('planning')", 'planning'), ("go('accueil'); quickMove(getPiece('p1'))", 'sortie-rapide')]:
             await aller(js, 'tel-' + nom)
+        print('Premier chargement sur un nouveau poste')
+        await pg.set_viewport_size({'width': 1300, 'height': 820})
+        await pg.evaluate("localStorage.setItem('__slow', '2500'); IDB.del(CLOUD.cacheKey())"); await pg.wait_for_timeout(200)
+        await pg.reload(); await pg.wait_for_timeout(500)
+        ok(await pg.evaluate("CLOUD.loading === true && !!document.querySelector('.loadcard') && document.body.dataset.view === 'accueil'"), 'nouveau poste : « Chargement des données… » affiché, menu en place')
+        await capture('chargement-nouveau-poste')
+        await pg.click('#nav [data-view=pieces]'); await pg.wait_for_timeout(150)
+        ok(await pg.evaluate("S.view === 'accueil' && /données arrivent/.test(document.querySelector('#toast')?.textContent || '')"), 'nouveau poste : menu bloqué pendant le chargement, avec un message')
+        await pg.wait_for_timeout(4000)
+        ok(await pg.evaluate("!CLOUD.loading && !document.querySelector('.loadcard') && db.pieces.length > 0"), 'nouveau poste : données affichées une fois chargées')
+        await pg.evaluate("localStorage.removeItem('__slow')")
+        for w in (1024, 1366):
+            await pg.set_viewport_size({'width': w, 'height': 768}); await pg.evaluate("go('accueil')"); await pg.wait_for_timeout(300); await capture(f'ordi-{w}-accueil')
+            ok(await pg.evaluate("(() => { const n = document.querySelector('#nav').getBoundingClientRect(), h = document.querySelector('.help-btn').getBoundingClientRect(), t = document.querySelector('.hero-copy').getBoundingClientRect(); return n.right <= h.left && n.left >= t.right - 1 && document.documentElement.scrollWidth <= innerWidth; })()"), f'menu bien placé à {w} px de large')
         await b.close()
     srv.shutdown()
     if CAPTURES: comparer(echecs)

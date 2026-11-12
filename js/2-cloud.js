@@ -121,10 +121,10 @@ const CLOUD = {
   cacheKey() {
     return 'snap:' + (this.cfg().url || '') + ':' + (this.user?.email || '');
   },
-  async fetchAll(cols) {
-    const rows = [];
-    let from = 0;
-    for (;;) {
+  /* Toute la table (sauf le journal), par pages de 1000. Si la base donne le total, 4 pages partent en même temps
+     (premier chargement d'un poste nettement plus rapide) et onProg(reçues, total) fait avancer la barre. */
+  async fetchAll(cols, onProg) {
+    const page = async from => {
       const {data, error} = await this.sb
         .from('docs')
         .select(cols)
@@ -133,9 +133,41 @@ const CLOUD = {
         .order('id')
         .range(from, from + 999);
       if (error) throw error;
-      rows.push(...data);
-      if (data.length < 1000) break;
-      from += 1000;
+      return data || [];
+    };
+    let total = null;
+    try {
+      const {count, error} = await this.sb.from('docs').select('id', {count: 'exact', head: true}).neq('collection', 'journal');
+      if (!error && typeof count === 'number') total = count;
+    } catch (e) {}
+    const rows = [];
+    if (total === null) {
+      for (let from = 0; ; from += 1000) {
+        const d = await page(from);
+        rows.push(...d);
+        onProg?.(rows.length, null);
+        if (d.length < 1000) break;
+      }
+      return rows;
+    }
+    const n = Math.max(1, Math.ceil(total / 1000)),
+      out = new Array(n);
+    let next = 0,
+      got = 0;
+    const worker = async () => {
+      while (next < n) {
+        const i = next++;
+        out[i] = await page(i * 1000);
+        got += out[i].length;
+        onProg?.(got, total);
+      }
+    };
+    await Promise.all(Array.from({length: Math.min(4, n)}, worker));
+    for (const d of out) rows.push(...d);
+    /* Des fiches ajoutées pendant le chargement : on prend la suite */
+    for (let from = n * 1000, last = out[n - 1]; last.length === 1000; from += 1000) {
+      last = await page(from);
+      rows.push(...last);
     }
     return rows;
   },
@@ -163,7 +195,7 @@ const CLOUD = {
           for (const r of data) got.set(r.collection + '|' + r.id, r);
         }
       rows = idx.map(r => got.get(r.collection + '|' + r.id) || cm.get(r.collection + '|' + r.id)).filter(Boolean);
-    } else rows = await this.fetchAll('collection,id,data,rev');
+    } else rows = await this.fetchAll('collection,id,data,rev', (n, t) => typeof loadProgress === 'function' && loadProgress(n, t));
     IDB.set(this.cacheKey(), {rows, at: Date.now()});
     return this.build(rows);
   },

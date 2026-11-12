@@ -1599,3 +1599,15 @@ input:not([type=checkbox]):not([type=radio]):focus,select:focus,textarea:focus{o
   .btile:hover,.mh-card:hover{transform:none}
 }
 @media (max-width:760px){ .page-head h1{font-size:var(--t-2xl)} }
+/* Premier chargement d'un poste : on dit que ça charge, avec l'avancement */
+.loadcard{display:flex;align-items:flex-start;gap:14px;margin:0 0 16px;padding:16px 18px;border:1px solid var(--line);border-radius:var(--r-xl);background:var(--surface);box-shadow:var(--sh-1)}
+.loadcard > div{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0}
+.loadcard b{font-size:var(--t-lg)}
+.loadcard [data-loadtxt]{color:var(--muted);font-size:var(--t-md);font-variant-numeric:tabular-nums}
+.loadcard small{color:var(--muted);font-size:var(--t-sm)}
+.lbar{display:block;height:6px;border-radius:var(--r-pill);background:var(--sunk);overflow:hidden}
+.lbar > i{display:block;height:100%;width:8%;border-radius:inherit;background:var(--accent);transition:width .3s ease}
+.spin{flex:none;width:22px;height:22px;margin-top:2px;border-radius:50%;border:3px solid var(--accent-soft);border-top-color:var(--accent);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){ .spin{animation-duration:2.4s} }
+@media (min-width:761px) and (max-width:1279px){ .hero-art{left:auto;width:46%;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 40%);mask-image:linear-gradient(90deg,transparent,#000 40%)} .hero-art::after{display:none} }
