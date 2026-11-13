@@ -164,7 +164,8 @@ const CLOUD = {
   /* Toute la table (sauf le journal), par pages de 1000. Si la base donne le total, 4 pages partent en même temps
      (premier chargement d'un poste nettement plus rapide) et onProg(reçues, total) fait avancer la barre. */
   async fetchAll(cols, onProg) {
-    const page = async from => {
+    /* Une page ; base lente (délai dépassé) ou coupure brève : jusqu'à 3 nouveaux essais */
+    const page = async (from, essai = 0) => {
       const {data, error} = await this.sb
         .from('docs')
         .select(cols)
@@ -172,12 +173,19 @@ const CLOUD = {
         .order('collection')
         .order('id')
         .range(from, from + 999);
-      if (error) throw error;
+      if (error) {
+        if (essai < 3 && /timeout|57014|fetch|network|503|504/i.test(`${error.code || ''} ${error.message || ''}`)) {
+          await new Promise(r => setTimeout(r, 800 * (essai + 1)));
+          return page(from, essai + 1);
+        }
+        throw error;
+      }
       return data || [];
     };
     let total = null;
     try {
-      const {count, error} = await this.sb.from('docs').select('id', {count: 'exact', head: true}).neq('collection', 'journal');
+      /* Total estimé (instantané) : sert à la barre d'avancement et au nombre de pages ; la suite est rattrapée plus bas */
+      const {count, error} = await this.sb.from('docs').select('id', {count: 'estimated', head: true}).neq('collection', 'journal');
       if (!error && typeof count === 'number') total = count;
     } catch (e) {}
     const rows = [];
@@ -202,7 +210,7 @@ const CLOUD = {
         onProg?.(got, total);
       }
     };
-    await Promise.all(Array.from({length: Math.min(4, n)}, worker));
+    await Promise.all(Array.from({length: Math.min(3, n)}, worker));
     for (const d of out) rows.push(...d);
     /* Des fiches ajoutées pendant le chargement : on prend la suite */
     for (let from = n * 1000, last = out[n - 1]; last.length === 1000; from += 1000) {

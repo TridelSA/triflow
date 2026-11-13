@@ -266,6 +266,10 @@ async def main():
         await capture('planning-metier')
         await pg.evaluate("S.pmet = ''; render()")
         who = await pg.evaluate("db.personnes.find(p => p.nom === 'ALPHA').id"); mon = await pg.evaluate("S.pweek")
+        # Glisser un travail du panneau « À planifier » dans une case
+        tue = await pg.evaluate("isoAdd(S.pweek, 1)"); tid = await pg.evaluate("document.querySelector('.pside .ps-t[data-tid]').dataset.tid"); n_plan = await pg.evaluate("db.plan.length")
+        await pg.drag_and_drop(f'.pside .ps-t[data-tid="{tid}"]', f'.wkgrid .pc[data-who="{who}"][data-date="{tue}"]'); await pg.wait_for_timeout(1500)
+        ok(await pg.evaluate(f"db.plan.length === {n_plan} + 1 && db.plan.some(x => x.tacheId === '{tid}' && x.who === '{who}' && x.date === '{tue}') && !!document.querySelector('.wkgrid .pc[data-who=\"{who}\"][data-date=\"{tue}\"] .pit.task') && [...__srv.rows.values()].some(r => r.collection === 'plan' && r.data.tacheId === '{tid}')"), 'glisser un travail dans le planning : il reste dans la case et part dans la base')
         await pg.click(f'.wkgrid .pc[data-who="{who}"][data-date="{mon}"]'); await pg.keyboard.type('Texte de test'); await pg.keyboard.press('Enter'); await pg.wait_for_timeout(400)
         ok(await pg.evaluate(f"db.plan.some(x => x.who === '{who}' && x.text === 'Texte de test')"), 'saisie directe dans le planning')
         await aller("S.sel.pieces=null; go('pieces'); locDialog('')", 'dialogue-emplacements', 300)
@@ -296,6 +300,10 @@ async def main():
         await pg.wait_for_timeout(4000)
         ok(await pg.evaluate("!CLOUD.loading && !document.querySelector('.loadcard') && db.pieces.length > 0"), 'nouveau poste : données affichées une fois chargées')
         await pg.evaluate("localStorage.removeItem('__slow')")
+        # Base trop lente pendant la mise à jour en arrière-plan : la page (copie de l'appareil) reste, pas d'écran d'erreur
+        await pg.evaluate("localStorage.setItem('__fail', '1')"); await pg.reload(); await pg.wait_for_timeout(9000)
+        ok(await pg.evaluate("document.querySelector('#gate')?.hidden !== false && db.pieces.length > 0 && /Nouvel essai/.test(document.querySelector('#toast').textContent)"), 'base lente : la page reste affichée, nouvel essai automatique')
+        await pg.evaluate("localStorage.removeItem('__fail')")
         for w in (1024, 1366):
             await pg.set_viewport_size({'width': w, 'height': 768}); await pg.evaluate("go('accueil')"); await pg.wait_for_timeout(300); await capture(f'ordi-{w}-accueil')
             ok(await pg.evaluate("(() => { const n = document.querySelector('#nav').getBoundingClientRect(), h = document.querySelector('.help-btn').getBoundingClientRect(), t = document.querySelector('.hero-copy').getBoundingClientRect(); return n.right <= h.left && n.left >= t.right - 1 && document.documentElement.scrollWidth <= innerWidth; })()"), f'menu bien placé à {w} px de large')

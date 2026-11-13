@@ -83,25 +83,25 @@ drop policy if exists "gmao_lecture"     on public.docs;
 drop policy if exists "gmao_ajout"       on public.docs;
 drop policy if exists "gmao_modif"       on public.docs;
 drop policy if exists "gmao_suppression" on public.docs;
-create policy "gmao_lecture" on public.docs for select to authenticated using (public.tf_ok());
-create policy "gmao_ajout"   on public.docs for insert to authenticated with check (public.tf_ok());
+create policy "gmao_lecture" on public.docs for select to authenticated using ((select public.tf_ok()));
+create policy "gmao_ajout"   on public.docs for insert to authenticated with check ((select public.tf_ok()));
 create policy "gmao_modif"   on public.docs for update to authenticated
-  using (public.tf_ok() and (collection <> 'journal' or updated_by = auth.uid()))
-  with check (public.tf_ok());
+  using ((select public.tf_ok()) and (collection <> 'journal' or updated_by = (select auth.uid())))
+  with check ((select public.tf_ok()));
 create policy "gmao_suppression" on public.docs for delete to authenticated
   using (
-    public.tf_ok() and collection <> 'journal' and (public.is_cadre()
+    (select public.tf_ok()) and collection <> 'journal' and ((select public.is_cadre())
     or collection = 'plan'
-    or (updated_by = auth.uid() and updated_at > now() - interval '1 day'))
+    or (updated_by = (select auth.uid()) and updated_at > now() - interval '1 day'))
   );
 
 -- Photos : mêmes règles
 drop policy if exists "photos_lecture" on storage.objects;
-create policy "photos_lecture" on storage.objects for select to authenticated using (bucket_id = 'photos' and public.tf_ok());
+create policy "photos_lecture" on storage.objects for select to authenticated using (bucket_id = 'photos' and (select public.tf_ok()));
 drop policy if exists "photos_ajout" on storage.objects;
-create policy "photos_ajout" on storage.objects for insert to authenticated with check (bucket_id = 'photos' and public.tf_ok());
+create policy "photos_ajout" on storage.objects for insert to authenticated with check (bucket_id = 'photos' and (select public.tf_ok()));
 drop policy if exists "photos_effacement" on storage.objects;
-create policy "photos_effacement" on storage.objects for delete to authenticated using (bucket_id = 'photos' and public.is_cadre());
+create policy "photos_effacement" on storage.objects for delete to authenticated using (bucket_id = 'photos' and (select public.is_cadre()));
 
 -- ---------------------------------------------------------------------
 --  FACULTATIF : refuser l'inscription dès le départ pour les autres adresses

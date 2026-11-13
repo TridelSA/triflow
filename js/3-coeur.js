@@ -583,12 +583,14 @@ async function bootCloud() {
 async function startCloud(quiet = false) {
   CLOUD.loading = !quiet;
   if (!quiet) showSkeleton();
+  let shown = quiet;
   try {
     const {data: ss} = await CLOUD.sb.auth.getSession();
     CLOUD.user = ss?.session?.user || null;
     const cached = CLOUD.user ? await CLOUD.fromCache() : null;
     if (cached) {
       db = migrate(cached);
+      shown = true;
       CLOUD.loading = false;
       CLOUD.warming = true;
       hideGate();
@@ -662,6 +664,16 @@ async function startCloud(quiet = false) {
       toast('La base est vide : vous pouvez y envoyer les données de ce navigateur depuis Options › Connexion.');
   } catch (e) {
     CLOUD.loading = false;
+    /* La page fonctionne déjà (copie de l'appareil) : on la garde, on prévient, on réessaie tout seul */
+    if (shown) {
+      CLOUD.status('offline');
+      toast(
+        'Mise à jour depuis la base impossible pour l’instant : vous travaillez sur la copie de cet appareil. Nouvel essai dans 30 secondes.'
+      );
+      clearTimeout(CLOUD.retryT);
+      CLOUD.retryT = setTimeout(() => startCloud(true), 30000);
+      return;
+    }
     showGate(
       `<p>Chargement impossible : ${esc(e.message || e)}</p><button class="btn primary" onclick="location.reload()">Réessayer</button>`
     );
