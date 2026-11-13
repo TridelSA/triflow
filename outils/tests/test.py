@@ -194,6 +194,14 @@ async def main():
         await pg.evaluate("S.opt='compte'; go('options')"); await pg.wait_for_timeout(300)
         ok(await pg.evaluate("[...document.querySelectorAll('.prefs-t th')].some(th => /Planning de l.accueil/.test(th.textContent)) && /Électricien/.test($('.prefs-t').textContent)"), 'Mon compte : tableau des réglages')
         await pg.evaluate("setPref('accPlan', '')")
+        # Deux postes modifient la même fiche en même temps : fusion, sans recharger la page ni rien perdre
+        await pg.evaluate("""(() => { const k = 'config|main', r = __srv.rows.get(k); const d = JSON.parse(JSON.stringify(r.data)); d.reglages.qrBase = 'https://autre-poste.example/'; __srv.rows.set(k, {...r, data: d, rev: r.rev + 1});
+          const p = __srv.rows.get('pieces|p1'); const pd = JSON.parse(JSON.stringify(p.data)); pd.notes = 'note venue d’un autre poste'; __srv.rows.set('pieces|p1', {...p, data: pd, rev: p.rev + 1}); })()""")
+        await pg.evaluate("window.__reloads = 0; const la = CLOUD.loadAll.bind(CLOUD); CLOUD.loadAll = () => (window.__reloads++, la()); setPref('pside', false); tx(() => { getPiece('p1').stockMin = 3; })")
+        await pg.wait_for_timeout(1500)
+        ok(await pg.evaluate("""(() => { const c = __srv.rows.get('config|main').data, p = __srv.rows.get('pieces|p1').data;
+          return window.__reloads === 0 && c.reglages.qrBase === 'https://autre-poste.example/' && c.reglages.comptes[meKey()].pside === false && p.notes === 'note venue d’un autre poste' && p.stockMin === 3 && db.reglages.qrBase === 'https://autre-poste.example/'; })()"""), 'conflit entre deux postes : fusion sans rechargement ni perte')
+        await pg.evaluate("setPref('pside', true); tx(() => { db.reglages.qrBase = ''; getPiece('p1').stockMin = 2; getPiece('p1').notes = ''; })"); await pg.wait_for_timeout(800)
         print('Pages (ordinateur)')
         for js, nom in [("go('accueil')", 'accueil'), ("S.sel.pieces=null; go('pieces')", 'pieces'), ("go('pieces','p1')", 'piece'),
                         ("go('taches','t2')", 'travaux-afaire'), ("S.statut='actives'; go('interventions')", 'travaux-encours'),

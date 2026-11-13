@@ -75,6 +75,46 @@ const CLOUD = {
     } catch (e) {}
     return {url: (SUPABASE_URL || c.url || '').trim(), key: (SUPABASE_KEY || c.key || '').trim(), fixed: !!SUPABASE_URL};
   },
+  /* Fusion à trois : base = dernière version connue, local = ma version, remote = celle de la base.
+     Ce que j'ai changé l'emporte champ par champ ; le reste vient de la base (descend dans config › reglages › comptes). */
+  mergeDoc(base, local, remote, depth = 0) {
+    const obj = x => x && typeof x === 'object' && !Array.isArray(x);
+    const same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+    if (!obj(local) || !obj(remote)) return same(local, base) ? remote : local;
+    const out = {...remote};
+    for (const k of new Set([...Object.keys(local), ...Object.keys(obj(base) ? base : {})])) {
+      const lv = local[k],
+        bv = obj(base) ? base[k] : undefined;
+      if (same(lv, bv)) continue;
+      if (lv === undefined) delete out[k];
+      else out[k] = depth < 3 && obj(lv) && obj(remote[k]) ? this.mergeDoc(bv, lv, remote[k], depth + 1) : lv;
+    }
+    return out;
+  },
+  putLocal(c, v) {
+    if (c === 'config') Object.assign(db, {meta: v.meta, reglages: v.reglages, listes: v.listes});
+    else if (db[c]) {
+      const i = db[c].findIndex(x => x.id === v.id);
+      if (i >= 0) db[c][i] = v;
+      else db[c].push(v);
+    }
+  },
+  async resolve(c, id) {
+    const k = c + '|' + id;
+    const {data, error} = await this.sb.from('docs').select('collection,id,data,rev').eq('collection', c).in('id', [id]);
+    if (error) throw error;
+    const r = (data || [])[0],
+      base = this.synced.has(k) ? JSON.parse(this.synced.get(k)) : null,
+      local = this.docsOf(db).get(k);
+    if (!r) {
+      this.revs.delete(k);
+      this.synced.delete(k);
+      return;
+    }
+    this.revs.set(k, r.rev);
+    this.synced.set(k, JSON.stringify(r.data));
+    if (local) this.putLocal(c, this.mergeDoc(base, JSON.parse(JSON.stringify(local)), r.data));
+  },
   docsOf(d) {
     const m = new Map();
     for (const c of COLS) for (const x of d[c] || []) m.set(c + '|' + x.id, x);
@@ -268,6 +308,7 @@ const CLOUD = {
           jr = JRN.entries(changes, this.synced, this.auto);
         } catch (e) {}
         this.auto = false;
+        let conflict = false;
         for (let i = 0; i < changes.length; i += 400) {
           const part = changes.slice(i, i + 400);
           const payload = part.map(x => {
@@ -276,7 +317,17 @@ const CLOUD = {
           });
           const {error} = await this.sb.rpc('save_docs', {changes: payload});
           if (error) {
+            /* Même fiche modifiée ailleurs au même moment : on fusionne (ce que j'ai changé + ce que l'autre a changé)
+               et on renvoie, sans recharger toute la base ni perdre le reste du paquet */
+            const cm = /GMAO_CONFLIT (\S+?)\/(\S+)/.exec(error.message || '');
+            if (cm && (this.retry = (this.retry || 0) + 1) <= 6) {
+              await this.resolve(cm[1], cm[2]);
+              this.again = true;
+              conflict = true;
+              break;
+            }
             if (/GMAO_CONFLIT/.test(error.message || '')) {
+              this.retry = 0;
               const {d} = await this.loadAll();
               db = migrate(d);
               render();
@@ -300,9 +351,14 @@ const CLOUD = {
             }
           }
         }
-        JRN.write(jr);
+        if (!conflict) JRN.write(jr);
         jr = [];
+        if (conflict) {
+          clearTimeout(this.rt);
+          this.rt = setTimeout(() => render(), 60);
+        }
       } while (this.again);
+      this.retry = 0;
       this.status('ok');
       IDB.del(this.pendKey());
     } catch (e) {
@@ -331,15 +387,20 @@ const CLOUD = {
       if (db[row.collection]) db[row.collection] = db[row.collection].filter(x => x.id !== row.id);
     } else {
       if ((ev.new.rev || 0) <= (this.revs.get(k) || 0)) return;
+      const base = this.synced.has(k) ? JSON.parse(this.synced.get(k)) : null,
+        local = this.docsOf(db).get(k);
       this.revs.set(k, ev.new.rev);
       this.synced.set(k, JSON.stringify(ev.new.data));
-      if (row.collection === 'config')
-        Object.assign(db, {meta: ev.new.data.meta, reglages: ev.new.data.reglages, listes: ev.new.data.listes});
-      else if (db[row.collection]) {
+      if (row.collection === 'config') {
+        const m = local ? this.mergeDoc(base, JSON.parse(JSON.stringify(local)), ev.new.data) : ev.new.data;
+        Object.assign(db, {meta: m.meta, reglages: m.reglages, listes: m.listes});
+      } else if (db[row.collection]) {
         const arr = db[row.collection],
           i = arr.findIndex(x => x.id === row.id);
-        if (i >= 0) arr[i] = ev.new.data;
-        else row.collection === 'mouvements' ? arr.unshift(ev.new.data) : arr.push(ev.new.data);
+        const mine = local && base && JSON.stringify(local) !== JSON.stringify(base);
+        const v = mine ? this.mergeDoc(base, JSON.parse(JSON.stringify(local)), ev.new.data) : ev.new.data;
+        if (i >= 0) arr[i] = v;
+        else row.collection === 'mouvements' ? arr.unshift(v) : arr.push(v);
       }
     }
     clearTimeout(this.rt);

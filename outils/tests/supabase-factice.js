@@ -34,7 +34,7 @@ window.__srv = window.__srv || {rows:new Map(), handlers:[], session:null, rpcCa
       if (name === 'is_cadre') return window.__cadre === undefined ? {data:null, error:{message:'function is_cadre() does not exist'}} : {data: window.__cadre, error:null};
       const {changes} = args;
       S.rpcCalls++;
-      for (const c of changes){ const k = c.c + '|' + c.id; const cur = S.rows.get(k); if ((cur ? cur.rev : 0) !== (c.rev || 0)) return {error:{message:'GMAO_CONFLIT ' + k}}; }
+      for (const c of changes){ const k = c.c + '|' + c.id; const cur = S.rows.get(k); if ((cur ? cur.rev : 0) !== (c.rev || 0)) return {error:{message:'GMAO_CONFLIT ' + c.c + '/' + c.id}}; }
       for (const c of changes){ const k = c.c + '|' + c.id; const cur = S.rows.get(k);
         if (c.del) S.rows.delete(k); else S.rows.set(k, {collection:c.c, id:c.id, data:JSON.parse(JSON.stringify(c.data)), rev:(cur ? cur.rev : 0) + 1}); }
       persist(); return {error:null};

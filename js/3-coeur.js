@@ -579,9 +579,10 @@ async function bootCloud() {
   if (/type=signup/.test(h)) setTimeout(() => toast('Adresse confirmée : bienvenue dans TriFlow !'), 800);
   startCloud();
 }
-async function startCloud() {
-  CLOUD.loading = true;
-  showSkeleton();
+/* quiet = retour du réseau : la page reste affichée pendant la mise à jour (pas d'écran de chargement) */
+async function startCloud(quiet = false) {
+  CLOUD.loading = !quiet;
+  if (!quiet) showSkeleton();
   try {
     const {data: ss} = await CLOUD.sb.auth.getSession();
     CLOUD.user = ss?.session?.user || null;
@@ -691,7 +692,7 @@ async function goOffline(pend) {
 addEventListener('online', () => {
   if (CLOUD.offline) {
     CLOUD.offline = false;
-    startCloud();
+    startCloud(true);
   } else if (CLOUD.on && CLOUD.state !== 'ok') CLOUD.push();
 });
 /* Toute modification passe par tx() : si une étape échoue, rien n'est enregistré. */
