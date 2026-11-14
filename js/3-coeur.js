@@ -1855,6 +1855,134 @@ const PAGE_L = {
   options: 'Options',
   kks: 'Installation'
 };
+/* Météo du jour à Lausanne (Open-Meteo, gratuit, sans clé) : une icône dans la bande de la date, min / max au survol.
+   Gardée quelques heures sur l'appareil (simple copie, pas un réglage). */
+let METEO = null,
+  meteoBusy = false;
+const METEO_ICO = c =>
+  c === 0
+    ? ['☀️', 'ensoleillé']
+    : c <= 2
+      ? ['🌤️', 'peu nuageux']
+      : c === 3
+        ? ['☁️', 'couvert']
+        : c <= 48
+          ? ['🌫️', 'brouillard']
+          : c <= 57
+            ? ['🌦️', 'bruine']
+            : c <= 67
+              ? ['🌧️', 'pluie']
+              : c <= 77
+                ? ['🌨️', 'neige']
+                : c <= 82
+                  ? ['🌦️', 'averses']
+                  : c <= 86
+                    ? ['🌨️', 'averses de neige']
+                    : ['⛈️', 'orage'];
+async function loadMeteo() {
+  const day = todayISO();
+  if ((METEO?.day === day && Date.now() - METEO.at < 3600e3) || meteoBusy) return;
+  try {
+    const c = JSON.parse(localStorage.getItem('tf-meteo') || 'null');
+    if (c?.day === day && Date.now() - c.at < 3600e3) {
+      METEO = c;
+      return headBand();
+    }
+  } catch (e) {}
+  meteoBusy = true;
+  try {
+    const r = await fetch(
+      'https://api.open-meteo.com/v1/forecast?latitude=46.52&longitude=6.63&daily=weather_code,temperature_2m_max,temperature_2m_min&current=weather_code,is_day&timezone=Europe%2FZurich&forecast_days=1'
+    );
+    const j = await r.json();
+    METEO = {
+      day,
+      at: Date.now(),
+      code: j.daily.weather_code[0],
+      now: j.current?.weather_code ?? j.daily.weather_code[0],
+      isDay: j.current?.is_day,
+      min: j.daily.temperature_2m_min[0],
+      max: j.daily.temperature_2m_max[0]
+    };
+    try {
+      localStorage.setItem('tf-meteo', JSON.stringify(METEO));
+    } catch (e) {}
+    headBand();
+  } catch (e) {
+  } finally {
+    meteoBusy = false;
+  }
+}
+/* Phase de la lune (0 = nouvelle, 0,25 = premier quartier, 0,5 = pleine, 0,75 = dernier quartier) */
+const moonPhase = (d = new Date()) => ((((d.getTime() / 864e5 + 2440587.5 - 2451550.1) / 29.530588853) % 1) + 1) % 1;
+/* Dessin météo au-dessus de l'usine, même style plat que l'illustration : soleil ou vraie lune, nuages, pluie, neige… */
+function meteoSVG() {
+  const h = new Date().getHours(),
+    day = METEO?.isDay != null ? !!METEO.isDay : h >= 7 && h < 19,
+    c = METEO ? +(METEO.now ?? METEO.code) : 0;
+  const cloud = (x, y, s, o = 1) =>
+    `<g transform="translate(${x} ${y}) scale(${s})" opacity="${o}"><path d="M8 30h40a10 10 0 0 0 1-20 14 14 0 0 0-26-5A11 11 0 0 0 8 30z" fill="#F2F6FB"/><path d="M8 30h40" stroke="#C9D6E6" stroke-width="2" stroke-linecap="round"/></g>`;
+  let sky;
+  if (day)
+    sky = `<g transform="translate(34 28)"><circle r="13" fill="#FFD45A"/>${Array.from({length: 8}, (_, i) => `<line x1="0" y1="-18" x2="0" y2="-23" stroke="#FFD45A" stroke-width="3" stroke-linecap="round" transform="rotate(${i * 45})"/>`).join('')}</g>`;
+  else {
+    const p = moonPhase(),
+      r = 13,
+      k = Math.cos(2 * Math.PI * p),
+      rx = Math.abs(k) * r,
+      waxing = p < 0.5;
+    const lit =
+      p < 0.02 || p > 0.98
+        ? ''
+        : Math.abs(p - 0.5) < 0.02
+          ? `<circle r="${r}" fill="#EEF3F9"/>`
+          : waxing
+            ? `<path d="M0 ${-r}A${r} ${r} 0 0 1 0 ${r}A${rx.toFixed(2)} ${r} 0 0 ${k > 0 ? 0 : 1} 0 ${-r}Z" fill="#EEF3F9"/>`
+            : `<path d="M0 ${-r}A${r} ${r} 0 0 0 0 ${r}A${rx.toFixed(2)} ${r} 0 0 ${k > 0 ? 1 : 0} 0 ${-r}Z" fill="#EEF3F9"/>`;
+    sky = `<g transform="translate(34 28)"><circle r="${r}" fill="#FFFFFF" fill-opacity=".12"/>${lit}</g><g fill="#FFFFFF" opacity=".7"><circle cx="14" cy="12" r="1.3"/><circle cx="96" cy="10" r="1"/><circle cx="104" cy="34" r="1.2"/></g>`;
+  }
+  let wx = '';
+  if (c >= 1 && c <= 2) wx = cloud(52, 30, 0.72);
+  else if (c === 3) wx = cloud(14, 20, 0.62, 0.8) + cloud(46, 30, 0.82);
+  else if (c >= 45 && c <= 48)
+    wx = `<g stroke="#E3EAF3" stroke-width="4" stroke-linecap="round" opacity=".85"><line x1="22" y1="44" x2="96" y2="44"/><line x1="30" y1="54" x2="104" y2="54"/><line x1="18" y1="64" x2="84" y2="64"/></g>`;
+  else if (c >= 51) {
+    const snow = (c >= 71 && c <= 77) || c === 85 || c === 86,
+      storm = c >= 95;
+    wx =
+      cloud(42, 22, 0.9) +
+      (storm
+        ? '<path d="M64 52l-8 13h7l-4 11 12-15h-7l5-9z" fill="#FFD45A"/>'
+        : snow
+          ? '<g fill="#FFFFFF"><circle cx="46" cy="62" r="2.4"/><circle cx="60" cy="70" r="2.4"/><circle cx="74" cy="62" r="2.4"/><circle cx="88" cy="70" r="2.4"/></g>'
+          : '<g stroke="#9CC8F5" stroke-width="3" stroke-linecap="round"><line x1="46" y1="58" x2="42" y2="68"/><line x1="60" y1="60" x2="56" y2="70"/><line x1="74" y1="58" x2="70" y2="68"/><line x1="88" y1="60" x2="84" y2="70"/></g>');
+  }
+  return `<svg viewBox="0 0 120 80" width="120" height="80" aria-hidden="true">${sky}${wx}</svg>`;
+}
+function meteoTitle() {
+  if (!METEO) return '';
+  const [, txt] = METEO_ICO(+(METEO.now ?? METEO.code));
+  return `Lausanne : ${txt} · min ${Math.round(METEO.min)} °C, max ${Math.round(METEO.max)} °C`;
+}
+function meteoHero() {
+  if (!(METEO?.day === todayISO() && Date.now() - METEO.at < 3600e3)) setTimeout(loadMeteo, 0);
+  const hero = $('.hero');
+  if (!hero) return;
+  let w = $('#herowx');
+  if (!w) {
+    w = document.createElement('div');
+    w.id = 'herowx';
+    w.className = 'hero-wx';
+    hero.append(w);
+  }
+  const t = meteoTitle(),
+    html = meteoSVG();
+  if (w._h !== html) w.innerHTML = w._h = html;
+  w.title = t;
+  w.setAttribute('role', 'img');
+  w.setAttribute('aria-label', t || 'Météo');
+}
+const meteoHTML = () => (meteoHero(), '');
 function headBand() {
   const sub = $('#hsub');
   if (sub) sub.textContent = PAGE_L[S.view] || 'Maintenance Tridel';
@@ -1869,12 +1997,10 @@ function headBand() {
   const it = (f, tone, tag, v, l) =>
     `<span class="hb-sep" aria-hidden="true"></span><button class="hb-i ${v ? tone : ''}" data-act="hband" data-f="${f}"><span class="hb-t"><i></i>${tag}</span><b>${v}</b><span class="hb-w">${l}</span></button>`;
   b.innerHTML =
-    `<span class="hb-i hb-day"><span class="hb-t"><i></i>Aujourd’hui</span>${DAYN[(dt.getDay() + 6) % 7]} ${dt.getDate()} ${MOIS_L[dt.getMonth()]} <span class="muted">· sem. ${isoWeek(today)}</span></span>` +
-    (S.view === 'accueil'
-      ? ''
-      : it('retard', 'bad', 'En retard', ret, ret > 1 ? 'travaux' : 'travail') +
-        it('semaine', 'warn', 'Cette semaine', sem, sem > 1 ? 'travaux' : 'travail') +
-        it('low', 'warn', 'À commander', low, low > 1 ? 'pièces' : 'pièce'));
+    `<span class="hb-i hb-day">${meteoHTML()}${DAYN[(dt.getDay() + 6) % 7]} ${dt.getDate()} ${MOIS_L[dt.getMonth()]} <span class="muted">· sem. ${isoWeek(today)}</span></span>` +
+    it('retard', 'bad', 'En retard', ret, ret > 1 ? 'travaux' : 'travail') +
+    it('semaine', 'warn', 'Cette semaine', sem, sem > 1 ? 'travaux' : 'travail') +
+    it('low', 'warn', 'À commander', low, low > 1 ? 'pièces' : 'pièce');
 }
 function render() {
   contIdx = null;

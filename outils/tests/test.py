@@ -196,13 +196,15 @@ async def main():
         await capture('ordi-accueil-planning7')
         # Ajouter une personne à la main (ex. un cadre de plus) : elle rejoint « Mon équipe »
         await pg.evaluate("go('accueil'); accPlanDialog()"); await pg.wait_for_timeout(200)
-        await pg.fill('dialog[open] [data-apq]', 'juliett'); await pg.click('dialog[open] .ap-list label:not([hidden]) input'); await pg.click('dialog[open] .sp:has(input[name=ap][value=team])'); await pg.click('dialog[open] button[type=submit]'); await pg.wait_for_timeout(300)
+        await pg.click('dialog[open] .sp:has(input[name=ap][value=team])'); await pg.fill('dialog[open] [data-apq]', 'juliett'); await pg.click('dialog[open] .ap-list label:not([hidden]) input'); await pg.click('dialog[open] button[type=submit]'); await pg.wait_for_timeout(300)
         ok(await pg.evaluate("accPlan().ppl.some(p => p.nom === 'JULIETT') && /JULIETT/.test(document.querySelector('.bt-l .p7').textContent) && !document.querySelector('.p7-leg')"), 'accueil : personne ajoutée à la main dans Mon équipe, sans légende')
-        await pg.evaluate("setPref('accPlus', '')")
+        await pg.evaluate("accPlanDialog()"); await pg.wait_for_timeout(200)
+        ok(await pg.evaluate("document.querySelectorAll('dialog[open] input[name=pp]:checked').length === myTeam().length && [...document.querySelectorAll('dialog[open] input[name=pp]:checked')].some(x => getPers(x.value).nom === 'JULIETT')"), 'Qui afficher : les personnes de Mon équipe sont cochées')
+        await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close()); setPref('accTeam', null); setPref('accPlus', '')")
         await pg.evaluate("setPref('accPlan', '')")
         # Responsable de deux groupes : par défaut, l'accueil montre moi + mes deux groupes ensemble
         ok(await pg.evaluate("""(() => { const me = meId(); tx(() => { db.reglages.resp = {...(db.reglages.resp || {}), 'Électricien': me, 'Mécanicien': me}; });
-          const a = accPlan(), g = new Set(a.ppl.map(p => p.groupe)); const r = a.key === 'team' && g.has('Électricien') && g.has('Mécanicien') && a.ppl[0].id === me && /Électricien, Mécanicien/.test(a.label);
+          const a = accPlan(), g = new Set(a.ppl.map(p => p.groupe)); const r = a.key === 'team' && g.has('Électricien') && g.has('Mécanicien') && a.ppl[0].id === me && a.label === 'Mon équipe';
           tx(() => { delete db.reglages.resp['Électricien']; delete db.reglages.resp['Mécanicien']; }); return r; })()"""), 'accueil : responsable de 2 groupes → les deux groupes ensemble par défaut')
         # Deux postes modifient la même fiche en même temps : fusion, sans recharger la page ni rien perdre
         await pg.evaluate("""(() => { const k = 'config|main', r = __srv.rows.get(k); const d = JSON.parse(JSON.stringify(r.data)); d.reglages.qrBase = 'https://autre-poste.example/'; __srv.rows.set(k, {...r, data: d, rev: r.rev + 1});
@@ -212,6 +214,11 @@ async def main():
         ok(await pg.evaluate("""(() => { const c = __srv.rows.get('config|main').data, p = __srv.rows.get('pieces|p1').data;
           return window.__reloads === 0 && c.reglages.qrBase === 'https://autre-poste.example/' && c.reglages.comptes[meKey()].pside === false && p.notes === 'note venue d’un autre poste' && p.stockMin === 3 && db.reglages.qrBase === 'https://autre-poste.example/'; })()"""), 'conflit entre deux postes : fusion sans rechargement ni perte')
         await pg.evaluate("setPref('pside', true); tx(() => { db.reglages.qrBase = ''; getPiece('p1').stockMin = 2; getPiece('p1').notes = ''; })"); await pg.wait_for_timeout(800)
+        # Bande de la date : plus « Aujourd'hui », mais la météo de Lausanne (min / max au survol)
+        await pg.evaluate("METEO = {day: todayISO(), at: Date.now(), code: 2, now: 2, isDay: 1, min: 3.4, max: 9.6}; go('accueil')"); await pg.wait_for_timeout(200); await capture('meteo-jour')
+        ok(await pg.evaluate("!/Aujourd/.test(document.querySelector('#hband').textContent) && /min 3 °C, max 10 °C/.test(document.querySelector('#herowx')?.title || '') && !!document.querySelector('#herowx svg circle') && /En retard/.test(document.querySelector('#hband').textContent)"), 'météo dessinée dans le bandeau (min / max au survol), chiffres aussi sur l’accueil')
+        await pg.evaluate("METEO = {day: todayISO(), at: Date.now(), code: 61, now: 61, isDay: 0, min: 1, max: 5}; render()"); await pg.wait_for_timeout(200); await capture('meteo-nuit-pluie')
+        ok(await pg.evaluate("moonPhase(new Date('2026-11-24T12:00:00')) > 0.45 && moonPhase(new Date('2026-11-24T12:00:00')) < 0.55 && /#9CC8F5/.test(document.querySelector('#herowx').innerHTML)"), 'météo : lune dans sa vraie phase (pleine lune du 24.11.2026), pluie dessinée')
         print('Pages (ordinateur)')
         for js, nom in [("go('accueil')", 'accueil'), ("S.sel.pieces=null; go('pieces')", 'pieces'), ("go('pieces','p1')", 'piece'),
                         ("go('taches','t2')", 'travaux-afaire'), ("S.statut='actives'; go('interventions')", 'travaux-encours'),
@@ -226,7 +233,7 @@ async def main():
         ok(await pg.evaluate("document.querySelectorAll('.bento > .btile').length === 5 && !document.querySelector('.kpis')"), 'accueil : une carte par page')
         ok(await pg.evaluate("![...document.querySelectorAll('[data-act=scan]')].some(b => b.offsetParent) && !!document.querySelector('.md-scan.desk-only')?.offsetParent"), 'ordinateur : pas de Scanner, « Sortir une pièce » à la place')
         ok(await pg.evaluate("/Graissage/.test(document.querySelector('.bt-w')?.textContent || '')"), 'accueil : travaux urgents dans la carte Travaux')
-        ok(await pg.evaluate("/Aujourd/.test(document.querySelector('#hband')?.textContent || '') && document.querySelector('#hsub')?.textContent === 'Accueil'"), 'en-tête : nom de la page et bandeau du jour')
+        ok(await pg.evaluate("/sem\\. \\d+/.test(document.querySelector('#hband')?.textContent || '') && document.querySelector('#hsub')?.textContent === 'Accueil'"), 'en-tête : nom de la page et bandeau du jour')
         await pg.evaluate("document.querySelector('.bt-l .bt-go').click()"); await pg.wait_for_timeout(300)
         ok(await pg.evaluate("S.view === 'planning'"), 'accueil : la carte Planning ouvre le planning')
         await pg.evaluate("S.pour=''; go('accueil')")

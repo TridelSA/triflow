@@ -1744,3 +1744,9 @@ body:not([data-view=accueil]) .hero-art svg{opacity:.1}
 .ap-list legend{display:flex;align-items:center;gap:6px}
 .ap-list .chk{flex-direction:row !important;align-items:center;gap:8px;color:var(--ink);font-weight:500}
 .ap-list .chk input{width:auto;min-height:0}
+.ap-team{display:flex;flex-direction:column;gap:8px}.ap-team[hidden]{display:none}
+.hb-meteo{font-size:1.1rem;line-height:1;cursor:help;margin-right:2px}
+/* Météo dessinée au-dessus de l'usine (soleil / vraie lune, nuages, pluie…) ; min / max au survol */
+.hero-wx{position:absolute;right:64px;top:50%;transform:translateY(-50%);width:84px;height:56px;z-index:1;cursor:help}
+.hero-wx svg{width:100%;height:100%;display:block}
+@media (max-width:760px){ .hero-wx{display:none} }
