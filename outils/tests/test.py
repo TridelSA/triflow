@@ -216,9 +216,9 @@ async def main():
         await pg.evaluate("setPref('pside', true); tx(() => { db.reglages.qrBase = ''; getPiece('p1').stockMin = 2; getPiece('p1').notes = ''; })"); await pg.wait_for_timeout(800)
         # Bande de la date : plus « Aujourd'hui », mais la météo de Lausanne (min / max au survol)
         await pg.evaluate("METEO = {day: todayISO(), at: Date.now(), code: 2, now: 2, isDay: 1, min: 3.4, max: 9.6}; go('accueil')"); await pg.wait_for_timeout(200); await capture('meteo-jour')
-        ok(await pg.evaluate("!/Aujourd/.test(document.querySelector('#hband').textContent) && /min 3 °C, max 10 °C/.test(document.querySelector('#herowx')?.title || '') && !!document.querySelector('#herowx svg circle') && /En retard/.test(document.querySelector('#hband').textContent)"), 'météo dessinée dans le bandeau (min / max au survol), chiffres aussi sur l’accueil')
+        ok(await pg.evaluate("!/Aujourd/.test(document.querySelector('#hband').textContent) && !document.querySelector('#herowx')?.title && !!document.querySelector('.hero-art #herowx svg circle') && /En retard/.test(document.querySelector('#hband').textContent)"), 'météo dessinée dans l’illustration (sans survol), chiffres aussi sur l’accueil')
         await pg.evaluate("METEO = {day: todayISO(), at: Date.now(), code: 61, now: 61, isDay: 0, min: 1, max: 5}; render()"); await pg.wait_for_timeout(200); await capture('meteo-nuit-pluie')
-        ok(await pg.evaluate("moonPhase(new Date('2026-11-24T12:00:00')) > 0.45 && moonPhase(new Date('2026-11-24T12:00:00')) < 0.55 && /#9CC8F5/.test(document.querySelector('#herowx').innerHTML)"), 'météo : lune dans sa vraie phase (pleine lune du 24.11.2026), pluie dessinée')
+        ok(await pg.evaluate("moonPhase(new Date('2026-11-24T12:00:00')) > 0.45 && moonPhase(new Date('2026-11-24T12:00:00')) < 0.55 && /#B9D4F2/.test(document.querySelector('#herowx').innerHTML)"), 'météo : lune dans sa vraie phase (pleine lune du 24.11.2026), pluie dessinée')
         print('Pages (ordinateur)')
         for js, nom in [("go('accueil')", 'accueil'), ("S.sel.pieces=null; go('pieces')", 'pieces'), ("go('pieces','p1')", 'piece'),
                         ("go('taches','t2')", 'travaux-afaire'), ("S.statut='actives'; go('interventions')", 'travaux-encours'),

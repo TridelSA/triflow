@@ -1921,10 +1921,10 @@ function meteoSVG() {
     day = METEO?.isDay != null ? !!METEO.isDay : h >= 7 && h < 19,
     c = METEO ? +(METEO.now ?? METEO.code) : 0;
   const cloud = (x, y, s, o = 1) =>
-    `<g transform="translate(${x} ${y}) scale(${s})" opacity="${o}"><path d="M8 30h40a10 10 0 0 0 1-20 14 14 0 0 0-26-5A11 11 0 0 0 8 30z" fill="#F2F6FB"/><path d="M8 30h40" stroke="#C9D6E6" stroke-width="2" stroke-linecap="round"/></g>`;
+    `<g transform="translate(${x} ${y}) scale(${s})" opacity="${o}"><path d="M8 30h40a10 10 0 0 0 1-20 14 14 0 0 0-26-5A11 11 0 0 0 8 30z" fill="#E9F0F8"/><path d="M8 30h40" stroke="#B9CBE0" stroke-width="2" stroke-linecap="round"/></g>`;
   let sky;
   if (day)
-    sky = `<g transform="translate(34 28)"><circle r="13" fill="#FFD45A"/>${Array.from({length: 8}, (_, i) => `<line x1="0" y1="-18" x2="0" y2="-23" stroke="#FFD45A" stroke-width="3" stroke-linecap="round" transform="rotate(${i * 45})"/>`).join('')}</g>`;
+    sky = `<g transform="translate(34 28)"><circle r="13" fill="#F6E3A4"/>${Array.from({length: 8}, (_, i) => `<line x1="0" y1="-18" x2="0" y2="-23" stroke="#F6E3A4" stroke-width="3" stroke-linecap="round" transform="rotate(${i * 45})"/>`).join('')}</g>`;
   else {
     const p = moonPhase(),
       r = 13,
@@ -1955,7 +1955,7 @@ function meteoSVG() {
         ? '<path d="M64 52l-8 13h7l-4 11 12-15h-7l5-9z" fill="#FFD45A"/>'
         : snow
           ? '<g fill="#FFFFFF"><circle cx="46" cy="62" r="2.4"/><circle cx="60" cy="70" r="2.4"/><circle cx="74" cy="62" r="2.4"/><circle cx="88" cy="70" r="2.4"/></g>'
-          : '<g stroke="#9CC8F5" stroke-width="3" stroke-linecap="round"><line x1="46" y1="58" x2="42" y2="68"/><line x1="60" y1="60" x2="56" y2="70"/><line x1="74" y1="58" x2="70" y2="68"/><line x1="88" y1="60" x2="84" y2="70"/></g>');
+          : '<g stroke="#B9D4F2" stroke-width="3" stroke-linecap="round"><line x1="46" y1="58" x2="42" y2="68"/><line x1="60" y1="60" x2="56" y2="70"/><line x1="74" y1="58" x2="70" y2="68"/><line x1="88" y1="60" x2="84" y2="70"/></g>');
   }
   return `<svg viewBox="0 0 120 80" width="120" height="80" aria-hidden="true">${sky}${wx}</svg>`;
 }
@@ -1966,7 +1966,7 @@ function meteoTitle() {
 }
 function meteoHero() {
   if (!(METEO?.day === todayISO() && Date.now() - METEO.at < 3600e3)) setTimeout(loadMeteo, 0);
-  const hero = $('.hero');
+  const hero = $('.hero-art');
   if (!hero) return;
   let w = $('#herowx');
   if (!w) {
@@ -1975,12 +1975,9 @@ function meteoHero() {
     w.className = 'hero-wx';
     hero.append(w);
   }
-  const t = meteoTitle(),
-    html = meteoSVG();
+  const html = meteoSVG();
   if (w._h !== html) w.innerHTML = w._h = html;
-  w.title = t;
-  w.setAttribute('role', 'img');
-  w.setAttribute('aria-label', t || 'Météo');
+  w.setAttribute('aria-hidden', 'true');
 }
 const meteoHTML = () => (meteoHero(), '');
 function headBand() {

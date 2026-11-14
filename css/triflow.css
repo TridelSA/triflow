@@ -1750,3 +1750,9 @@ body:not([data-view=accueil]) .hero-art svg{opacity:.1}
 .hero-wx{position:absolute;right:64px;top:50%;transform:translateY(-50%);width:84px;height:56px;z-index:1;cursor:help}
 .hero-wx svg{width:100%;height:100%;display:block}
 @media (max-width:760px){ .hero-wx{display:none} }
+/* Illustration Tridel plus visible mais fondue dans le bleu ; la météo fait partie du dessin (même traitement), sans survol */
+@media (min-width:761px){
+  .hero-art svg,body:not([data-view=accueil]) .hero-art svg{opacity:.34;filter:saturate(.2) brightness(1.12);mix-blend-mode:screen}
+  .hero-art .hero-wx{position:absolute;right:228px;top:3px;bottom:auto;left:auto;transform:none;width:66px;height:44px;cursor:default;pointer-events:none}
+  .hero-art .hero-wx svg{position:static;width:100%;height:100%;opacity:.62;filter:saturate(.55);mix-blend-mode:screen}
+}
