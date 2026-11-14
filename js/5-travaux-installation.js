@@ -18,7 +18,7 @@ function travauxShell() {
   const t = S.view === 'taches';
   return `<header class="page-head"><h1>Travaux</h1><div class="tools">${searchBox(t ? 'taches' : 'interventions', t ? 'Rechercher un travail…' : 'Rechercher un rapport…')}
     ${t ? `<button class="btn primary" data-act="new-tache">${icon('plus')}Nouveau travail</button>` : `<button class="btn primary" data-act="new-int">${icon('plus')}Nouveau rapport</button>`}
-    ${menu(t ? [['signal', 'Signaler un problème', 'bell', {}], ['new-int', 'Nouveau rapport sans travail prévu', 'report', {}], ['print-taches', 'Imprimer la liste', 'printer', {}], ['xl-taches', 'Exporter en Excel', 'excel', {}], '-', archItem('taches')] : [['xl-ints', 'Exporter en Excel', 'excel', {}], archItem('interventions'), ...(canDel() ? ['-', ['import-travaux', 'Importer depuis CareOffice', 'save', {}]] : [])])}</div></header>
+    ${menu(t ? [['signal', 'Signaler un problème', 'bell', {}], ['new-int', 'Nouveau rapport sans travail prévu', 'report', {}], ['print-taches', 'Imprimer la liste', 'printer', {}], ['xl-taches', 'Exporter en Excel', 'excel', {}], '-', archItem('taches')] : [['xl-ints', 'Exporter en Excel', 'excel', {}], archItem('interventions')])}</div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`;
 }
 const doneOn = (t, d) => db.interventions.some(i => i.tacheId === t.id && i.date === d) || (t.faits || []).some(f => f.date === d);

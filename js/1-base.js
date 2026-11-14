@@ -121,6 +121,7 @@ const fmtDT = s =>
 
 /* ---------------- Icônes ---------------- */
 const ICONS = {
+  trash: 'M4 7h16M10 11v6M14 11v6M9 7V4h6v3M6 7l1 13h10l1-13',
   check: 'M5 12.5l4.5 4.5L19 7.5',
   repeat: 'M4 11V9a3 3 0 013-3h12M16 3l3 3-3 3M20 13v2a3 3 0 01-3 3H5M8 21l-3-3 3-3',
   home: 'M3 11l9-7 9 7M5 9.5V20h14V9.5M10 20v-6h4v6',
@@ -164,6 +165,13 @@ const ICONS = {
   tag: 'M3 12V4h8l10 10-8 8zM7.5 7.5h.5'
 };
 let menuSeq = 0;
+/* Bouton outil : icône seule, son nom en bulle (même format qu'une entrée de menu : [action, nom, icône, données]) */
+const toolBtn = (it, cls = '') =>
+  it
+    ? `<button type="button" class="btn icon-only small tool ${cls}" data-act="${it[0]}" ${Object.entries(it[3] || {})
+        .map(([k, v]) => `data-${k}="${esc(v)}"`)
+        .join(' ')} title="${esc(it[1])}" aria-label="${esc(it[1])}">${icon(it[2])}</button>`
+    : '';
 function menu(items, label = 'Plus', ic = 'more', cls = '') {
   const id = 'menu-' + ++menuSeq;
   return `<div class="menu"><button type="button" class="btn ${cls}" data-act="menu" aria-haspopup="menu" aria-expanded="false" aria-controls="${id}">${icon(ic)}${label}<svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="menu-list" id="${id}" role="menu" hidden>${items

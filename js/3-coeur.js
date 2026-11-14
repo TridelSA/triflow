@@ -1282,7 +1282,7 @@ const HARD_LBL = {
   pieces: ['la pièce', 'Son historique de stock est aussi effacé.'],
   interventions: ['le rapport', 'Les pièces qu’il a consommées sont remises en stock.']
 };
-const hardItem = (col, id) => (canDel() ? ['hard-del', 'Supprimer définitivement', 'out', {col, id}] : null);
+const hardItem = (col, id) => (canDel() ? ['hard-del', 'Supprimer définitivement', 'trash', {col, id}] : null);
 const archDel = (col, x, hard) =>
   x.arch
     ? canDel()
@@ -1915,19 +1915,33 @@ async function loadMeteo() {
 }
 /* Phase de la lune (0 = nouvelle, 0,25 = premier quartier, 0,5 = pleine, 0,75 = dernier quartier) */
 const moonPhase = (d = new Date()) => ((((d.getTime() / 864e5 + 2440587.5 - 2451550.1) / 29.530588853) % 1) + 1) % 1;
-/* Dessin météo au-dessus de l'usine, même style plat que l'illustration : soleil ou vraie lune, nuages, pluie, neige… */
+/* Météo dessinée dans le ciel de l'illustration de l'usine (bande de 560 × 64, calée à droite du bandeau) :
+   nuages longs et étirés qui passent DERRIÈRE les bâtiments, soleil ou vraie lune à droite de la cheminée,
+   mêmes tons pâles que le dessin. Pas de survol. */
 function meteoSVG() {
   const h = new Date().getHours(),
     day = METEO?.isDay != null ? !!METEO.isDay : h >= 7 && h < 19,
     c = METEO ? +(METEO.now ?? METEO.code) : 0;
-  const cloud = (x, y, s, o = 1) =>
-    `<g transform="translate(${x} ${y}) scale(${s})" opacity="${o}"><path d="M8 30h40a10 10 0 0 0 1-20 14 14 0 0 0-26-5A11 11 0 0 0 8 30z" fill="#E9F0F8"/><path d="M8 30h40" stroke="#B9CBE0" stroke-width="2" stroke-linecap="round"/></g>`;
+  /* nuage étiré : une longue base arrondie et deux bosses */
+  const cloud = (x, y, w, hh, o) => {
+    /* base arrondie + bosses réparties sur toute la longueur (plus grandes au milieu) */
+    const n = Math.max(2, Math.round(w / (hh * 1.4))),
+      vary = [0.82, 1, 0.7, 0.92, 0.76],
+      bumps = Array.from({length: n}, (_, i) => {
+        const t = (i + 0.5) / n,
+          r = hh * (0.4 + 0.26 * Math.sin(Math.PI * t)) * vary[i % vary.length];
+        return `<circle cx="${(x + w * t).toFixed(1)}" cy="${(y + hh - r * 0.95).toFixed(1)}" r="${r.toFixed(1)}"/>`;
+      }).join('');
+    return `<g fill="#EAF1F9" opacity="${o}"><rect x="${x}" y="${y + hh * 0.42}" width="${w}" height="${hh * 0.58}" rx="${hh * 0.29}"/>${bumps}</g>`;
+  };
+  const SX = 452,
+    SY = 16;
   let sky;
   if (day)
-    sky = `<g transform="translate(34 28)"><circle r="13" fill="#F6E3A4"/>${Array.from({length: 8}, (_, i) => `<line x1="0" y1="-18" x2="0" y2="-23" stroke="#F6E3A4" stroke-width="3" stroke-linecap="round" transform="rotate(${i * 45})"/>`).join('')}</g>`;
+    sky = `<g transform="translate(${SX} ${SY})" opacity=".85"><circle r="16" fill="#F4E2A6" opacity=".25"/><circle r="10" fill="#F6E7B4"/></g>`;
   else {
     const p = moonPhase(),
-      r = 13,
+      r = 9,
       k = Math.cos(2 * Math.PI * p),
       rx = Math.abs(k) * r,
       waxing = p < 0.5;
@@ -1939,25 +1953,26 @@ function meteoSVG() {
           : waxing
             ? `<path d="M0 ${-r}A${r} ${r} 0 0 1 0 ${r}A${rx.toFixed(2)} ${r} 0 0 ${k > 0 ? 0 : 1} 0 ${-r}Z" fill="#EEF3F9"/>`
             : `<path d="M0 ${-r}A${r} ${r} 0 0 0 0 ${r}A${rx.toFixed(2)} ${r} 0 0 ${k > 0 ? 1 : 0} 0 ${-r}Z" fill="#EEF3F9"/>`;
-    sky = `<g transform="translate(34 28)"><circle r="${r}" fill="#FFFFFF" fill-opacity=".12"/>${lit}</g><g fill="#FFFFFF" opacity=".7"><circle cx="14" cy="12" r="1.3"/><circle cx="96" cy="10" r="1"/><circle cx="104" cy="34" r="1.2"/></g>`;
+    sky = `<g transform="translate(${SX} ${SY})" opacity=".9"><circle r="15" fill="#EEF3F9" opacity=".08"/><circle r="${r}" fill="#FFFFFF" opacity=".1"/>${lit}</g><g fill="#FFFFFF" opacity=".55"><circle cx="372" cy="9" r=".9"/><circle cx="508" cy="13" r=".8"/><circle cx="410" cy="34" r=".7"/><circle cx="246" cy="14" r=".8"/></g>`;
   }
   let wx = '';
-  if (c >= 1 && c <= 2) wx = cloud(52, 30, 0.72);
-  else if (c === 3) wx = cloud(14, 20, 0.62, 0.8) + cloud(46, 30, 0.82);
+  if (c >= 1 && c <= 2) wx = cloud(378, 6, 84, 16, 0.5);
+  else if (c === 3) wx = cloud(250, 4, 110, 16, 0.38) + cloud(380, 8, 120, 18, 0.52);
   else if (c >= 45 && c <= 48)
-    wx = `<g stroke="#E3EAF3" stroke-width="4" stroke-linecap="round" opacity=".85"><line x1="22" y1="44" x2="96" y2="44"/><line x1="30" y1="54" x2="104" y2="54"/><line x1="18" y1="64" x2="84" y2="64"/></g>`;
+    wx = `<g stroke="#EAF1F9" stroke-linecap="round" opacity=".32"><line x1="150" y1="30" x2="540" y2="30" stroke-width="5"/><line x1="200" y1="41" x2="560" y2="41" stroke-width="6"/><line x1="120" y1="52" x2="500" y2="52" stroke-width="5"/></g>`;
   else if (c >= 51) {
     const snow = (c >= 71 && c <= 77) || c === 85 || c === 86,
       storm = c >= 95;
+    const fall = snow
+      ? `<g fill="#FFFFFF" opacity=".55">${[228, 262, 300, 338, 380, 418, 456, 494].map((x, i) => `<circle cx="${x}" cy="${40 + (i % 3) * 7}" r="1.6"/>`).join('')}</g>`
+      : `<g stroke="#D7E6F6" stroke-width="1.6" stroke-linecap="round" opacity=".45">${[226, 252, 278, 304, 330, 356, 382, 408, 434, 460, 486].map((x, i) => `<line x1="${x}" y1="${36 + (i % 2) * 6}" x2="${x - 5}" y2="${50 + (i % 2) * 6}"/>`).join('')}</g>`;
     wx =
-      cloud(42, 22, 0.9) +
-      (storm
-        ? '<path d="M64 52l-8 13h7l-4 11 12-15h-7l5-9z" fill="#FFD45A"/>'
-        : snow
-          ? '<g fill="#FFFFFF"><circle cx="46" cy="62" r="2.4"/><circle cx="60" cy="70" r="2.4"/><circle cx="74" cy="62" r="2.4"/><circle cx="88" cy="70" r="2.4"/></g>'
-          : '<g stroke="#B9D4F2" stroke-width="3" stroke-linecap="round"><line x1="46" y1="58" x2="42" y2="68"/><line x1="60" y1="60" x2="56" y2="70"/><line x1="74" y1="58" x2="70" y2="68"/><line x1="88" y1="60" x2="84" y2="70"/></g>');
+      cloud(222, 2, 150, 20, 0.42) +
+      cloud(364, 5, 150, 21, 0.55) +
+      fall +
+      (storm ? '<path d="M420 30l-7 11h6l-4 10 11-14h-6l5-7z" fill="#F6E7B4" opacity=".8"/>' : '');
   }
-  return `<svg viewBox="0 0 120 80" width="120" height="80" aria-hidden="true">${sky}${wx}</svg>`;
+  return `<svg viewBox="0 0 560 64" preserveAspectRatio="xMaxYMin meet" aria-hidden="true">${sky}${wx}</svg>`;
 }
 function meteoTitle() {
   if (!METEO) return '';
@@ -1973,7 +1988,7 @@ function meteoHero() {
     w = document.createElement('div');
     w.id = 'herowx';
     w.className = 'hero-wx';
-    hero.append(w);
+    hero.prepend(w);
   }
   const html = meteoSVG();
   if (w._h !== html) w.innerHTML = w._h = html;

@@ -90,7 +90,7 @@ VIEWS.accueil = {
           )
           .join(
             ''
-          )}</tbody></table></div>${ppl.length > rowsP.length ? `<p class="bt-txt muted">et ${nbs(ppl.length - rowsP.length, "autre personne", "autres personnes")} : voir le planning.</p>` : ''}`
+          )}</tbody></table></div>${ppl.length > rowsP.length ? `<p class="bt-txt muted">et ${nbs(ppl.length - rowsP.length, 'autre personne', 'autres personnes')} : voir le planning.</p>` : ''}`
       : '<p class="bt-empty">Personne.</p>';
     const planning = `<section class="btile bt-l">${head('planning', 'calendar', 'Planning', 'l')}
       <p class="bt-txt p7-who"><strong>${esc(ap.short || ap.label)}</strong><button class="link" data-act="acc-plan">Changer</button></p>
@@ -255,9 +255,12 @@ const stockBar = (p, big = false) => {
 };
 VIEWS.pieces = {
   shell:
-    () => `<header class="q7age-head"><h1>Pièces</h1><div class="tools">${searchBox('pieces', 'Rechercher une pièce…')}<button class="btn icon-only no-desk" data-act="scan" title="Scanner un QR code" aria-label="Scanner un QR code">${icon('scan')}</button><button class="btn primary" data-act="new-piece">${icon('plus')}Nouvelle pièce</button>
-    ${menu([['to-order', 'Pièces à commander', 'truck', {}], ['xl-pieces', 'Exporter en Excel', 'excel', {}], ['labels-list', 'Imprimer les étiquettes QR', 'qr', {}], '-', archItem('pieces'), ...(canDel() ? ['-', ['dups', 'Trouver les doublons', 'merge', {}], ['import-pieces', 'Importer depuis CareOffice', 'save', {}], ['import-histo', 'Importer l’historique du stock (CareOffice)', 'save', {}]] : [])])}</div></header>
-    <div class="split"><section class="q7ane" id="list"></section><section class="q7ane detail" id="detail"></section></div>`,
+    () => `<header class="page-head"><h1>Pièces</h1><div class="tools">${searchBox('pieces', 'Rechercher une pièce…')}<button class="btn icon-only no-desk" data-act="scan" title="Scanner un QR code" aria-label="Scanner un QR code">${icon('scan')}</button><button class="btn primary" data-act="new-piece">${icon('plus')}Nouvelle pièce</button>
+    ${(() => {
+      const n = db.pieces.filter(p => live(p) && isLow(p)).length;
+      return `<button class="btn" data-act="to-order">${icon('truck')}À commander${n ? ` <span class="badge">${n}</span>` : ''}</button>`;
+    })()}</div></header>
+    <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list() {
     const rows = filteredPieces();
     if (!db.pieces.length) return empty('Aucune pièce', '<p>Créez la première avec « Nouvelle pièce ».</p>');
@@ -289,7 +292,7 @@ VIEWS.pieces = {
               `<p>Essayez un autre mot, ou scannez l’étiquette.</p><button class="btn no-desk" data-act="scan">${icon('scan')}Scanner</button>`
             ))
       );
-    const more = `${chips}<div class="list-bar"><span class="muted">${nbs(rows.length, 'pièce', 'pièces')}</span><span class="lb-r lb-sort"><label>Trier<select class="mini" data-change="psort" aria-label="Trier les pièces">${[
+    const more = `${chips}<div class="list-bar"><span class="muted">${nbs(rows.length, 'pièce', 'pièces')}</span><span class="lb-r lb-tools">${toolBtn(['xl-pieces', 'Exporter en Excel', 'excel', {}])}${toolBtn(['labels-list', 'Imprimer les étiquettes QR', 'qr', {}])}${canDel() ? toolBtn(['dups', 'Trouver les doublons', 'merge', {}]) : ''}${toolBtn(archItem('pieces'))}</span><span class="lb-r lb-sort"><label>Trier<select class="mini" data-change="psort" aria-label="Trier les pièces">${[
       ['iddesc', 'Par ID (décroissant)'],
       ['id', 'Par ID (croissant)'],
       ['alpha', 'Alphabétique'],
@@ -339,7 +342,7 @@ VIEWS.pieces = {
         return acc;
       }, []);
     const low = p.stockMin > 0 && dispo(p) < p.stockMin;
-    return `<button class="btn small m-only back-list" data-act="desel">${icon('chev')}Liste des pièces</button>${archBanner('pieces', p)}<div class="pd-head"><span class="pd-id">ID ${esc(p.ref)}</span><div class="pd-tools"><button class="btn small" data-act="edit-piece" data-id="${p.id}">${icon('edit')}Modifier</button>${menu([['add-place', 'Ajouter un emplacement', 'shelf', {id: p.id}], ['labels-one', 'Imprimer l’étiquette QR', 'qr', {id: p.id}], ['print-piece', 'Imprimer la fiche', 'printer', {id: p.id}], '-', p.arch ? ['unarch', 'Restaurer la pièce', 'archive', {col: 'pieces', id: p.id}] : ['arch', 'Archiver la pièce', 'archive', {col: 'pieces', id: p.id}], hardItem('pieces', p.id)].filter(Boolean), 'Plus', 'more', 'small')}</div></div>
+    return `<button class="btn small m-only back-list" data-act="desel">${icon('chev')}Liste des pièces</button>${archBanner('pieces', p)}<div class="pd-head"><span class="pd-id">ID ${esc(p.ref)}</span><div class="pd-tools"><button class="btn small" data-act="edit-piece" data-id="${p.id}">${icon('edit')}Modifier</button>${toolBtn(['add-place', 'Ajouter un emplacement', 'shelf', {id: p.id}])}${toolBtn(['labels-one', 'Imprimer l’étiquette QR', 'qr', {id: p.id}])}${toolBtn(['print-piece', 'Imprimer la fiche', 'printer', {id: p.id}])}${toolBtn(p.arch ? ['unarch', 'Restaurer la pièce', 'archive', {col: 'pieces', id: p.id}] : ['arch', 'Archiver la pièce', 'archive', {col: 'pieces', id: p.id}])}${toolBtn(hardItem('pieces', p.id), 'danger-ghost')}</div></div>
       <div class="pd-hero">${p.photos?.length ? `<span class="pd-ph">${photoImg(p.photos[0].path)}</span>` : `<span class="pd-ph none">${icon('box')}</span>`}<div class="pd-hl">
         <h2 class="pd-title">${esc(p.designation)}</h2>
         ${p.fabricant || p.refFab ? `<p class="pd-sub">${esc(p.fabricant || '')}${p.refFab ? ` <span class="muted">· réf.</span> <span class="mono">${esc(p.refFab)}</span>` : ''}</p>` : ''}</div></div>
@@ -665,8 +668,8 @@ function lieuTree(ls, act, selId) {
 }
 VIEWS.lieux = {
   shell:
-    () => `<header class="q7age-head"><h1>Emplacements</h1><div class="tools">${searchBox('lieux', 'Filtrer : code, salle ou pièce rangée…')}${menu([['new-lieu', 'Nouvel emplacement', 'plus', {}], ['new-salle', 'Nouveau local', 'plus', {}], ['gen-series', 'Plusieurs emplacements d’un coup', 'list', {}], '-', ['arch-view', S.arch.lieux ? 'Revenir à la liste' : 'Voir les archives', 'archive', {v: 'lieux'}]])}</div></header>
-    <div class="split"><section class="q7ane" id="list"></section><section class="q7ane detail" id="detail"></section></div>`,
+    () => `<header class="page-head"><h1>Emplacements</h1><div class="tools">${searchBox('lieux', 'Filtrer : code, salle ou pièce rangée…')}${menu([['new-lieu', 'Nouvel emplacement', 'plus', {}], ['new-salle', 'Nouveau local', 'plus', {}], ['gen-series', 'Plusieurs emplacements d’un coup', 'list', {}], '-', ['arch-view', S.arch.lieux ? 'Revenir à la liste' : 'Voir les archives', 'archive', {v: 'lieux'}]])}</div></header>
+    <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list() {
     if (!db.salles.length)
       return empty('Aucun emplacement défini', '<p>Les salles et emplacements se créent dans Options › Emplacements.</p>');

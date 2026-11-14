@@ -1496,7 +1496,6 @@ OPT.fournisseurs = () => {
   return `<section class="opt-sec"><div class="head"><h2>Fournisseurs <span class="muted" style="font-family:var(--f-mono);font-size:.9rem">${db.listes.fournisseurs.length}</span></h2><div class="tools">${menu(
     [
       ['new-four', 'Un fournisseur', 'plus'],
-      ['import-four', 'Importer depuis CareOffice (fichier)', 'save'],
       ['link-four', 'Relier les pièces aux fournisseurs', 'repeat']
     ],
     'Ajouter',
