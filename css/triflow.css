@@ -1737,3 +1737,10 @@ body:not([data-view=accueil]) .hero-art svg{opacity:.1}
   .nav button:focus-visible{outline:2px solid #fff;outline-offset:1px}
 }
 .hb-day .hb-t i{background:var(--accent)}
+.p7-who{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0}
+.ap-list{display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow:auto}
+.ap-list fieldset{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 10px}
+.ap-list fieldset[hidden],.ap-list label[hidden]{display:none}
+.ap-list legend{display:flex;align-items:center;gap:6px}
+.ap-list .chk{flex-direction:row !important;align-items:center;gap:8px;color:var(--ink);font-weight:500}
+.ap-list .chk input{width:auto;min-height:0}

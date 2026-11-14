@@ -187,13 +187,18 @@ async def main():
         # Case Planning de l'accueil : qui afficher
         await pg.evaluate("S.opt='accueil'; go('options')"); await pg.wait_for_timeout(300)
         await capture('ordi-options-accueil')
-        await pg.select_option('select[data-change=accPlan]', 'g:Électricien'); await pg.wait_for_timeout(300)
+        await pg.evaluate("accPlanDialog()"); await pg.wait_for_timeout(200); await pg.click('dialog[open] .sp:has(input[name=ap][value="g:Électricien"])'); await pg.click('dialog[open] button[type=submit]'); await pg.wait_for_timeout(300)
         await pg.evaluate("go('accueil')"); await pg.wait_for_timeout(400)
-        ok(await pg.evaluate("accPlan().label === 'Électricien' && document.querySelectorAll('.bt-l .p7 tbody tr').length > 0 && document.querySelectorAll('.bt-l .p7 thead th').length === 8 && /Auj/.test(document.querySelector('.bt-l .p7 thead th.today').textContent) && !!document.querySelector('.bt-l .p7-leg')"), 'accueil : planning d’un corps de métier, 7 jours dès aujourd’hui, présence écrite')
+        ok(await pg.evaluate("accPlan().label === 'Électricien' && document.querySelectorAll('.bt-l .p7 tbody tr').length > 0 && document.querySelectorAll('.bt-l .p7 thead th').length === 8 && /Auj/.test(document.querySelector('.bt-l .p7 thead th.today').textContent)"), 'accueil : planning d’un corps de métier, 7 jours dès aujourd’hui, présence écrite')
         ok(await pg.evaluate("db.reglages.comptes[meKey()].accPlan === 'g:Électricien' && !db.reglages.accPlan"), 'réglages du compte : gardés avec le compte (tous les appareils)')
         await pg.evaluate("S.opt='compte'; go('options')"); await pg.wait_for_timeout(300)
         ok(await pg.evaluate("[...document.querySelectorAll('.prefs-t th')].some(th => /Planning de l.accueil/.test(th.textContent)) && /Électricien/.test($('.prefs-t').textContent)"), 'Mon compte : tableau des réglages')
         await capture('ordi-accueil-planning7')
+        # Ajouter une personne à la main (ex. un cadre de plus) : elle rejoint « Mon équipe »
+        await pg.evaluate("go('accueil'); accPlanDialog()"); await pg.wait_for_timeout(200)
+        await pg.fill('dialog[open] [data-apq]', 'juliett'); await pg.click('dialog[open] .ap-list label:not([hidden]) input'); await pg.click('dialog[open] .sp:has(input[name=ap][value=team])'); await pg.click('dialog[open] button[type=submit]'); await pg.wait_for_timeout(300)
+        ok(await pg.evaluate("accPlan().ppl.some(p => p.nom === 'JULIETT') && /JULIETT/.test(document.querySelector('.bt-l .p7').textContent) && !document.querySelector('.p7-leg')"), 'accueil : personne ajoutée à la main dans Mon équipe, sans légende')
+        await pg.evaluate("setPref('accPlus', '')")
         await pg.evaluate("setPref('accPlan', '')")
         # Responsable de deux groupes : par défaut, l'accueil montre moi + mes deux groupes ensemble
         ok(await pg.evaluate("""(() => { const me = meId(); tx(() => { db.reglages.resp = {...(db.reglages.resp || {}), 'Électricien': me, 'Mécanicien': me}; });

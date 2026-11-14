@@ -69,6 +69,7 @@ const ACT = {
     render();
   },
   'plan-hide': () => planHideDialog(),
+  'acc-plan': () => accPlanDialog(),
   pvue(d) {
     setPref('planVue', d.v === 'all' ? '' : d.v);
     render();

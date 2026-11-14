@@ -90,12 +90,10 @@ VIEWS.accueil = {
           )
           .join(
             ''
-          )}</tbody></table></div>${ppl.length > rowsP.length ? `<p class="bt-txt muted">et ${ppl.length - rowsP.length} autres : voir le planning.</p>` : ''}
-        <p class="p7-leg"><span class="q7p">✓</span>présent<span class="q7t">2</span>travaux notés<span class="q7a">CA</span>absent (code du planning)</p>`
+          )}</tbody></table></div>${ppl.length > rowsP.length ? `<p class="bt-txt muted">et ${nbs(ppl.length - rowsP.length, "autre personne", "autres personnes")} : voir le planning.</p>` : ''}`
       : '<p class="bt-empty">Personne.</p>';
     const planning = `<section class="btile bt-l">${head('planning', 'calendar', 'Planning', 'l')}
-      <div class="bt-n"><b>${here == null ? '–' : here}</b><span>${here == null ? 'présences en chargement' : plural(here, 'présent aujourd’hui', 'présents aujourd’hui')}</span></div>
-      <p class="bt-txt"><strong>${esc(ap.label)}</strong> · 7 prochains jours <button class="link" data-act="opt" data-sec="compte">Changer</button></p>
+      <p class="bt-txt p7-who"><strong>${esc(ap.short || ap.label)}</strong><button class="link" data-act="acc-plan">Changer</button></p>
       ${grid}
       <div class="bt-foot"><button class="btn small" data-act="nav" data-view="planning">${icon('calendar')}<span>Préparer<span class="d-inline"> et imprimer</span></span></button></div></section>`;
     /* Rapports */

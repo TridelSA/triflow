@@ -121,9 +121,8 @@ const planVueKey = () => pref('planVue', 'all');
 function planVueFilter(list) {
   const k = planVueKey();
   if (k === 'team') {
-    const gs = myGroups(),
-      me = meId();
-    return gs.length ? list.filter(p => p.id === me || gs.includes(p.groupe)) : list;
+    const ids = new Set(myTeam().map(p => p.id));
+    return ids.size > 1 ? list.filter(p => ids.has(p.id)) : list;
   }
   if (k.startsWith('g:')) return list.filter(p => p.groupe === k.slice(2));
   return list;
@@ -134,7 +133,7 @@ function planVueChips() {
     hide = planHide(),
     grps = db.listes.groupes.filter(g => !hide.g.has(g) && db.personnes.some(p => p.groupe === g && p.actif !== false && live(p)));
   const chip = (v, l) => `<button class="ychip" data-act="pvue" data-v="${esc(v)}" aria-pressed="${k === v}">${l}</button>`;
-  return `<div class="fchips pvue" role="group" aria-label="Qui afficher">${chip('all', 'Tout le monde')}${gs.length ? chip('team', 'Mon équipe') : ''}<span class="ysep" aria-hidden="true"></span>${grps.map(g => chip('g:' + g, `${mdot(metOf(g))}${esc(g)}`)).join('')}</div>`;
+  return `<div class="fchips pvue" role="group" aria-label="Qui afficher">${chip('all', 'Tout le monde')}${gs.length || myPlus().length ? chip('team', 'Mon équipe') : ''}<span class="ysep" aria-hidden="true"></span>${grps.map(g => chip('g:' + g, `${mdot(metOf(g))}${esc(g)}`)).join('')}</div>`;
 }
 function planHide() {
   const h = db.reglages.planHide;
@@ -253,32 +252,83 @@ function myGroups() {
     .map(([g]) => g);
   return resp.length ? resp : me.groupe && !NOFILTER_GRP.includes(me.groupe) ? [me.groupe] : [];
 }
-/* Par défaut : mon équipe (moi + mes groupes, tous ensemble) ; 'all' = tout le monde */
-const accPlanKey = () => pref('accPlan', '') || (myGroups().length ? 'team' : 'all');
+/* Personnes ajoutées à la main à « Mon équipe » (ex. un cadre de plus), gardées avec le compte */
+const myPlus = () => (pref('accPlus', []) || []).filter(id => getPers(id));
+/* Mon équipe = moi + mes groupes + les personnes ajoutées */
+function myTeam() {
+  const me = meId() && getPers(meId()),
+    gs = myGroups(),
+    plus = new Set(myPlus()),
+    all = db.personnes.filter(p => live(p) && p.actif !== false).sort(persSort);
+  return all
+    .filter(p => p.id === me?.id || gs.includes(p.groupe) || plus.has(p.id))
+    .sort(
+      (a, b) =>
+        (a.id === me?.id ? -1 : b.id === me?.id ? 1 : 0) ||
+        plus.has(a.id) - plus.has(b.id) ||
+        gs.indexOf(a.groupe) - gs.indexOf(b.groupe) ||
+        persSort(a, b)
+    );
+}
+/* Par défaut : mon équipe ; 'all' = tout le monde ; 'pick' = seulement les personnes cochées */
+const accPlanKey = () => pref('accPlan', '') || (myGroups().length || myPlus().length ? 'team' : 'all');
 function accPlan() {
   const key = accPlanKey(),
     me = meId() && getPers(meId()),
     all = db.personnes.filter(p => live(p) && p.actif !== false).sort(persSort);
-  if (key === 'me' && me) return {key, label: persName(me), ppl: [me]};
-  if (key === 'team') {
-    const gs = myGroups();
-    if (gs.length)
-      return {
-        key,
-        label: `Mon équipe (${gs.join(', ')})`,
-        ppl: all
-          .filter(p => p.id === me?.id || gs.includes(p.groupe))
-          .sort((a, b) => (a.id === me?.id ? -1 : b.id === me?.id ? 1 : 0) || gs.indexOf(a.groupe) - gs.indexOf(b.groupe) || persSort(a, b))
-      };
+  if (key === 'me' && me) return {key, label: persName(me), short: 'Moi', ppl: [me]};
+  if (key === 'pick') {
+    const plus = myPlus();
+    return {key, label: 'Personnes choisies', short: 'Personnes choisies', ppl: plus.map(getPers).filter(Boolean)};
   }
-  if (key.startsWith('g:')) return {key, label: key.slice(2), ppl: all.filter(p => p.groupe === key.slice(2))};
-  return {key: 'all', label: 'Tout le monde', ppl: all};
+  if (key === 'team' && (myGroups().length || myPlus().length)) {
+    const gs = myGroups();
+    return {key, label: `Mon équipe (${gs.join(', ')})`, short: 'Mon équipe', ppl: myTeam()};
+  }
+  if (key.startsWith('g:')) return {key, label: key.slice(2), short: key.slice(2), ppl: all.filter(p => p.groupe === key.slice(2))};
+  return {key: 'all', label: 'Tout le monde', short: 'Tout le monde', ppl: all};
+}
+/* Choisir qui afficher : pastilles + personnes à cocher (ajoutées à Mon équipe, ou seules) */
+function accPlanDialog() {
+  const k = accPlanKey(),
+    plus = new Set(myPlus()),
+    gs = myGroups(),
+    grps = db.listes.groupes.filter(g => db.personnes.some(p => p.groupe === g && p.actif !== false && live(p))),
+    ppl = db.personnes.filter(p => live(p) && p.actif !== false).sort(persSort);
+  dialog({
+    title: 'Qui afficher ?',
+    saveLabel: 'Enregistrer',
+    body: `<div class="pills" role="radiogroup" aria-label="Afficher">${sp('ap', 'team', 'Mon équipe', k)}${sp('ap', 'pick', 'Seulement les personnes cochées', k)}${sp('ap', 'all', 'Tout le monde', k)}${meId() ? sp('ap', 'me', 'Moi', k) : ''}${grps.map(g => sp('ap', 'g:' + g, `${mdot(metOf(g))}${esc(g)}`, k)).join('')}</div>
+      <p class="hint">${gs.length ? `Mon équipe = moi + ${esc(gs.join(', '))} + les personnes cochées ci-dessous.` : 'Mon équipe = moi + les personnes cochées ci-dessous.'}</p>
+      <input type="search" data-apq placeholder="Chercher une personne…" aria-label="Chercher une personne">
+      <div class="ap-list">${grps
+        .map(g => {
+          const l = ppl.filter(p => p.groupe === g);
+          return l.length
+            ? `<fieldset data-g><legend>${mdot(metOf(g))}${esc(g)}</legend>${l.map(p => `<label class="chk" data-n="${esc(norm(persName(p)))}"><input type="checkbox" name="pp" value="${p.id}" ${plus.has(p.id) ? 'checked' : ''}> ${esc(persName(p))}</label>`).join('')}</fieldset>`
+            : '';
+        })
+        .join('')}</div>`,
+    onOpen(f, d) {
+      $('[data-apq]', d).addEventListener('input', e => {
+        const q = norm(e.target.value);
+        $$('.ap-list label', d).forEach(l => (l.hidden = !!q && !l.dataset.n.includes(q)));
+        $$('.ap-list fieldset', d).forEach(fs => (fs.hidden = !$$('label:not([hidden])', fs).length));
+      });
+    },
+    onSave(f) {
+      const v = f.querySelector('input[name=ap]:checked')?.value || 'team',
+        ids = $$('input[name=pp]:checked', f).map(x => x.value);
+      if (v === 'pick' && !ids.length) throw new Error('Cochez au moins une personne.');
+      setPref('accPlus', ids.length ? ids : '');
+      setPref('accPlan', v);
+      render();
+      toast('Accueil : ' + accPlan().label);
+    }
+  });
 }
 function accPlanSelect() {
-  const k = accPlanKey(),
-    gs = myGroups(),
-    grps = db.listes.groupes.filter(g => db.personnes.some(p => p.groupe === g && p.actif !== false && live(p)));
-  return `<label>Planning de l’accueil : afficher<select data-change="accPlan">${gs.length ? opt('team', `Mon équipe (${gs.join(', ')})`, k) : ''}${opt('all', 'Tout le monde', k)}${meId() ? opt('me', 'Moi seulement', k) : ''}<optgroup label="Un corps de métier">${grps.map(g => opt('g:' + g, g, k)).join('')}</optgroup></select></label>`;
+  return `<p>Planning de l’accueil : <strong>${esc(accPlan().label)}</strong>${myPlus().length ? ` · ${nbs(myPlus().length, 'personne ajoutée', 'personnes ajoutées')}` : ''}</p><button class="btn" data-act="acc-plan">${icon('person')}Choisir qui afficher</button>`;
 }
 /* Disponible ce jour-là (R, PIQ, EN, PI, CA, PO…) : case blanche, sans code */
 const isDispo = code => !!code && (DISPO.has(code) || ['on', 'piq'].includes((PCODE[code] || [])[1]));
@@ -1313,6 +1363,7 @@ const OPT = {};
 /* Tableau des réglages du compte : libellé et valeur lisible de chaque réglage connu */
 const PREFS = {
   accPlan: ['Planning de l’accueil', () => accPlan().label],
+  accPlus: ['Personnes ajoutées à mon équipe', v => (Array.isArray(v) ? v.map(id => persName(getPers(id) || {nom: '?'})).join(', ') : '')],
   planVue: ['Personnes visibles au planning', v => (v === 'all' ? 'Tout le monde' : v === 'team' ? 'Mon équipe' : String(v).slice(2))],
   pside: ['Liste « À planifier » du planning', v => (v ? 'Ouverte' : 'Fermée')],
   bienvenue: ['Message de bienvenue', () => 'Déjà vu']
