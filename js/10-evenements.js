@@ -69,6 +69,10 @@ const ACT = {
     render();
   },
   'plan-hide': () => planHideDialog(),
+  pvue(d) {
+    setPref('planVue', d.v === 'all' ? '' : d.v);
+    render();
+  },
   navplus(d, t) {
     const s2 = $('#navsheet');
     s2.hidden = !s2.hidden;

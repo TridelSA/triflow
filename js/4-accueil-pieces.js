@@ -68,29 +68,35 @@ VIEWS.accueil = {
       ppl = ap.ppl,
       pids = new Set(ppl.map(p => p.id));
     const here = presOk ? ppl.filter(p => isDispo(presOf(p, today)?.code)).length : null;
-    const nw = planWeek(),
-      days = [0, 1, 2, 3, 4].map(n => isoAdd(nw, n)),
-      cnt = days.map(d => db.plan.filter(x => x.date === d && (ap.key === 'all' || pids.has(x.who))).length),
-      placed = cnt.reduce((a, b) => a + b, 0);
-    /* Aujourd'hui, pour les personnes choisies (Options › Connexion) : ce qui est noté, ou l'absence */
-    const todayRows =
-      ap.key !== 'all'
-        ? ppl
-            .slice(0, 14)
-            .map(p => {
-              const it = db.plan
-                  .filter(x => x.who === p.id && x.date === today)
-                  .map(x => (x.tacheId ? get('taches', x.tacheId)?.titre : x.text) || ''),
-                pr = presOk ? presOf(p, today) : null,
-                abs = pr && pr.code && !isDispo(pr.code) ? (PCODE[pr.code] || [pr.code])[0] : '';
-              return `<li><span class="t">${esc(persName(p))}</span><span class="br-r ${abs ? 'muted' : ''}">${esc(abs || it.filter(Boolean).join(' · ') || '—')}</span></li>`;
-            })
-            .join('')
-        : '';
+    /* Les 7 prochains jours, aujourd'hui à gauche : présence écrite dans chaque case (✓ présent, code d'absence, ou nombre de choses notées) */
+    const d7 = Array.from({length: 7}, (_, i) => isoAdd(today, i)),
+      DJ = ['di', 'lu', 'ma', 'me', 'je', 've', 'sa'];
+    const rowsP = ppl.slice(0, ap.key === 'all' ? 10 : 16);
+    const cell = (p, d) => {
+      const items = db.plan.filter(x => x.who === p.id && x.date === d),
+        txt = items.map(x => (x.tacheId ? get('taches', x.tacheId)?.titre : x.text) || '').filter(Boolean),
+        code = presOk ? presOf(p, d)?.code || '' : '',
+        we = [0, 6].includes(new Date(d + 'T12:00:00').getDay());
+      if (code && !isDispo(code)) return `<td class="q7a${we ? ' we' : ''}" title="${esc((PCODE[code] || [code])[0])}">${esc(code)}</td>`;
+      if (items.length) return `<td class="q7t" title="${esc(txt.join(' · ') || 'Noté au planning')}">${items.length}</td>`;
+      if (code) return `<td class="q7p" title="Présent">✓</td>`;
+      return `<td class="q7n${we ? ' we' : ''}" title="${presOk ? 'Rien d’indiqué' : 'Présences en chargement'}">·</td>`;
+    };
+    const grid = rowsP.length
+      ? `<div class="p7-wrap"><table class="p7"><thead><tr><th></th>${d7.map((d, i) => `<th class="${i === 0 ? 'today' : ''}">${i === 0 ? 'Auj.' : DJ[new Date(d + 'T12:00:00').getDay()]}<small>${+d.slice(8)}</small></th>`).join('')}</tr></thead><tbody>${rowsP
+          .map(
+            p =>
+              `<tr><th title="${esc(persName(p))}${p.groupe ? ' · ' + esc(p.groupe) : ''}">${esc(p.nom || persName(p))}</th>${d7.map(d => cell(p, d)).join('')}</tr>`
+          )
+          .join(
+            ''
+          )}</tbody></table></div>${ppl.length > rowsP.length ? `<p class="bt-txt muted">et ${ppl.length - rowsP.length} autres : voir le planning.</p>` : ''}
+        <p class="p7-leg"><span class="q7p">✓</span>présent<span class="q7t">2</span>travaux notés<span class="q7a">CA</span>absent (code du planning)</p>`
+      : '<p class="bt-empty">Personne.</p>';
     const planning = `<section class="btile bt-l">${head('planning', 'calendar', 'Planning', 'l')}
-      <div class="bt-n"><b>${here == null ? '–' : here}</b><span>${here == null ? 'présences en chargement' : plural(here, 'présent aujourd’hui', 'présents aujourd’hui')} · semaine ${isoWeek(nw)} : <strong>${placed}</strong> ${plural(placed, 'case remplie', 'cases remplies')}</span></div>
-      ${ap.key !== 'all' ? `<p class="bt-txt"><strong>${esc(ap.label)}</strong> · aujourd’hui <button class="link" data-act="opt" data-sec="compte">Changer</button></p>${todayRows ? `<ul class="bt-plist">${todayRows}</ul>` : '<p class="bt-empty">Personne.</p>'}` : ''}
-      <div class="bt-week">${days.map((d, i) => `<div><span>${DAYS[i].slice(0, 3)}</span><b class="${cnt[i] ? 'on' : ''}">${cnt[i] || ''}</b></div>`).join('')}</div>
+      <div class="bt-n"><b>${here == null ? '–' : here}</b><span>${here == null ? 'présences en chargement' : plural(here, 'présent aujourd’hui', 'présents aujourd’hui')}</span></div>
+      <p class="bt-txt"><strong>${esc(ap.label)}</strong> · 7 prochains jours <button class="link" data-act="opt" data-sec="compte">Changer</button></p>
+      ${grid}
       <div class="bt-foot"><button class="btn small" data-act="nav" data-view="planning">${icon('calendar')}<span>Préparer<span class="d-inline"> et imprimer</span></span></button></div></section>`;
     /* Rapports */
     const mon = isoAdd(today, -((new Date(today + 'T12:00:00').getDay() + 6) % 7));
@@ -175,7 +181,7 @@ VIEWS.accueil = {
       const dt = new Date(today + 'T12:00:00'),
         ini = mp ? ((mp.prenom || '')[0] || '') + ((mp.nom || '')[0] || '') : '';
       return `<div class="mhome">
-        <div class="mh-top"><img class="mh-logo" src="icon-192.png?v=202611142153" alt="TriFlow" width="34" height="34"><button class="mh-av" data-act="navplus" aria-label="Plus">${esc(ini.toUpperCase() || '…')}</button></div>
+        <div class="mh-top"><img class="mh-logo" src="icon-192.png?v=202611142214" alt="TriFlow" width="34" height="34"><button class="mh-av" data-act="navplus" aria-label="Plus">${esc(ini.toUpperCase() || '…')}</button></div>
         <h1 class="mh-h">Bonjour${mp ? ' ' + esc(mp.prenom || niceName(mp.nom || persName(mp))) : ''}</h1>
         <p class="mh-date">${DAYN[(dt.getDay() + 6) % 7]} ${dt.getDate()} ${MOIS_L[dt.getMonth()]} · semaine ${isoWeek(today)}</p>
         ${mp ? `<section class="mh-card"><p class="mh-lbl">Au planning aujourd’hui</p><div class="md-plan">${absent ? '<span class="md-it abs">Pas au planning aujourd’hui</span>' : items.length ? items.map(it).join('') : '<span class="muted">Rien de noté pour aujourd’hui.</span>'}</div></section>` : ''}
@@ -251,9 +257,9 @@ const stockBar = (p, big = false) => {
 };
 VIEWS.pieces = {
   shell:
-    () => `<header class="page-head"><h1>Pièces</h1><div class="tools">${searchBox('pieces', 'Rechercher une pièce…')}<button class="btn icon-only no-desk" data-act="scan" title="Scanner un QR code" aria-label="Scanner un QR code">${icon('scan')}</button><button class="btn primary" data-act="new-piece">${icon('plus')}Nouvelle pièce</button>
+    () => `<header class="q7age-head"><h1>Pièces</h1><div class="tools">${searchBox('pieces', 'Rechercher une pièce…')}<button class="btn icon-only no-desk" data-act="scan" title="Scanner un QR code" aria-label="Scanner un QR code">${icon('scan')}</button><button class="btn primary" data-act="new-piece">${icon('plus')}Nouvelle pièce</button>
     ${menu([['to-order', 'Pièces à commander', 'truck', {}], ['xl-pieces', 'Exporter en Excel', 'excel', {}], ['labels-list', 'Imprimer les étiquettes QR', 'qr', {}], '-', archItem('pieces'), ...(canDel() ? ['-', ['dups', 'Trouver les doublons', 'merge', {}], ['import-pieces', 'Importer depuis CareOffice', 'save', {}], ['import-histo', 'Importer l’historique du stock (CareOffice)', 'save', {}]] : [])])}</div></header>
-    <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
+    <div class="split"><section class="q7ane" id="list"></section><section class="q7ane detail" id="detail"></section></div>`,
   list() {
     const rows = filteredPieces();
     if (!db.pieces.length) return empty('Aucune pièce', '<p>Créez la première avec « Nouvelle pièce ».</p>');
@@ -661,8 +667,8 @@ function lieuTree(ls, act, selId) {
 }
 VIEWS.lieux = {
   shell:
-    () => `<header class="page-head"><h1>Emplacements</h1><div class="tools">${searchBox('lieux', 'Filtrer : code, salle ou pièce rangée…')}${menu([['new-lieu', 'Nouvel emplacement', 'plus', {}], ['new-salle', 'Nouveau local', 'plus', {}], ['gen-series', 'Plusieurs emplacements d’un coup', 'list', {}], '-', ['arch-view', S.arch.lieux ? 'Revenir à la liste' : 'Voir les archives', 'archive', {v: 'lieux'}]])}</div></header>
-    <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
+    () => `<header class="q7age-head"><h1>Emplacements</h1><div class="tools">${searchBox('lieux', 'Filtrer : code, salle ou pièce rangée…')}${menu([['new-lieu', 'Nouvel emplacement', 'plus', {}], ['new-salle', 'Nouveau local', 'plus', {}], ['gen-series', 'Plusieurs emplacements d’un coup', 'list', {}], '-', ['arch-view', S.arch.lieux ? 'Revenir à la liste' : 'Voir les archives', 'archive', {v: 'lieux'}]])}</div></header>
+    <div class="split"><section class="q7ane" id="list"></section><section class="q7ane detail" id="detail"></section></div>`,
   list() {
     if (!db.salles.length)
       return empty('Aucun emplacement défini', '<p>Les salles et emplacements se créent dans Options › Emplacements.</p>');

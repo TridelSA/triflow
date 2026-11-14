@@ -116,6 +116,26 @@ const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 
 const dayLbl = iso =>
   `${DAYN[(new Date(iso + 'T12:00:00').getDay() + 6) % 7].toLowerCase()} ${+iso.slice(8)} ${MOIS[+iso.slice(5, 7) - 1]}`;
 /* Personnes masquées du planning : réglage commun à tous (Options partagées). Par défaut : équipes de rotation, administration et la dernière personne de la liste. */
+/* Qui voir dans la grille du planning : choix personnel (pastilles au-dessus de la grille), gardé avec le compte */
+const planVueKey = () => pref('planVue', 'all');
+function planVueFilter(list) {
+  const k = planVueKey();
+  if (k === 'team') {
+    const gs = myGroups(),
+      me = meId();
+    return gs.length ? list.filter(p => p.id === me || gs.includes(p.groupe)) : list;
+  }
+  if (k.startsWith('g:')) return list.filter(p => p.groupe === k.slice(2));
+  return list;
+}
+function planVueChips() {
+  const k = planVueKey(),
+    gs = myGroups(),
+    hide = planHide(),
+    grps = db.listes.groupes.filter(g => !hide.g.has(g) && db.personnes.some(p => p.groupe === g && p.actif !== false && live(p)));
+  const chip = (v, l) => `<button class="ychip" data-act="pvue" data-v="${esc(v)}" aria-pressed="${k === v}">${l}</button>`;
+  return `<div class="fchips pvue" role="group" aria-label="Qui afficher">${chip('all', 'Tout le monde')}${gs.length ? chip('team', 'Mon équipe') : ''}<span class="ysep" aria-hidden="true"></span>${grps.map(g => chip('g:' + g, `${mdot(metOf(g))}${esc(g)}`)).join('')}</div>`;
+}
 function planHide() {
   const h = db.reglages.planHide;
   if (h) return {g: new Set(h.g || []), p: new Set(h.p || [])};
@@ -211,7 +231,7 @@ function planPeople(withLeave = false) {
     mon = S.pweek || planWeek();
   const P = PLANS[mon.slice(0, 4)],
     ord = n => P?.order.get(String(n).toUpperCase()) ?? 999;
-  const all = db.personnes.filter(p => live(p) && p.actif !== false && !hide.g.has(p.groupe || '') && !hide.p.has(p.id));
+  const all = planVueFilter(db.personnes.filter(p => live(p) && p.actif !== false && !hide.g.has(p.groupe || '') && !hide.p.has(p.id)));
   planPeople.conge = all.filter(p => enConge(p, mon));
   return all
     .filter(p => withLeave || !planPeople.conge.includes(p))
@@ -231,7 +251,7 @@ function myGroups() {
   const resp = Object.entries(db.reglages.resp || {})
     .filter(([, v]) => v === me.id)
     .map(([g]) => g);
-  return resp.length ? resp : me.groupe ? [me.groupe] : [];
+  return resp.length ? resp : me.groupe && !NOFILTER_GRP.includes(me.groupe) ? [me.groupe] : [];
 }
 /* Par défaut : mon équipe (moi + mes groupes, tous ensemble) ; 'all' = tout le monde */
 const accPlanKey = () => pref('accPlan', '') || (myGroups().length ? 'team' : 'all');
@@ -354,7 +374,8 @@ VIEWS.planning = {
             ? `<span class="chip ok plan-ready" title="Imprimée le ${fmtDT(r.at)}">${icon('check')}Prête${getPers(r.by) ? ' · ' + esc(getPers(r.by).nom) : ''}</span>`
             : '';
         })()}
-        ${menu([['plan-hide', 'Personnes affichées', 'person', {}]])}</div></header>
+        ${menu([['plan-hide', 'Masquer des personnes (pour tous)', 'person', {}]])}</div></header>
+      ${planVueChips()}
       <div class="ptip-row"><p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez une case et tapez le travail : <b>Entrée</b> valide, <b>Tab</b> passe au jour suivant, <b>⋯</b> pour plus de choix.</p>${planLegend()}</div>
       <div class="pwrap ${S.pside ? '' : 'noside'}"><div class="wkgrid-wrap"><table class="wkgrid"><thead><tr><th></th>${days.map((d, i) => `<th class="${d === today ? 'today' : ''}">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>${S.pside ? planSideHTML(days, ppl) : ''}</div>
       ${
@@ -1292,6 +1313,7 @@ const OPT = {};
 /* Tableau des réglages du compte : libellé et valeur lisible de chaque réglage connu */
 const PREFS = {
   accPlan: ['Planning de l’accueil', () => accPlan().label],
+  planVue: ['Personnes visibles au planning', v => (v === 'all' ? 'Tout le monde' : v === 'team' ? 'Mon équipe' : String(v).slice(2))],
   pside: ['Liste « À planifier » du planning', v => (v ? 'Ouverte' : 'Fermée')],
   bienvenue: ['Message de bienvenue', () => 'Déjà vu']
 };

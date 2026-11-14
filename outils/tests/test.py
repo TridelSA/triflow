@@ -189,10 +189,11 @@ async def main():
         await capture('ordi-options-accueil')
         await pg.select_option('select[data-change=accPlan]', 'g:Électricien'); await pg.wait_for_timeout(300)
         await pg.evaluate("go('accueil')"); await pg.wait_for_timeout(400)
-        ok(await pg.evaluate("accPlan().label === 'Électricien' && document.querySelectorAll('.bt-l .bt-plist li').length > 0"), 'accueil : planning d’un corps de métier choisi')
+        ok(await pg.evaluate("accPlan().label === 'Électricien' && document.querySelectorAll('.bt-l .p7 tbody tr').length > 0 && document.querySelectorAll('.bt-l .p7 thead th').length === 8 && /Auj/.test(document.querySelector('.bt-l .p7 thead th.today').textContent) && !!document.querySelector('.bt-l .p7-leg')"), 'accueil : planning d’un corps de métier, 7 jours dès aujourd’hui, présence écrite')
         ok(await pg.evaluate("db.reglages.comptes[meKey()].accPlan === 'g:Électricien' && !db.reglages.accPlan"), 'réglages du compte : gardés avec le compte (tous les appareils)')
         await pg.evaluate("S.opt='compte'; go('options')"); await pg.wait_for_timeout(300)
         ok(await pg.evaluate("[...document.querySelectorAll('.prefs-t th')].some(th => /Planning de l.accueil/.test(th.textContent)) && /Électricien/.test($('.prefs-t').textContent)"), 'Mon compte : tableau des réglages')
+        await capture('ordi-accueil-planning7')
         await pg.evaluate("setPref('accPlan', '')")
         # Responsable de deux groupes : par défaut, l'accueil montre moi + mes deux groupes ensemble
         ok(await pg.evaluate("""(() => { const me = meId(); tx(() => { db.reglages.resp = {...(db.reglages.resp || {}), 'Électricien': me, 'Mécanicien': me}; });
