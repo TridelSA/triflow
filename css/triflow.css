@@ -1658,3 +1658,32 @@ input:not([type=checkbox]):not([type=radio]):focus,select:focus,textarea:focus{o
 .pd-fiche dt,.pd-fiche dd{padding:7px 0;border-bottom:1px solid var(--line)}
 .pd-fiche dt:last-of-type,.pd-fiche dd:last-of-type{border-bottom:0}
 @media (max-width:760px){ .prow .sbar{display:none} .pd-ph{width:56px;height:56px} }
+
+/* =====================================================================
+   Couleurs TriFlow (novembre 2026) : bleu (couleur principale) et orange (appoint), comme le logo,
+   dans l'esprit Tridel (tuile brillante, flèches). Le vert reste seulement pour « OK / fait ».
+   ===================================================================== */
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --sunk:#ECF0F5; --ink:#111823; --muted:#566275; --line:#DFE5EE;
+  --accent:#1A5FAF; --accent-ink:#FFFFFF; --accent-soft:#E7F0FB; --accent-line:#A9C6EA;
+  --signal:#E8770F; --today:#C55A06; --band-top:#FFF1E2;
+  --steel:#1A5FAF; --steel-soft:#E7F0FB; --info:#1A5FAF; --info-soft:#E7F0FB;
+  --hero-a:#081F40; --hero-b:#123F78; --hero-c:#1F66B8; --hero-text:#D6E4F5;
+  --tile-p:#FFF0E0; --tile-p-ink:#C55A06;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0C1118; --surface:#141B25; --sunk:#10161F; --ink:#E7ECF3; --muted:#93A0B2; --line:#232D3B;
+  --accent:#5AA2F0; --accent-ink:#04121F; --accent-soft:#132741; --accent-line:#28507F;
+  --steel:#5AA2F0; --steel-soft:#132741; --info:#5AA2F0; --info-soft:#132741;
+  --hero-a:#06162E; --hero-b:#0D2F5C; --hero-c:#184F91; --hero-text:#C9D9EE;
+  --tile-p:#3A220C; --tile-p-ink:#FFB066;
+}}
+.hero{background:radial-gradient(circle at 100% -10%,rgba(240,138,28,.30),transparent 46%),linear-gradient(135deg,var(--hero-a),var(--hero-b) 55%,var(--hero-c) 92%)}
+.hero-art::after{background:linear-gradient(90deg,rgba(6,22,46,.92) 0%,rgba(6,22,46,.62) 34%,rgba(6,22,46,.12) 62%,rgba(6,22,46,0) 80%)}
+@media (max-width:760px){ .hero-art::after{background:linear-gradient(90deg,rgba(6,22,46,.85) 0%,rgba(6,22,46,.45) 50%,rgba(6,22,46,.1) 100%)} }
+.help-btn{background:rgba(6,22,46,.55)}
+.help-btn:hover{background:rgba(6,22,46,.78)}
+/* Le logo a sa propre tuile arrondie : plus de coins ni d'ombre ajoutés */
+.logo,.mh-logo{border-radius:0;object-fit:contain;filter:drop-shadow(0 3px 8px rgba(0,0,0,.35))}
+/* Touche d'orange : la page active du menu et le trait des pastilles choisies */
+.nav button[aria-current="page"]{color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.14),inset 0 -2px 0 var(--signal)}

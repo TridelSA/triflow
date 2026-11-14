@@ -175,7 +175,7 @@ VIEWS.accueil = {
       const dt = new Date(today + 'T12:00:00'),
         ini = mp ? ((mp.prenom || '')[0] || '') + ((mp.nom || '')[0] || '') : '';
       return `<div class="mhome">
-        <div class="mh-top"><img class="mh-logo" src="icon-192.png" alt="TriFlow" width="34" height="34"><button class="mh-av" data-act="navplus" aria-label="Plus">${esc(ini.toUpperCase() || '…')}</button></div>
+        <div class="mh-top"><img class="mh-logo" src="icon-192.png?v=202611142153" alt="TriFlow" width="34" height="34"><button class="mh-av" data-act="navplus" aria-label="Plus">${esc(ini.toUpperCase() || '…')}</button></div>
         <h1 class="mh-h">Bonjour${mp ? ' ' + esc(mp.prenom || niceName(mp.nom || persName(mp))) : ''}</h1>
         <p class="mh-date">${DAYN[(dt.getDay() + 6) % 7]} ${dt.getDate()} ${MOIS_L[dt.getMonth()]} · semaine ${isoWeek(today)}</p>
         ${mp ? `<section class="mh-card"><p class="mh-lbl">Au planning aujourd’hui</p><div class="md-plan">${absent ? '<span class="md-it abs">Pas au planning aujourd’hui</span>' : items.length ? items.map(it).join('') : '<span class="muted">Rien de noté pour aujourd’hui.</span>'}</div></section>` : ''}

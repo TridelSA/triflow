@@ -16,6 +16,7 @@ Pas d'outil de compilation : `index.html` (squelette) charge `css/triflow.css` p
 | Fichier | Contenu |
 |---|---|
 | `css/triflow.css` | Tous les styles. Couleurs dans `:root` et `prefers-color-scheme: dark`. Règles téléphone : `@media (max-width:760px)` (plusieurs blocs). |
+| `logo.svg` | Logo TriFlow (style Tridel : tuile brillante, flèches, bleu et orange). Les icônes PNG en sont tirées par `python3 outils/logo.py` ; après un changement, mettre un nouveau `?v=` sur les icônes (index.html, manifest.json). |
 | `sw.js` | Fonctionnement sans réseau (garde le site sur l'appareil). Ne jamais y mettre en cache la base Supabase. |
 | `js/qrcode.js` | Bibliothèque QR (ne pas modifier). |
 | `js/1-base.js` | Outils, **`morph()`** (mise à jour ciblée du HTML, utilisée par `render`), `ICONS`, `menu()`, migrations des données (`migrate`, drapeaux `d.meta.xxxV`). |
@@ -49,7 +50,7 @@ Pas d'outil de compilation : `index.html` (squelette) charge `css/triflow.css` p
 - **impeccable** (Paul Bakaus, Apache 2.0) : concevoir, auditer, peaufiner l'interface. Lancer d'abord `.claude/skills/impeccable/scripts/impeccable context --target index.html`. TriFlow est en mode **Operate** (outil de travail : lisibilité et précision avant l'effet). Contexte produit dans `PRODUCT.md`, choix visuels dans `DESIGN.md`. Après une modification d'affichage : `impeccable detect --json css/triflow.css js/<fichier>.js`.
 - **emil-design-eng** (Emil Kowalski, MIT) : finitions (retour au clic, animations courtes, états de survol et de focus).
 - **gmao-tridel** (écrite pour TriFlow) : le métier de la maintenance — correspondances avec une GMAO classique (SAP PM), règles de Tridel, indicateurs, idées. **À lire avant toute fonction liée aux équipements, travaux, rapports, préventif, stock ou indicateurs.**
-- **taste-skill** (Leonxlnx, MIT ; seuls `SKILL.md` et `references/` sont copiés) : goût visuel « anti-générique ». Il vise les sites vitrines : n'en prendre que ce qui sert un outil de travail (`references/system.md` : interface neutre, un seul accent = le vert Tridel, noir doux, titres en minuscules sans capitales espacées, texte lisible, un seul bouton plein par vue ; `references/motion.md` : survol et appui). Ignorer photos, scènes, « une section par écran ». La refonte appliquée est le dernier bloc de `css/triflow.css`.
+- **taste-skill** (Leonxlnx, MIT ; seuls `SKILL.md` et `references/` sont copiés) : goût visuel « anti-générique ». Il vise les sites vitrines : n'en prendre que ce qui sert un outil de travail (`references/system.md` : interface neutre, un seul accent = le bleu TriFlow, l'orange en appoint, noir doux, titres en minuscules sans capitales espacées, texte lisible, un seul bouton plein par vue ; `references/motion.md` : survol et appui). Ignorer photos, scènes, « une section par écran ». La refonte appliquée et la palette bleu/orange sont les derniers blocs de `css/triflow.css`.
 - Ne pas les modifier : pour les mettre à jour, recopier depuis github.com/pbakaus/impeccable github.com/emilkowalski/skills et github.com/Leonxlnx/taste-skill.
 
 ## Données (Supabase, une seule table `docs`)

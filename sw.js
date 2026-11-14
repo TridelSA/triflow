@@ -2,7 +2,7 @@
    Le site (page, styles, scripts, polices, bibliothèque Supabase) est gardé sur l'appareil :
    l'appli s'ouvre même sans réseau. Les données, elles, restent gérées par l'appli (copie locale + envoi au retour du réseau).
    La base Supabase n'est jamais mise en cache ici. */
-const CACHE = 'triflow-v1';
+const CACHE = 'triflow-v2';
 const SHELL = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
