@@ -194,6 +194,10 @@ async def main():
         await pg.evaluate("S.opt='compte'; go('options')"); await pg.wait_for_timeout(300)
         ok(await pg.evaluate("[...document.querySelectorAll('.prefs-t th')].some(th => /Planning de l.accueil/.test(th.textContent)) && /Électricien/.test($('.prefs-t').textContent)"), 'Mon compte : tableau des réglages')
         await pg.evaluate("setPref('accPlan', '')")
+        # Responsable de deux groupes : par défaut, l'accueil montre moi + mes deux groupes ensemble
+        ok(await pg.evaluate("""(() => { const me = meId(); tx(() => { db.reglages.resp = {...(db.reglages.resp || {}), 'Électricien': me, 'Mécanicien': me}; });
+          const a = accPlan(), g = new Set(a.ppl.map(p => p.groupe)); const r = a.key === 'team' && g.has('Électricien') && g.has('Mécanicien') && a.ppl[0].id === me && /Électricien, Mécanicien/.test(a.label);
+          tx(() => { delete db.reglages.resp['Électricien']; delete db.reglages.resp['Mécanicien']; }); return r; })()"""), 'accueil : responsable de 2 groupes → les deux groupes ensemble par défaut')
         # Deux postes modifient la même fiche en même temps : fusion, sans recharger la page ni rien perdre
         await pg.evaluate("""(() => { const k = 'config|main', r = __srv.rows.get(k); const d = JSON.parse(JSON.stringify(r.data)); d.reglages.qrBase = 'https://autre-poste.example/'; __srv.rows.set(k, {...r, data: d, rev: r.rev + 1});
           const p = __srv.rows.get('pieces|p1'); const pd = JSON.parse(JSON.stringify(p.data)); pd.notes = 'note venue d’un autre poste'; __srv.rows.set('pieces|p1', {...p, data: pd, rev: p.rev + 1}); })()""")

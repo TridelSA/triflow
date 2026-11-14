@@ -70,25 +70,26 @@ VIEWS.accueil = {
     const here = presOk ? ppl.filter(p => isDispo(presOf(p, today)?.code)).length : null;
     const nw = planWeek(),
       days = [0, 1, 2, 3, 4].map(n => isoAdd(nw, n)),
-      cnt = days.map(d => db.plan.filter(x => x.date === d && (!ap.key || pids.has(x.who))).length),
+      cnt = days.map(d => db.plan.filter(x => x.date === d && (ap.key === 'all' || pids.has(x.who))).length),
       placed = cnt.reduce((a, b) => a + b, 0);
     /* Aujourd'hui, pour les personnes choisies (Options › Connexion) : ce qui est noté, ou l'absence */
-    const todayRows = ap.key
-      ? ppl
-          .slice(0, 8)
-          .map(p => {
-            const it = db.plan
-                .filter(x => x.who === p.id && x.date === today)
-                .map(x => (x.tacheId ? get('taches', x.tacheId)?.titre : x.text) || ''),
-              pr = presOk ? presOf(p, today) : null,
-              abs = pr && pr.code && !isDispo(pr.code) ? (PCODE[pr.code] || [pr.code])[0] : '';
-            return `<li><span class="t">${esc(persName(p))}</span><span class="br-r ${abs ? 'muted' : ''}">${esc(abs || it.filter(Boolean).join(' · ') || '—')}</span></li>`;
-          })
-          .join('')
-      : '';
+    const todayRows =
+      ap.key !== 'all'
+        ? ppl
+            .slice(0, 14)
+            .map(p => {
+              const it = db.plan
+                  .filter(x => x.who === p.id && x.date === today)
+                  .map(x => (x.tacheId ? get('taches', x.tacheId)?.titre : x.text) || ''),
+                pr = presOk ? presOf(p, today) : null,
+                abs = pr && pr.code && !isDispo(pr.code) ? (PCODE[pr.code] || [pr.code])[0] : '';
+              return `<li><span class="t">${esc(persName(p))}</span><span class="br-r ${abs ? 'muted' : ''}">${esc(abs || it.filter(Boolean).join(' · ') || '—')}</span></li>`;
+            })
+            .join('')
+        : '';
     const planning = `<section class="btile bt-l">${head('planning', 'calendar', 'Planning', 'l')}
       <div class="bt-n"><b>${here == null ? '–' : here}</b><span>${here == null ? 'présences en chargement' : plural(here, 'présent aujourd’hui', 'présents aujourd’hui')} · semaine ${isoWeek(nw)} : <strong>${placed}</strong> ${plural(placed, 'case remplie', 'cases remplies')}</span></div>
-      ${ap.key ? `<p class="bt-txt"><strong>${esc(ap.label)}</strong> · aujourd’hui</p>${todayRows ? `<ul class="bt-plist">${todayRows}</ul>` : '<p class="bt-empty">Personne.</p>'}` : ''}
+      ${ap.key !== 'all' ? `<p class="bt-txt"><strong>${esc(ap.label)}</strong> · aujourd’hui <button class="link" data-act="opt" data-sec="compte">Changer</button></p>${todayRows ? `<ul class="bt-plist">${todayRows}</ul>` : '<p class="bt-empty">Personne.</p>'}` : ''}
       <div class="bt-week">${days.map((d, i) => `<div><span>${DAYS[i].slice(0, 3)}</span><b class="${cnt[i] ? 'on' : ''}">${cnt[i] || ''}</b></div>`).join('')}</div>
       <div class="bt-foot"><button class="btn small" data-act="nav" data-view="planning">${icon('calendar')}<span>Préparer<span class="d-inline"> et imprimer</span></span></button></div></section>`;
     /* Rapports */
@@ -241,6 +242,13 @@ function filteredPieces() {
   if (S.psort === 'iddesc') return rows.sort((a, b) => idn(b) - idn(a) || coll.compare(b.ref, a.ref));
   return rows.sort((a, b) => idn(a) - idn(b) || coll.compare(a.ref, b.ref));
 }
+/* État du stock d'une pièce : en stock / stock bas / épuisé, et petite jauge par rapport au minimum (le minimum est au milieu) */
+const stockSt = p => (isOut(p) ? ['out', 'Épuisé'] : isLow(p) ? ['low', 'Stock bas'] : ['ok', 'En stock']);
+const stockBar = (p, big = false) => {
+  if (!(p.stockMin > 0)) return '';
+  const pct = Math.max(dispo(p) > 0 ? 4 : 0, Math.min(100, (dispo(p) / (p.stockMin * 2)) * 100));
+  return `<i class="sbar ${big ? 'big' : ''} ${stockSt(p)[0]}" title="${num(dispo(p))} / minimum ${num(p.stockMin)}"><i style="width:${pct.toFixed(0)}%"></i><b aria-hidden="true"></b></i>`;
+};
 VIEWS.pieces = {
   shell:
     () => `<header class="page-head"><h1>Pièces</h1><div class="tools">${searchBox('pieces', 'Rechercher une pièce…')}<button class="btn icon-only no-desk" data-act="scan" title="Scanner un QR code" aria-label="Scanner un QR code">${icon('scan')}</button><button class="btn primary" data-act="new-piece">${icon('plus')}Nouvelle pièce</button>
@@ -292,10 +300,11 @@ VIEWS.pieces = {
         const mp = mainPlace(p),
           n = sortedStock(p).length,
           hm = horsMag(p);
+        const st = stockSt(p);
         return `<button class="prow ${S.sel.pieces === p.id ? 'sel' : ''}" data-act="select" data-id="${p.id}">
-        ${p.photos?.length ? photoImg(p.photos[0].path, 'ph-row') : ''}<span class="pm"><span class="pdes" title="${esc(p.designation)}">${esc(p.designation)}</span>
+        <span class="pthumb">${p.photos?.length ? photoImg(p.photos[0].path, 'ph-row') : icon('box')}</span><span class="pm"><span class="pdes" title="${esc(p.designation)}">${esc(p.designation)}</span>${p.fabricant || p.refFab ? `<span class="pfab">${esc(p.fabricant || '')}${p.fabricant && p.refFab ? ' · ' : ''}${p.refFab ? `<span class="mono">${esc(p.refFab)}</span>` : ''}</span>` : ''}
           <span class="ploc"><span class="pid">${esc(p.ref)}</span>${mp ? plate(mp, false) + (n > 1 ? ` <span class="muted">+${n - 1}</span>` : '') : '<span class="muted">Sans emplacement</span>'}${hm.length ? ` <span class="muted" style="color:var(--stat)">+${num(hm.reduce((a, s) => a + s.qte, 0))} hors magasin</span>` : ''}</span></span>
-        <span class="pq ${isOut(p) ? 'zero' : isLow(p) ? 'low' : ''}"><b>${num(dispo(p))}</b><small>${isOut(p) ? 'épuisé' : isLow(p) ? 'stock bas' : esc(p.unite)}</small></span></button>`;
+        <span class="pq ${st[0]}"><span class="pqn"><b>${num(dispo(p))}</b><small>${esc(p.unite)}</small></span>${st[0] === 'ok' ? '' : `<span class="stp ${st[0]}">${st[1]}</span>`}${stockBar(p)}</span></button>`;
       })
       .join(
         ''
@@ -327,14 +336,15 @@ VIEWS.pieces = {
       }, []);
     const low = p.stockMin > 0 && dispo(p) < p.stockMin;
     return `<button class="btn small m-only back-list" data-act="desel">${icon('chev')}Liste des pièces</button>${archBanner('pieces', p)}<div class="pd-head"><span class="pd-id">ID ${esc(p.ref)}</span><div class="pd-tools"><button class="btn small" data-act="edit-piece" data-id="${p.id}">${icon('edit')}Modifier</button>${menu([['add-place', 'Ajouter un emplacement', 'shelf', {id: p.id}], ['labels-one', 'Imprimer l’étiquette QR', 'qr', {id: p.id}], ['print-piece', 'Imprimer la fiche', 'printer', {id: p.id}], '-', p.arch ? ['unarch', 'Restaurer la pièce', 'archive', {col: 'pieces', id: p.id}] : ['arch', 'Archiver la pièce', 'archive', {col: 'pieces', id: p.id}], hardItem('pieces', p.id)].filter(Boolean), 'Plus', 'more', 'small')}</div></div>
-      <h2 class="pd-title">${esc(p.designation)}</h2>
-      ${p.fabricant || p.refFab ? `<p class="pd-sub">${esc(p.fabricant || '')}${p.refFab ? ` <span class="muted">· réf.</span> <span class="mono">${esc(p.refFab)}</span>` : ''}</p>` : ''}
-      <div class="pd-stock ${low ? 'low' : ''}">
-        <div class="pd-qty"><span class="n">${num(dispo(p))}</span><span class="u">${esc(p.unite)}</span><span class="l">en magasin${p.stockMin ? ` · min ${num(p.stockMin)}` : ''}</span></div>
+      <div class="pd-hero">${p.photos?.length ? `<span class="pd-ph">${photoImg(p.photos[0].path)}</span>` : `<span class="pd-ph none">${icon('box')}</span>`}<div class="pd-hl">
+        <h2 class="pd-title">${esc(p.designation)}</h2>
+        ${p.fabricant || p.refFab ? `<p class="pd-sub">${esc(p.fabricant || '')}${p.refFab ? ` <span class="muted">· réf.</span> <span class="mono">${esc(p.refFab)}</span>` : ''}</p>` : ''}</div></div>
+      <div class="pd-stock st-${stockSt(p)[0]} ${low ? 'low' : ''}">
+        <div class="pd-sq"><div class="pd-qty"><span class="n">${num(dispo(p))}</span><span class="u">${esc(p.unite)}</span><span class="stp ${stockSt(p)[0]}">${stockSt(p)[1]}</span></div>
+          ${p.stockMin ? `<div class="pd-gauge">${stockBar(p, true)}<span class="l">en magasin · minimum ${num(p.stockMin)} ${esc(p.unite)}${low ? ` · <b>${num(round(p.stockMin - dispo(p)))} à commander</b>` : ''}</span></div>` : '<span class="l">en magasin · pas de minimum</span>'}</div>
         <button class="btn primary" data-act="move" data-id="${p.id}" data-type="sortie">${icon('move')}Mouvement de stock</button>
       </div>
       <div class="pd-mbar"><button class="btn big-out" data-act="quick-out" data-id="${p.id}">− Sortir</button><button class="btn big-in" data-act="quick-out" data-id="${p.id}">+ Entrer</button></div>
-      <section class="pd-sec"><h3>${icon('camera')}Photos <span class="muted">${(p.photos || []).length || ''}</span></h3>${photoStrip(p.photos, {col: 'pieces', id: p.id})}</section>
       <section class="pd-sec"><h3>${icon('shelf')}Où la trouver</h3>
         ${
           phys.length
@@ -351,13 +361,19 @@ VIEWS.pieces = {
         ${ks.length ? `<div class="pd-kks">${ks.map(k => `<span class="pd-k">${kksTag(k)}<span class="t">${esc(k.designation)}</span><button class="icon-btn" data-act="unlink-kks" data-piece="${p.id}" data-id="${k.id}" aria-label="Retirer ${esc(k.code)}" title="Retirer">×</button></span>`).join('')}</div>` : '<p class="empty-line">Aucun équipement lié.</p>'}
         <form class="inline-form" data-form="link-kks" data-piece="${p.id}"><input name="kks" list="dl-kks" placeholder="Lier un équipement (code KKS)" aria-label="Repère KKS à lier" autocomplete="off"><button class="btn">Lier</button></form></section>
       ${
-        (p.fournisseur && p.fournisseur !== p.fabricant) || noteRows.length || (p.fours || []).length
-          ? `<section class="pd-sec"><h3>${icon('list')}Informations</h3><dl class="pd-info">
+        true
+          ? `<section class="pd-sec"><h3>${icon('list')}Fiche</h3><dl class="pd-info pd-fiche">
+        <dt>ID</dt><dd class="mono">${esc(p.ref)}</dd>
+        ${p.fabricant ? `<dt>Fabricant</dt><dd>${esc(p.fabricant)}</dd>` : ''}
+        ${p.refFab ? `<dt>Réf. fabricant</dt><dd class="mono">${esc(p.refFab)}</dd>` : ''}
         ${p.fournisseur && p.fournisseur !== p.fabricant ? `<dt>Fournisseur</dt><dd>${esc(p.fournisseur)}</dd>` : ''}
+        <dt>Unité</dt><dd>${esc(p.unite || '—')}</dd>
+        <dt>Stock minimum</dt><dd>${p.stockMin ? `${num(p.stockMin)} ${esc(p.unite)}` : '—'}</dd>
         ${(p.fours || []).filter(n => n !== p.fournisseur && n !== p.fabricant).length ? `<dt>Aussi cités</dt><dd>${esc(p.fours.filter(n => n !== p.fournisseur && n !== p.fabricant).join(', '))}</dd>` : ''}
         ${noteRows.map(([k, v]) => (k ? `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>` : `<dd class="full">${esc(v)}</dd>`)).join('')}</dl></section>`
           : ''
       }
+      <section class="pd-sec"><h3>${icon('camera')}Photos <span class="muted">${(p.photos || []).length || ''}</span></h3>${photoStrip(p.photos, {col: 'pieces', id: p.id})}</section>
       ${(() => {
         const ids = matIndex().usedIn.get(p.id);
         if (!ids || !ids.size) return '';

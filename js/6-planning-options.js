@@ -224,20 +224,41 @@ function planPeople(withLeave = false) {
 }
 /* Case Planning de l'accueil : qui afficher (choix personnel, Options › Connexion).
    '' = comme le planning ; 'me' = moi ; 'team' = mon équipe ; 'g:Groupe' = un corps de métier */
-const accPlanKey = () => pref('accPlan', '');
+/* Mes groupes : ceux dont je suis responsable (Options › Rôles), sinon le mien */
+function myGroups() {
+  const me = meId() && getPers(meId());
+  if (!me) return [];
+  const resp = Object.entries(db.reglages.resp || {})
+    .filter(([, v]) => v === me.id)
+    .map(([g]) => g);
+  return resp.length ? resp : me.groupe ? [me.groupe] : [];
+}
+/* Par défaut : mon équipe (moi + mes groupes, tous ensemble) ; 'all' = tout le monde */
+const accPlanKey = () => pref('accPlan', '') || (myGroups().length ? 'team' : 'all');
 function accPlan() {
   const key = accPlanKey(),
     me = meId() && getPers(meId()),
     all = db.personnes.filter(p => live(p) && p.actif !== false).sort(persSort);
   if (key === 'me' && me) return {key, label: persName(me), ppl: [me]};
-  const g = key === 'team' ? me?.groupe : key.startsWith('g:') ? key.slice(2) : '';
-  if (g) return {key, label: key === 'team' ? `Mon équipe (${g})` : g, ppl: all.filter(p => p.groupe === g)};
-  return {key: '', label: 'Tout le monde', ppl: all};
+  if (key === 'team') {
+    const gs = myGroups();
+    if (gs.length)
+      return {
+        key,
+        label: `Mon équipe (${gs.join(', ')})`,
+        ppl: all
+          .filter(p => p.id === me?.id || gs.includes(p.groupe))
+          .sort((a, b) => (a.id === me?.id ? -1 : b.id === me?.id ? 1 : 0) || gs.indexOf(a.groupe) - gs.indexOf(b.groupe) || persSort(a, b))
+      };
+  }
+  if (key.startsWith('g:')) return {key, label: key.slice(2), ppl: all.filter(p => p.groupe === key.slice(2))};
+  return {key: 'all', label: 'Tout le monde', ppl: all};
 }
 function accPlanSelect() {
   const k = accPlanKey(),
+    gs = myGroups(),
     grps = db.listes.groupes.filter(g => db.personnes.some(p => p.groupe === g && p.actif !== false && live(p)));
-  return `<label>Planning de l’accueil : afficher<select data-change="accPlan">${opt('', 'Tout le monde', k)}${meId() ? opt('me', 'Moi', k) + opt('team', 'Mon équipe', k) : ''}<optgroup label="Un corps de métier">${grps.map(g => opt('g:' + g, g, k)).join('')}</optgroup></select></label>`;
+  return `<label>Planning de l’accueil : afficher<select data-change="accPlan">${gs.length ? opt('team', `Mon équipe (${gs.join(', ')})`, k) : ''}${opt('all', 'Tout le monde', k)}${meId() ? opt('me', 'Moi seulement', k) : ''}<optgroup label="Un corps de métier">${grps.map(g => opt('g:' + g, g, k)).join('')}</optgroup></select></label>`;
 }
 /* Disponible ce jour-là (R, PIQ, EN, PI, CA, PO…) : case blanche, sans code */
 const isDispo = code => !!code && (DISPO.has(code) || ['on', 'piq'].includes((PCODE[code] || [])[1]));
