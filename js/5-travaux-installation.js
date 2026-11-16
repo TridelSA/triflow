@@ -18,7 +18,7 @@ function travauxShell() {
   const t = S.view === 'taches';
   return `<header class="page-head"><h1>Travaux</h1><div class="tools">${searchBox(t ? 'taches' : 'interventions', t ? 'Rechercher un travail…' : 'Rechercher un rapport…')}
     ${t ? `<button class="btn primary" data-act="new-tache">${icon('plus')}Nouveau travail</button>` : `<button class="btn primary" data-act="new-int">${icon('plus')}Nouveau rapport</button>`}
-    ${menu(t ? [['signal', 'Signaler un problème', 'bell', {}], ['new-int', 'Nouveau rapport sans travail prévu', 'report', {}], ['print-taches', 'Imprimer la liste', 'printer', {}], ['xl-taches', 'Exporter en Excel', 'excel', {}], '-', archItem('taches')] : [['xl-ints', 'Exporter en Excel', 'excel', {}], archItem('interventions')])}</div></header>
+    ${t ? `<button class="btn" data-act="signal">${icon('bell')}Signaler un problème</button>` : ''}<span class="head-tools">${(t ? [['new-int', 'Nouveau rapport sans travail prévu', 'report', {}], ['print-taches', 'Imprimer la liste', 'printer', {}], ['xl-taches', 'Exporter en Excel', 'excel', {}], archItem('taches')] : [['xl-ints', 'Exporter en Excel', 'excel', {}], archItem('interventions')]).map(x => toolBtn(x)).join('')}</span></div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`;
 }
 const doneOn = (t, d) => db.interventions.some(i => i.tacheId === t.id && i.date === d) || (t.faits || []).some(f => f.date === d);
@@ -241,7 +241,7 @@ VIEWS.taches = {
     const off = t.actif === false,
       di = dueInfo(t),
       RAP = {oui: 'avec rapport', non: 'sans rapport'};
-    return `${archBanner('taches', t)}<div class="pd-head"><span class="pd-id">${isPetit(t) ? 'Une seule fois' + (prioOf(t) !== 'normale' ? ' · priorité ' + PRIO[prioOf(t)][0].toLowerCase() : '') : esc(freqLabel(t.freq))}${t.arret ? ' · pendant l’arrêt' : ''}</span><div class="pd-tools"><button class="btn small" data-act="edit-tache" data-id="${t.id}">${icon('edit')}Modifier</button>${menu([t.arch ? ['unarch', 'Restaurer', 'archive', {col: 'taches', id: t.id}] : ['arch', 'Archiver', 'archive', {col: 'taches', id: t.id}], hardItem('taches', t.id)].filter(Boolean), 'Plus', 'more', 'small')}</div></div>
+    return `${archBanner('taches', t)}<div class="pd-head"><span class="pd-id">${isPetit(t) ? 'Une seule fois' + (prioOf(t) !== 'normale' ? ' · priorité ' + PRIO[prioOf(t)][0].toLowerCase() : '') : esc(freqLabel(t.freq))}${t.arret ? ' · pendant l’arrêt' : ''}</span><div class="pd-tools"><button class="btn small" data-act="edit-tache" data-id="${t.id}">${icon('edit')}Modifier</button>${toolBtn(t.arch ? ['unarch', 'Restaurer', 'archive', {col: 'taches', id: t.id}] : ['arch', 'Archiver', 'archive', {col: 'taches', id: t.id}])}${toolBtn(hardItem('taches', t.id), 'danger-ghost')}</div></div>
       <h2 class="pd-title">${esc(t.titre)}</h2>
       ${k ? `<div class="equip-hero">${kksTag(k)}<span>${esc(k.designation || '')}</span></div>` : ''}
       <p class="pd-sub">${t.assign?.v ? `Pour <strong style="font-weight:600">${esc(assignLabel(t.assign))}</strong>` : '<span class="muted">Pour personne en particulier</span>'}${last ? ` · fait la dernière fois le ${fmtD(last)}` : ''}${RAP[t.rapport] ? ` · ${RAP[t.rapport]}` : ''}</p>
@@ -690,7 +690,7 @@ VIEWS.interventions = {
           `<span class="pp ${isFourId(x.id) ? 'four' : ''}">${isFourId(x.id) ? icon('truck') : ''}${getPers(x.id) ? `<button class="link" data-act="pers-ints" data-id="${x.id}" title="Tous ses rapports">${esc(persName(x))}</button>` : isFourId(x.id) ? `<button class="link" data-act="four-ints" data-name="${esc(x.id.slice(5))}" title="Tous ses rapports">${esc(persName(x))}</button>` : `<button class="link" data-act="name-ints" data-name="${esc(x.nom)}" title="Tous ses rapports">${esc(persName(x))}</button>`}${x.groupe ? `<small>${esc(x.groupe)}</small>` : ''}</span>`
       )
       .join('');
-    return `${archBanner('interventions', i)}<div class="pd-head"><span class="pd-id">${esc(i.num)}</span><div class="pd-tools">${i.statut !== 'terminee' ? statutChip(i.statut) : ''}<button class="btn small" data-act="edit-int" data-id="${i.id}">${icon('edit')}${i.statut === 'terminee' ? 'Modifier' : 'Compléter'}</button><button class="btn small" data-act="print-int" data-id="${i.id}">${icon('printer')}Imprimer</button>${menu([i.arch ? ['unarch', 'Restaurer le rapport', 'archive', {col: 'interventions', id: i.id}] : ['arch', 'Archiver le rapport', 'archive', {col: 'interventions', id: i.id}], hardItem('interventions', i.id)].filter(Boolean), 'Plus', 'more', 'small')}</div></div>
+    return `${archBanner('interventions', i)}<div class="pd-head"><span class="pd-id">${esc(i.num)}</span><div class="pd-tools">${i.statut !== 'terminee' ? statutChip(i.statut) : ''}<button class="btn small" data-act="edit-int" data-id="${i.id}">${icon('edit')}${i.statut === 'terminee' ? 'Modifier' : 'Compléter'}</button>${toolBtn(['print-int', 'Imprimer', 'printer', {id: i.id}])}${toolBtn(i.arch ? ['unarch', 'Restaurer le rapport', 'archive', {col: 'interventions', id: i.id}] : ['arch', 'Archiver le rapport', 'archive', {col: 'interventions', id: i.id}])}${toolBtn(hardItem('interventions', i.id), 'danger-ghost')}</div></div>
       <h2 class="pd-title">${esc(i.titre)}</h2>
       ${k ? `<div class="equip-hero">${kTagI(i)}<span>${esc(k.designation || '')}</span></div>` : ''}
       <p class="pd-sub">${fmtD(i.date)}${i.type ? ` · ${esc(i.type)}` : ''}${i.cause ? ` · cause : ${esc(i.cause)}` : ''}${i.statut === 'terminee' ? ' · <span style="color:var(--ok)">terminé</span>' : ''}</p>
@@ -804,7 +804,7 @@ VIEWS.kks = {
       'Ajouter',
       'plus',
       'primary'
-    )}${menu([['xl-kks', 'Exporter en Excel', 'excel', {}], archItem('kks')])}</div></header>
+    )}<span class="head-tools">${toolBtn(['xl-kks', 'Exporter en Excel', 'excel', {}])}${toolBtn(archItem('kks'))}</span></div></header>
     <div class="split tsplit"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list() {
     if (!db.kks.length) return empty('Aucun équipement', '<p>Ajoutez-les avec « Coller une liste ».</p>');
@@ -900,7 +900,7 @@ VIEWS.kks = {
     const stat = (n, t, sub, tone = '') =>
       `<div class="kst ${tone}"><b>${n}</b><span>${t}</span>${sub ? `<small>${sub}</small>` : ''}</div>`;
     return `${S.q.kks || S.arch.kks ? '' : `<button class="btn small back" data-act="kks-back">${icon('chev')}${sysEff(k.code) ? `${sysEff(k.code)} ${esc(sysName(sysEff(k.code)))}` : 'Retour'}</button>`}${archBanner('kks', k)}
-      <div class="pd-head"><span class="kks big">${esc(k.code)}</span><div class="pd-tools"><button class="btn small" data-act="edit-kks" data-id="${k.id}">${icon('edit')}Modifier</button>${menu([['new-tache', 'Nouveau travail sur cet équipement', 'check', {kks: k.id}], '-', k.arch ? ['unarch', 'Restaurer l’équipement', 'archive', {col: 'kks', id: k.id}] : ['arch', 'Archiver l’équipement', 'archive', {col: 'kks', id: k.id}]], 'Plus', 'more', 'small')}</div></div>
+      <div class="pd-head"><span class="kks big">${esc(k.code)}</span><div class="pd-tools"><button class="btn small" data-act="edit-kks" data-id="${k.id}">${icon('edit')}Modifier</button><button class="btn small" data-act="new-tache" data-kks="${k.id}">${icon('plus')}Travail</button>${toolBtn(k.arch ? ['unarch', 'Restaurer l’équipement', 'archive', {col: 'kks', id: k.id}] : ['arch', 'Archiver l’équipement', 'archive', {col: 'kks', id: k.id}])}</div></div>
       <h2 class="pd-title">${esc(k.designation)}</h2>
       <p class="pd-sub">${sysEff(k.code) ? `<button class="link" data-act="sys-sel" data-sys="${sysEff(k.code)}">${esc(sysLabel(k.code))}</button>` : '<span class="muted">Sans système</span>'}${k.aic ? ` · AIC <span class="aic">${esc(k.aic)}</span>` : ''}</p>
       <div class="kstats">${stat(ps.length, plural(ps.length, 'pièce de rechange', 'pièces de rechange'), ps.length ? `${inStock} en stock` : '', ps.length && !inStock ? 'bad' : '')}${stat(ints.length, plural(ints.length, 'rapport', 'rapports'), ints[0] ? `dernier le ${fmtD(ints[0].date)}` : '')}${stat(ts.length, plural(ts.length, 'travail', 'travaux'), nxt ? `prochaine le ${fmtD(nxt.prochaine)}` : '', nxt && daysTo(nxt.prochaine) < 0 ? 'bad' : '')}</div>

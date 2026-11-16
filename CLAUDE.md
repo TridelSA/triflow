@@ -6,6 +6,7 @@ Le demandeur est **Thomas Bonnant**, responsable informatique. Il décrit ses be
 
 ## Le mot d'ordre : « facile »
 - Interface en **français**, pour des techniciens d'atelier : peu de texte, des mots simples, des actions évidentes.
+- Pas de menu « Plus » : actions principales en boutons, actions secondaires en petites icônes (`toolBtn()`, avec leur nom en bulle).
 - Préférer **simplifier** plutôt qu'ajouter. Pas de doublon d'accès à une même fonction. Un seul style de filtre : les **pastilles** (`.ychip` / `.fchips`).
 - Toujours penser **ordinateur et téléphone**. Téléphone (≤ 760 px) = style appli : pas de bandeau, barre du bas « Ma journée · Travaux · [Scanner] · Pièces · Plus » (Plus = Planning, Options, Aide), accueil `.mhome` (dans `VIEWS.accueil`), pas d'impression.
 - Rien n'est supprimé par défaut : on **archive** (champ `arch`). La suppression définitive est réservée aux **cadres** (`canDel()`).
@@ -16,7 +17,7 @@ Pas d'outil de compilation : `index.html` (squelette) charge `css/triflow.css` p
 | Fichier | Contenu |
 |---|---|
 | `css/triflow.css` | Tous les styles. Couleurs dans `:root` et `prefers-color-scheme: dark`. Règles téléphone : `@media (max-width:760px)` (plusieurs blocs). |
-| `logo.svg` | Logo TriFlow (style Tridel : tuile brillante, flèches, bleu et orange). Les icônes PNG en sont tirées par `python3 outils/logo.py` ; après un changement, mettre un nouveau `?v=` sur les icônes (index.html, manifest.json). |
+| `logo.svg` | Logo TriFlow : tuile blanche, « Tf » vert Tridel, ruban des cinq couleurs du logo Tridel. Les icônes PNG en sont tirées par `python3 outils/logo.py` ; après un changement, mettre un nouveau `?v=` sur les icônes (index.html, manifest.json). |
 | `sw.js` | Fonctionnement sans réseau (garde le site sur l'appareil). Ne jamais y mettre en cache la base Supabase. |
 | `js/qrcode.js` | Bibliothèque QR (ne pas modifier). |
 | `js/1-base.js` | Outils, **`morph()`** (mise à jour ciblée du HTML, utilisée par `render`), `ICONS`, `menu()`, migrations des données (`migrate`, drapeaux `d.meta.xxxV`). |
@@ -50,7 +51,7 @@ Pas d'outil de compilation : `index.html` (squelette) charge `css/triflow.css` p
 - **impeccable** (Paul Bakaus, Apache 2.0) : concevoir, auditer, peaufiner l'interface. Lancer d'abord `.claude/skills/impeccable/scripts/impeccable context --target index.html`. TriFlow est en mode **Operate** (outil de travail : lisibilité et précision avant l'effet). Contexte produit dans `PRODUCT.md`, choix visuels dans `DESIGN.md`. Après une modification d'affichage : `impeccable detect --json css/triflow.css js/<fichier>.js`.
 - **emil-design-eng** (Emil Kowalski, MIT) : finitions (retour au clic, animations courtes, états de survol et de focus).
 - **gmao-tridel** (écrite pour TriFlow) : le métier de la maintenance — correspondances avec une GMAO classique (SAP PM), règles de Tridel, indicateurs, idées. **À lire avant toute fonction liée aux équipements, travaux, rapports, préventif, stock ou indicateurs.**
-- **taste-skill** (Leonxlnx, MIT ; seuls `SKILL.md` et `references/` sont copiés) : goût visuel « anti-générique ». Il vise les sites vitrines : n'en prendre que ce qui sert un outil de travail (`references/system.md` : interface neutre, un seul accent = le bleu TriFlow, l'orange en appoint, noir doux, titres en minuscules sans capitales espacées, texte lisible, un seul bouton plein par vue ; `references/motion.md` : survol et appui). Ignorer photos, scènes, « une section par écran ». La refonte appliquée et la palette bleu/orange sont les derniers blocs de `css/triflow.css`.
+- **taste-skill** (Leonxlnx, MIT ; seuls `SKILL.md` et `references/` sont copiés) : goût visuel « anti-générique ». Il vise les sites vitrines : n'en prendre que ce qui sert un outil de travail (`references/system.md` : interface neutre, un seul accent = le vert Tridel #0C6E3E ; jaune, orange, rouge du logo Tridel seulement en touches (ruban, alertes), noir doux, titres en minuscules sans capitales espacées, texte lisible, un seul bouton plein par vue ; `references/motion.md` : survol et appui). Ignorer photos, scènes, « une section par écran ». Le thème Tridel est le bloc « THÈME TRIDEL » vers la fin de `css/triflow.css`.
 - Ne pas les modifier : pour les mettre à jour, recopier depuis github.com/pbakaus/impeccable github.com/emilkowalski/skills et github.com/Leonxlnx/taste-skill.
 
 ## Données (Supabase, une seule table `docs`)
@@ -59,7 +60,7 @@ Chaque fiche = `(collection, id, data jsonb, rev)`. Collections : `pieces`, `sal
 - **Historique du stock CareOffice** : collection `histo` `{id: pieceId, l:[{d, q, t, lieu, n (sans signe), w, no (n° d'écriture)}]}`, importée par *Pièces › Plus › Importer l’historique du stock* (`importHistoDialog`, Excel/CSV du « Journal des écritures » ou JSON brut ; CareOffice note les entrées en négatif).
 - **Rapports** : numéro `R26-017` (`nextNum`, `renumberInts`) ; `co` = ancien numéro CareOffice, caché, sert à éviter les doublons à l'import.
 - **Personnes et présences** : viennent du Planning Tridel (`PLANNING_URL`, fichier `planning-AAAA.json`, champs `nom`, `categorie`, `planning{date: code}`). Codes dans `PCODE`. Disponible au planning = `DISPO` (R, PIQ, EN, PI, CA) ; congés = `CONGE`.
-- **Rôles** : cadres = groupe « Cadres » reconnu par l'e-mail ; responsable par groupe dans `reglages.resp` (droits à définir plus tard, Options › Rôles).
+- **Niveaux d'utilisateur** : `niveau()` = 0 technicien, 1 responsable d'un groupe (`reglages.resp`, Options › Rôles), 2 cadre (`canDel()`, table `tf_cadres`). Les groupes d'Options ont un niveau minimum (`OPT_GROUPS`, 3e élément) : technicien = Moi + L'usine ; responsable + L'équipe ; cadre + Réglages et Administration. Penser à ce niveau pour toute nouvelle fonction d'administration.
 - **Planning** : s'ouvre sur la semaine suivante (`planWeek()`), une case = une personne × un jour ; un seul texte par case ; tâches glissées ou « cliquer puis cliquer la case ».
 
 Scripts SQL (à lancer à la main dans Supabase, jamais depuis le site) : `outils/supabase.sql` (table et droits de base), `outils/droits.sql` (suppression réservée aux cadres, journal protégé), `outils/photos.sql`, `outils/acces.sql` (accès réservé aux adresses @tridelsa.ch confirmées ou à la table `tf_exceptions` ; cadres = table `tf_cadres`, lue par `is_cadre()` → `CLOUD.cadre` → `canDel()`). Fonction Supabase : `outils/supabase-fonction/creer-utilisateur.ts`.

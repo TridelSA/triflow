@@ -1770,3 +1770,54 @@ body:not([data-view=accueil]) .hero-art svg{opacity:.1}
 .btn.tool.danger-ghost:hover{color:var(--bad)}
 .pd-tools{display:flex;align-items:center;gap:2px}
 .pd-tools > .btn:first-child{margin-right:4px}
+
+/* =====================================================================
+   THÈME TRIDEL (novembre 2026) — couleurs relevées sur le logo Tridel :
+   vert foncé #0C6E3E (principal), vert #4E8C40, vert clair #A4C961, jaune #FBDC17, orange #F18413, rouge #E11817.
+   Interface calme : un seul vert pour agir, les autres couleurs seulement pour signaler (fait / à venir / en retard).
+   Plus d'air : marges, lignes de liste et sections plus espacées.
+   ===================================================================== */
+:root{
+  --bg:#F3F5F2; --surface:#FFFFFF; --sunk:#EDF1EC; --ink:#14201A; --muted:#58665E; --line:#DFE6E0;
+  --accent:#0C6E3E; --accent-ink:#FFFFFF; --accent-soft:#E4F1E8; --accent-line:#A9D1B6;
+  --steel:#0C6E3E; --steel-soft:#E4F1E8; --info:#1D5F86; --info-soft:#E3EEF5;
+  --signal:#F18413; --today:#B85A0B; --band-top:#FFFFFF;
+  --hero-a:#0A5A33; --hero-b:#0B6238; --hero-c:#0C6E3E; --hero-text:#D5EADC;
+  --tile-w:#FFF1DE; --tile-w-ink:#C25F06; --tile-p:#FFF7CF; --tile-p-ink:#8A6A00; --tile-r:#E4F1E8; --tile-r-ink:#0C6E3E;
+  --t-base:.97rem;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0D1310; --surface:#151D18; --sunk:#111814; --ink:#E6EEE8; --muted:#94A69A; --line:#243029;
+  --accent:#3FB16F; --accent-ink:#04140A; --accent-soft:#16301F; --accent-line:#2A5C3B;
+  --steel:#3FB16F; --steel-soft:#16301F; --info:#6BB3DF; --info-soft:#132A38;
+  --hero-a:#07361F; --hero-b:#083F24; --hero-c:#0A4A2B; --hero-text:#C7E2D0;
+  --tile-w:#3A2610; --tile-w-ink:#FFB066; --tile-p:#332C0B; --tile-p-ink:#F2D35A; --tile-r:#16301F; --tile-r-ink:#7FD3A0;
+}}
+/* Bandeau : vert Tridel uni ; le ruban de couleurs Tridel souligne le bandeau */
+.hero{background:var(--hero-b)}
+.hband{position:relative}
+.hband::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,#0C6E3E 0 20%,#A4C961 20% 40%,#FBDC17 40% 60%,#F18413 60% 80%,#E11817 80% 100%);opacity:.9}
+/* Plus d'air */
+main{padding-block:12px 40px}
+.page-head{margin-bottom:20px;gap:14px 24px}
+.split{gap:24px}
+.pane{border-radius:var(--r-xl)}
+.prow{padding:13px 18px;gap:14px}
+.tbl td{padding:12px 14px}
+.pd-sec{padding:18px 0 6px;margin-top:14px}
+.pd-sec h3{margin-bottom:12px}
+#detail{padding:22px 24px}
+.fchips{padding:12px 16px;gap:8px}
+.list-bar{padding:10px 18px}
+.btile{padding:22px;gap:14px}
+.bento{gap:20px}
+.opt-sec .pad{padding:18px 22px}
+@media (max-width:760px){
+  main{padding-block:8px 96px}
+  .page-head{margin-bottom:12px}
+  #detail{padding:16px}
+  .prow{padding:12px 14px}
+}
+.niv-l{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px;color:var(--muted)}
+.niv{display:inline-flex;padding:3px 10px;border-radius:var(--r-pill);background:var(--accent-soft);color:var(--accent);font-weight:650;font-size:var(--t-sm)}
+.head-tools{display:inline-flex;gap:2px;align-items:center}

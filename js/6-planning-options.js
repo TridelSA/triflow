@@ -1350,19 +1350,20 @@ const OPT_GROUPS = [
       ['personnes', 'Personnes', 'person'],
       ['roles', 'Rôles', 'tag'],
       ['fournisseurs', 'Fournisseurs', 'truck']
-    ]
+    ],
+    1
   ],
-  ['Réglages', [['listes', 'Listes', 'list']]],
+  ['Réglages', [['listes', 'Listes', 'list']], 2],
   [
     'Administration',
     [
       ['historique', 'Historique', 'list'],
       ['donnees', 'Sauvegarde', 'save']
     ],
-    true
+    2
   ]
 ];
-const optGroups = () => OPT_GROUPS.filter(g => !g[2] || canDel());
+const optGroups = () => OPT_GROUPS.filter(g => !g[2] || niveau() >= g[2]);
 /* Anciennes adresses de pages (liens, réglages gardés) */
 const OPT_ALIAS = {accueil: 'compte', connexion: 'compte', kks: 'historique'};
 function optCur() {
@@ -1754,7 +1755,7 @@ const respOf = id =>
     .map(([g]) => g);
 OPT.connexion = () => {
   const c = CLOUD.cfg();
-  return `<section class="opt-sec"><div class="head"><h2>Qui je suis</h2></div><div class="pad"><p>${meId() ? `Vous êtes <strong>${esc(persName(getPers(meId())))}</strong>. ${NOFILTER_GRP.includes(getPers(meId()).groupe) ? 'Comme cadre / administration, vous voyez tout par défaut.' : 'À chaque ouverture, l’accueil, les tâches et les rapports sont filtrés sur vous et votre groupe ; le filtre se désactive avec « Tout le monde ». Les archives ne sont jamais filtrées.'}` : 'Personne n’est choisi : tout le monde voit tout.'}</p><div class="tools"><button class="btn" data-act="me">${icon('person')}${meId() ? 'Changer' : 'Choisir mon nom'}</button></div></div></section><section class="opt-sec"><div class="head"><h2>Connexion</h2></div><div class="pad">
+  return `<section class="opt-sec"><div class="head"><h2>Qui je suis</h2></div><div class="pad"><p class="niv-l"><span class="niv">${NIVEAUX[niveau()][0]}</span>${NIVEAUX[niveau()][1]}</p><p>${meId() ? `Vous êtes <strong>${esc(persName(getPers(meId())))}</strong>. ${NOFILTER_GRP.includes(getPers(meId()).groupe) ? 'Comme cadre / administration, vous voyez tout par défaut.' : 'À chaque ouverture, l’accueil, les tâches et les rapports sont filtrés sur vous et votre groupe ; le filtre se désactive avec « Tout le monde ». Les archives ne sont jamais filtrées.'}` : 'Personne n’est choisi : tout le monde voit tout.'}</p><div class="tools"><button class="btn" data-act="me">${icon('person')}${meId() ? 'Changer' : 'Choisir mon nom'}</button></div></div></section><section class="opt-sec"><div class="head"><h2>Connexion</h2></div><div class="pad">
     ${
       CLOUD.on
         ? `<p>Connecté en tant que <strong>${esc(CLOUD.user?.email || '')}</strong>. Les données sont partagées par tous les postes connectés.</p>

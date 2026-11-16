@@ -10,7 +10,7 @@ async def main():
         b = await p.chromium.launch(**({"executable_path": "/opt/pw-browsers/chromium"} if os.path.isfile("/opt/pw-browsers/chromium") else {}))
         for nom, taille, marge in SORTIES:
             pg = await b.new_page(viewport={'width': taille, 'height': taille})
-            fond = '#0B3F7E' if marge else 'transparent'
+            fond = '#0B6238' if marge else 'transparent'
             pad = int(taille * marge)
             await pg.set_content(f'<html><body style="margin:0;background:{fond}"><div style="padding:{pad}px;width:{taille-2*pad}px;height:{taille-2*pad}px">{svg.replace("width=\"512\" height=\"512\"", "width=\"100%\" height=\"100%\"")}</div></body></html>')
             await pg.wait_for_timeout(200)

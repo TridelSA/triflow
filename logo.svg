@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Logo TriFlow : même idée que l'icône du Planning Tridel (tuile, initiales, bande de couleurs), en plus net :
-       tuile bleue unie, « Tf » blanc, bande bleu → orange. Icônes PNG : python3 outils/logo.py -->
-  <rect x="0" y="0" width="512" height="512" rx="116" fill="#1A5FAF"/>
-  <rect x="5" y="5" width="502" height="502" rx="111" fill="none" stroke="#FFFFFF" stroke-opacity=".14" stroke-width="10"/>
-  <text x="256" y="318" text-anchor="middle" font-family="Inter, 'Inter Display', Arial, sans-serif" font-weight="800" font-size="252" letter-spacing="-10" fill="#FFFFFF">Tf</text>
+  <!-- Logo TriFlow : tuile blanche, « Tf » vert Tridel, ruban des cinq couleurs du logo Tridel
+       (vert foncé, vert clair, jaune, orange, rouge). Icônes PNG : python3 outils/logo.py -->
+  <rect x="0" y="0" width="512" height="512" rx="116" fill="#FFFFFF"/>
+  <rect x="5" y="5" width="502" height="502" rx="111" fill="none" stroke="#0C6E3E" stroke-opacity=".12" stroke-width="10"/>
+  <text x="256" y="318" text-anchor="middle" font-family="Inter, 'Inter Display', Arial, sans-serif" font-weight="800" font-size="252" letter-spacing="-10" fill="#0C6E3E">Tf</text>
   <g>
-    <rect x="98" y="372" width="60" height="30" rx="5" fill="#9CC8F5"/>
-    <rect x="162" y="372" width="60" height="30" fill="#CFE3FA"/>
-    <rect x="226" y="372" width="60" height="30" fill="#F6C04A"/>
-    <rect x="290" y="372" width="60" height="30" fill="#F59A2C"/>
-    <rect x="354" y="372" width="60" height="30" rx="5" fill="#E8590C"/>
+    <rect x="98" y="372" width="64" height="30" rx="5" fill="#0C6E3E"/>
+    <rect x="160" y="372" width="64" height="30" fill="#A4C961"/>
+    <rect x="222" y="372" width="64" height="30" fill="#FBDC17"/>
+    <rect x="284" y="372" width="64" height="30" fill="#F18413"/>
+    <rect x="346" y="372" width="66" height="30" rx="5" fill="#E11817"/>
   </g>
 </svg>

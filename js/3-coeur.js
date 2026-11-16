@@ -835,6 +835,17 @@ function canDel() {
   if (typeof CLOUD.cadre === 'boolean') return CLOUD.cadre;
   return personFromEmail(CLOUD.user.email)?.groupe === 'Cadres';
 }
+/* Niveau d'utilisateur : 0 = technicien, 1 = responsable d'un groupe (Options › Rôles), 2 = cadre */
+function niveau() {
+  if (canDel()) return 2;
+  const me = meId();
+  return me && Object.values(db.reglages.resp || {}).includes(me) ? 1 : 0;
+}
+const NIVEAUX = [
+  ['Technicien', 'Travaux, rapports, pièces et planning.'],
+  ['Responsable', 'En plus : les personnes, les rôles et les fournisseurs de l’équipe.'],
+  ['Cadre', 'Tout, y compris les listes, l’historique, les sauvegardes et la suppression définitive.']
+];
 function meId() {
   const e = (CLOUD.user?.email || '').toLowerCase();
   let id = e && db.reglages.moi ? db.reglages.moi[e] : null;

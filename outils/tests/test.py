@@ -221,6 +221,8 @@ async def main():
         ok(await pg.evaluate("moonPhase(new Date('2026-11-24T12:00:00')) > 0.45 && moonPhase(new Date('2026-11-24T12:00:00')) < 0.55 && /#D7E6F6/.test(document.querySelector('#herowx').innerHTML)"), 'météo : lune dans sa vraie phase (pleine lune du 24.11.2026), pluie dessinée')
         await pg.evaluate("go('pieces', 'p1')"); await pg.wait_for_timeout(300)
         ok(await pg.evaluate("document.querySelectorAll('.page-head h1').length === 1 && document.querySelectorAll('.split > section.pane').length === 2 && !document.querySelector('.page-head .menu') && !document.querySelector('#detail .pd-tools .menu') && document.querySelectorAll('#list .lb-tools .tool').length >= 3 && !/CareOffice/.test(document.body.innerHTML.replace(/<script[\\s\\S]*?<\\/script>/g, ''))"), 'Pièces : plus de menus « Plus », outils en icônes, plus d’import CareOffice')
+        ok(await pg.evaluate("(CLOUD.cadre = false, niveau() === 0 && optGroups().map(g => g[0]).join('|') === 'Moi|L’usine') && (CLOUD.cadre = true, niveau() === 2 && optGroups().length === 5)"), 'niveaux : un technicien ne voit que Moi et L’usine dans les Options, un cadre tout')
+        await pg.evaluate("delete CLOUD.cadre")
         print('Pages (ordinateur)')
         for js, nom in [("go('accueil')", 'accueil'), ("S.sel.pieces=null; go('pieces')", 'pieces'), ("go('pieces','p1')", 'piece'),
                         ("go('taches','t2')", 'travaux-afaire'), ("S.statut='actives'; go('interventions')", 'travaux-encours'),
