@@ -8,6 +8,7 @@ Le demandeur est **Thomas Bonnant**, responsable informatique. Il décrit ses be
 - Interface en **français**, pour des techniciens d'atelier : peu de texte, des mots simples, des actions évidentes.
 - Pas de menu « Plus » : actions principales en boutons, actions secondaires en petites icônes (`toolBtn()`, avec leur nom en bulle).
 - Préférer **simplifier** plutôt qu'ajouter. Pas de doublon d'accès à une même fonction. Un seul style de filtre : les **pastilles** (`.ychip` / `.fchips`).
+- **Ordinateur (≥ 1024 px)** : barre latérale à gauche (logo, menu, carte verte usine + météo, Aide), contenu sur toute la largeur, grand titre — bloc « DISPOSITION APPLE » à la fin de `css/triflow.css`. Tablette (761-1023 px) : bandeau vert en haut.
 - Toujours penser **ordinateur et téléphone**. Téléphone (≤ 760 px) = style appli : pas de bandeau, barre du bas « Ma journée · Travaux · [Scanner] · Pièces · Plus » (Plus = Planning, Options, Aide), accueil `.mhome` (dans `VIEWS.accueil`), pas d'impression.
 - Rien n'est supprimé par défaut : on **archive** (champ `arch`). La suppression définitive est réservée aux **cadres** (`canDel()`).
 
@@ -52,6 +53,7 @@ Pas d'outil de compilation : `index.html` (squelette) charge `css/triflow.css` p
 - **emil-design-eng** (Emil Kowalski, MIT) : finitions (retour au clic, animations courtes, états de survol et de focus).
 - **gmao-tridel** (écrite pour TriFlow) : le métier de la maintenance — correspondances avec une GMAO classique (SAP PM), règles de Tridel, indicateurs, idées. **À lire avant toute fonction liée aux équipements, travaux, rapports, préventif, stock ou indicateurs.**
 - **taste-skill** (Leonxlnx, MIT ; seuls `SKILL.md` et `references/` sont copiés) : goût visuel « anti-générique ». Il vise les sites vitrines : n'en prendre que ce qui sert un outil de travail (`references/system.md` : interface neutre, un seul accent = le vert Tridel #0C6E3E ; jaune, orange, rouge du logo Tridel seulement en touches (ruban, alertes), noir doux, titres en minuscules sans capitales espacées, texte lisible, un seul bouton plein par vue ; `references/motion.md` : survol et appui). Ignorer photos, scènes, « une section par écran ». Le thème Tridel est le bloc « THÈME TRIDEL » vers la fin de `css/triflow.css`.
+- **apple-design** (github.com/dickwu/apple-design-skill) : revue d'interface d'après les règles d'Apple (HIG). **Pas copié dans ce dépôt public** : le texte des règles appartient à Apple. Le cloner dans un dossier temporaire pour s'en servir. Retenu pour TriFlow : barre latérale sur ordinateur, marque Tridel en un seul endroit, vert réservé aux actions, cibles de 44 px au téléphone, contraste 4,5:1.
 - Ne pas les modifier : pour les mettre à jour, recopier depuis github.com/pbakaus/impeccable github.com/emilkowalski/skills et github.com/Leonxlnx/taste-skill.
 
 ## Données (Supabase, une seule table `docs`)

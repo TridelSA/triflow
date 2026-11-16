@@ -1983,7 +1983,7 @@ function meteoSVG() {
       fall +
       (storm ? '<path d="M420 30l-7 11h6l-4 10 11-14h-6l5-7z" fill="#F6E7B4" opacity=".8"/>' : '');
   }
-  return `<svg viewBox="0 0 560 64" preserveAspectRatio="xMaxYMin meet" aria-hidden="true">${sky}${wx}</svg>`;
+  return `<svg viewBox="0 0 560 64" preserveAspectRatio="xMaxYMin slice" aria-hidden="true">${sky}${wx}</svg>`;
 }
 function meteoTitle() {
   if (!METEO) return '';

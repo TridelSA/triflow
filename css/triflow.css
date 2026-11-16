@@ -1821,3 +1821,45 @@ main{padding-block:12px 40px}
 .niv-l{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px;color:var(--muted)}
 .niv{display:inline-flex;padding:3px 10px;border-radius:var(--r-pill);background:var(--accent-soft);color:var(--accent);font-weight:650;font-size:var(--t-sm)}
 .head-tools{display:inline-flex;gap:2px;align-items:center}
+
+/* =====================================================================
+   DISPOSITION « APPLE » SUR ORDINATEUR (≥ 1024 px), d'après le skill apple-design (HIG) :
+   barre latérale calme (comme Mail ou le Finder), contenu sur toute la largeur, grand titre,
+   la marque Tridel concentrée en un seul endroit : la carte verte usine + météo en bas de la barre.
+   Téléphone et tablette gardent leur disposition.
+   ===================================================================== */
+@media (min-width:1024px){
+  .app{display:grid;grid-template-columns:236px minmax(0,1fr);column-gap:32px;max-width:1560px;padding-top:0;padding-left:0}
+  .app > .hero,body:not([data-view=accueil]) .app > .hero{grid-column:1;grid-row:1 / span 3;position:sticky;top:0;align-self:start;height:100vh;min-height:0;box-sizing:border-box;
+    display:flex;flex-direction:column;align-items:stretch;padding:22px 14px 16px;border-radius:0;background:var(--surface);color:var(--ink);border-right:1px solid var(--line);overflow:hidden}
+  .app > .hband,.app > .content{grid-column:2}
+  .app > .hband{margin-top:16px}
+  .hero-inner{flex-direction:column;align-items:stretch;gap:20px;flex:1;min-height:0;position:static}
+  .hero-inner > .logo,body:not([data-view=accueil]) .hero-inner > .logo{position:absolute;left:14px;top:22px;width:34px;height:34px;filter:none}
+  .hero-copy{padding-left:46px;min-height:34px;display:flex;flex-direction:column;justify-content:center}
+  .hero h1,body:not([data-view=accueil]) .hero h1{color:var(--ink);font-size:var(--t-lg)}
+  .hero p,body:not([data-view=accueil]) .hero p{color:var(--muted);font-size:var(--t-sm)}
+  .hero-side,body:not([data-view=accueil]) .hero-side{display:flex !important;flex-direction:column !important;align-items:stretch !important;flex:1;gap:8px;min-height:0;margin:0 !important}
+  .hero-inner .nav{margin-left:0 !important;width:100%}
+  .hero-inner .nav{order:1;flex-direction:column;gap:2px;margin:0;padding:0;background:transparent;border:0;box-shadow:none}
+  .hero-inner .nav button{justify-content:flex-start;gap:12px;padding:10px 12px;border-radius:10px;color:var(--ink);font-weight:500;font-size:var(--t-base)}
+  .hero-inner .nav button .ico{width:18px;height:18px;color:var(--muted)}
+  .hero-inner .nav button .nl{display:inline}
+  .hero-inner .nav button:hover{background:var(--sunk);color:var(--ink)}
+  .hero-inner .nav button[aria-current="page"]{background:var(--accent-soft);color:var(--accent);font-weight:600;box-shadow:none}
+  .hero-inner .nav button[aria-current="page"] .ico{color:var(--accent)}
+  .hero-inner .help-btn{order:3;margin:auto 0 0;width:auto;height:auto;border-radius:10px;padding:9px 12px;justify-content:flex-start;display:flex;gap:10px;
+    background:transparent;border:0;color:var(--muted);font-weight:600;font-size:var(--t-md)}
+  .hero-inner .help-btn::after{content:'Aide'}
+  .hero-inner .help-btn:hover{background:var(--sunk);color:var(--ink)}
+  /* Signature Tridel : la carte verte avec l'usine et la météo, en bas de la barre */
+  .app > .hero > .hero-art{position:absolute;left:14px;right:14px;bottom:62px;top:auto;width:auto;height:118px;border-radius:14px;background:var(--hero-b);overflow:hidden;-webkit-mask-image:none;mask-image:none}
+  .app > .hero > .hero-art > svg{opacity:.38 !important}
+  .hero-art .hero-wx{right:0;left:0;top:4px;width:auto;height:58%}
+  .hero-inner .nav button.nav-scan,.hero-inner .nav button.nav-plus{display:none}
+  .hsync{color:var(--muted)}
+  .page-head h1{font-size:2.1rem;letter-spacing:-.025em}
+}
+@media (min-width:1024px) and (prefers-color-scheme:dark){
+  .app > .hero{background:var(--sunk)}
+}

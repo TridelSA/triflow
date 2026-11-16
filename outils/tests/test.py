@@ -327,7 +327,7 @@ async def main():
         await pg.evaluate("localStorage.removeItem('__fail')")
         for w in (1024, 1366):
             await pg.set_viewport_size({'width': w, 'height': 768}); await pg.evaluate("go('accueil')"); await pg.wait_for_timeout(300); await capture(f'ordi-{w}-accueil')
-            ok(await pg.evaluate("(() => { const n = document.querySelector('#nav').getBoundingClientRect(), h = document.querySelector('.help-btn').getBoundingClientRect(), t = document.querySelector('.hero-copy').getBoundingClientRect(); return n.right <= h.left && n.left >= t.right - 1 && document.documentElement.scrollWidth <= innerWidth; })()"), f'menu bien placé à {w} px de large')
+            ok(await pg.evaluate("(() => { const n = document.querySelector('#nav').getBoundingClientRect(), h = document.querySelector('.help-btn').getBoundingClientRect(), t = document.querySelector('.hero-copy').getBoundingClientRect(); return n.left < 40 && n.width > 180 && n.top > t.bottom && h.top > n.bottom && document.documentElement.scrollWidth <= innerWidth; })()"), f'barre latérale bien placée à {w} px de large')
         await b.close()
     srv.shutdown()
     if CAPTURES: comparer(echecs)
