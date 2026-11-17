@@ -1386,15 +1386,15 @@ details.more > summary{flex-wrap:wrap;row-gap:0}
   .app{padding-top:calc(10px + env(safe-area-inset-top,0px))}
   /* barre du bas */
   body > #nav{height:auto;align-items:flex-end;padding:6px 6px calc(8px + env(safe-area-inset-bottom,0px)*.7)}
-  #nav button[data-view="planning"],#nav button[data-view="options"]{display:none}
-  #nav .nav-plus{display:flex}
+  #nav button[data-view="options"]{display:none}
+  #nav .nav-plus{display:none}
   #nav .nav-scan{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;background:none;min-height:44px;color:var(--ink);font-size:var(--t-xs);font-weight:700}
   #nav .nav-scan .ns-c{width:60px;height:60px;margin-top:-30px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;box-shadow:0 8px 20px -6px rgba(0,0,0,.35);border:4px solid var(--bg);transition:transform .12s var(--ease-out,ease-out)}
   #nav .nav-scan .ns-c .ico{width:26px;height:26px}
   #nav .nav-scan:active .ns-c{transform:scale(.94)}
   #nav .nav-scan:focus-visible{outline:none}
   #nav .nav-scan:focus-visible .ns-c{outline:2px solid var(--accent);outline-offset:3px}
-  .navsheet{bottom:calc(80px + env(safe-area-inset-bottom,0px));right:10px;min-width:200px}
+  .navsheet{top:calc(58px + env(safe-area-inset-top,0px));bottom:auto;right:12px;min-width:220px;transform-origin:top right;animation:ns-in .16s var(--ease-out,ease-out)}
   .navsheet button{min-height:44px;box-sizing:border-box}
   /* accueil */
   .mhome{display:block}
@@ -2014,3 +2014,18 @@ main{padding-block:12px 40px}
 .pclash-bar > .ico{color:var(--bad);width:18px;height:18px;flex:none;margin-top:2px}
 .pclash-bar b{display:block;color:var(--bad)}
 .p7 td.q7x{background:var(--bad-soft,#FDECEC);color:var(--bad);font-weight:700}
+
+/* Téléphone : barre du bas à 5 entrées (Ma journée · Travaux · Scanner · Pièces · Planning) ;
+   Options et Aide derrière la pastille du compte, en haut à droite de « Ma journée » */
+@keyframes ns-in{from{opacity:0;transform:scale(.96) translateY(-4px)}}
+.ns-who{padding:8px 14px 10px;border-bottom:1px solid var(--line);margin-bottom:2px}
+.ns-who b{display:block;font-size:var(--t-base)}
+.ns-who small{display:block;color:var(--muted);font-size:var(--t-xs);overflow-wrap:anywhere}
+.ns-who:empty{display:none}
+/* Révision au téléphone : colonne des travaux étroite, la grille défile de côté */
+@media (max-width:760px){
+  .revg .rl{min-width:132px;max-width:132px;padding:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .revg tr.rsec th .link{font-size:.66rem}
+  .rev-hint{display:none}
+  .rev-scroll{max-height:calc(100dvh - 300px)}
+}

@@ -125,9 +125,14 @@ document.addEventListener('mousedown', e => {
     }
   }
 });
-document.addEventListener('mousedown', e => {
+/* Menu du compte (téléphone) : se ferme en touchant ailleurs, ou après un choix */
+document.addEventListener('pointerdown', e => {
   const ns = $('#navsheet');
-  if (ns && !ns.hidden && !e.target.closest('#navsheet') && !e.target.closest('.nav-plus')) ns.hidden = true;
+  if (ns && !ns.hidden && !e.target.closest('#navsheet') && !e.target.closest('.nav-plus, .mh-av')) ns.hidden = true;
+});
+document.addEventListener('click', e => {
+  const ns = $('#navsheet');
+  if (ns && !ns.hidden && e.target.closest('#navsheet [data-act]')) ns.hidden = true;
 });
 document.getElementById('fab').addEventListener('click', e => {
   if (e.target.closest('.fab-menu button')) {

@@ -9,7 +9,7 @@ Le demandeur est **Thomas Bonnant**, responsable informatique. Il décrit ses be
 - Pas de menu « Plus » : actions principales en boutons, actions secondaires en petites icônes (`toolBtn()`, avec leur nom en bulle).
 - Préférer **simplifier** plutôt qu'ajouter. Pas de doublon d'accès à une même fonction. Un seul style de filtre : les **pastilles** (`.ychip` / `.fchips`).
 - **Ordinateur (≥ 1024 px)** : barre latérale à gauche (logo, menu, carte verte usine + météo, Aide), contenu sur toute la largeur, grand titre — bloc « DISPOSITION APPLE » à la fin de `css/triflow.css`. Tablette (761-1023 px) : bandeau vert en haut.
-- Toujours penser **ordinateur et téléphone**. Téléphone (≤ 760 px) = style appli : pas de bandeau, barre du bas « Ma journée · Travaux · [Scanner] · Pièces · Plus » (Plus = Planning, Options, Aide), accueil `.mhome` (dans `VIEWS.accueil`), pas d'impression.
+- Toujours penser **ordinateur et téléphone**. Téléphone (≤ 760 px) = style appli : pas de bandeau, barre du bas « Ma journée · Travaux · [Scanner] · Pièces · Planning » (Options et Aide : pastille du compte en haut à droite de Ma journée ; Révision = onglet de Travaux), accueil `.mhome` (dans `VIEWS.accueil`), pas d'impression.
 - Rien n'est supprimé par défaut : on **archive** (champ `arch`). La suppression définitive est réservée aux **cadres** (`canDel()`).
 
 ## Où est le code

@@ -334,8 +334,15 @@ async def main():
         ok(await pg.evaluate("document.querySelectorAll('dialog[open]').length === 1 && /C.est fait|rapport/.test(document.querySelector('dialog[open] h2').textContent)"), 'glisser un travail vers la droite : « C’est fait »')
         await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close())")
         for js, nom in [("go('accueil')", 'accueil'), ("S.sel.pieces=null; go('pieces')", 'pieces'), ("S.sel.taches=null; go('taches')", 'travaux'), ("S.sel.interventions=null; S.statut='terminee'; go('interventions')", 'travaux-fait'),
-                        ("go('interventions','i1')", 'rapport'), ("go('planning')", 'planning'), ("go('accueil'); quickMove(getPiece('p1'))", 'sortie-rapide')]:
+                        ("go('interventions','i1')", 'rapport'), ("go('revision')", 'revision'), ("go('planning')", 'planning'), ("go('accueil'); quickMove(getPiece('p1'))", 'sortie-rapide')]:
             await aller(js, 'tel-' + nom)
+        await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close()); go('accueil')"); await pg.wait_for_timeout(300)
+        ok(await pg.evaluate("(() => { const v = [...document.querySelectorAll('#nav > button')].filter(b => b.offsetParent && getComputedStyle(b).display !== 'none'); return v.length === 5 && v.some(b => b.dataset.view === 'planning') && !v.some(b => b.classList.contains('nav-plus')); })()"), 'téléphone : barre du bas à 5 entrées, Planning compris')
+        await pg.click('.mh-av'); await pg.wait_for_timeout(300)
+        await capture('tel-compte')
+        ok(await pg.evaluate("!document.querySelector('#navsheet').hidden && !!document.querySelector('#navsheet [data-view=options]')"), 'téléphone : la pastille du compte ouvre Options et Aide')
+        await pg.click('#navsheet [data-view=options]'); await pg.wait_for_timeout(300)
+        ok(await pg.evaluate("S.view === 'options' && document.querySelector('#navsheet').hidden"), 'téléphone : Options ouvert, menu refermé')
         await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close()); S.sel.taches=null; go('taches')"); await pg.wait_for_timeout(300)
         ok(await pg.evaluate("(() => { const a = document.querySelector('.app'), n = document.querySelector('#nav').getBoundingClientRect(); a.scrollTop = 400; return document.scrollingElement.scrollTop === 0 && a.scrollTop > 0 && Math.abs(n.bottom - innerHeight) < 2 && Math.abs(document.querySelector('#nav').getBoundingClientRect().bottom - innerHeight) < 2; })()"), 'téléphone : seule la liste défile, la barre du bas reste en bas')
         ok(await pg.evaluate("[...document.querySelectorAll('.wtabs button, .pour-chips .ychip')].every(b => { const r = b.getBoundingClientRect(); return r.right <= innerWidth && r.left >= 0; })"), 'téléphone : onglets et filtres Travaux entiers (rien de coupé)')

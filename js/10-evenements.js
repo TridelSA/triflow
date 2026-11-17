@@ -112,7 +112,11 @@ const ACT = {
     render();
   },
   navplus(d, t) {
-    const s2 = $('#navsheet');
+    const s2 = $('#navsheet'),
+      mp = getPers(meId()),
+      w = $('#ns-who');
+    if (w)
+      w.innerHTML = mp || CLOUD.user ? `<b>${esc(mp ? persName(mp) : 'Mon compte')}</b><small>${esc(CLOUD.user?.email || '')}</small>` : '';
     s2.hidden = !s2.hidden;
     t.setAttribute('aria-expanded', String(!s2.hidden));
   },
