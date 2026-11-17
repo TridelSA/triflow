@@ -343,6 +343,24 @@ function accPlanSelect() {
 }
 /* Disponible ce jour-là (R, PIQ, EN, PI, CA, PO…) : case blanche, sans code */
 const isDispo = code => !!code && (DISPO.has(code) || ['on', 'piq'].includes((PCODE[code] || [])[1]));
+/* Prévu au planning mais la personne est absente ce jour-là (vacances, rotation, congé… même un seul jour) :
+   renvoie le code d'absence, sinon '' */
+function planClash(x) {
+  const p = getPers(x.who),
+    c = p ? presOf(p, x.date)?.code || '' : '';
+  return c && !isDispo(c) ? c : '';
+}
+/* Tout ce qui est prévu entre deux dates pour une personne absente */
+const planClashes = (d0, d1) =>
+  db.plan
+    .filter(x => x.date >= d0 && x.date <= d1 && getPers(x.who))
+    .map(x => ({x, c: planClash(x)}))
+    .filter(o => o.c)
+    .sort((a, b) => a.x.date.localeCompare(b.x.date));
+const clashTxt = o => {
+  const t = o.x.tacheId ? get('taches', o.x.tacheId) : null;
+  return `${esc(persName(getPers(o.x.who)))} · ${DAYN[(new Date(o.x.date + 'T12:00:00').getDay() + 6) % 7] || ''} ${fmtD(o.x.date)} (${esc((PCODE[o.c] || [o.c])[0])}) : ${esc(t ? t.titre : o.x.text || '')}`;
+};
 function planCell(who, iso, p) {
   const items = db.plan.filter(x => x.who === who && x.date === iso),
     pr = p ? presOf(p, iso) : null,
@@ -351,13 +369,15 @@ function planCell(who, iso, p) {
     const t = x.tacheId && get('taches', x.tacheId);
     return !!t && doneOn(t, iso);
   };
-  return `<div class="pc ${pc ? 'k-' + pc[1] : p && pr && !pr.code ? 'k-none' : ''} ${S.pdrop === who + '|' + iso ? 'drop' : ''}" data-act="plan-add" data-who="${esc(who)}" data-date="${iso}">
+  const clash = !!pc && items.length > 0;
+  return `<div class="pc ${pc ? 'k-' + pc[1] : p && pr && !pr.code ? 'k-none' : ''} ${clash ? 'pclash' : ''} ${S.pdrop === who + '|' + iso ? 'drop' : ''}" data-act="plan-add" data-who="${esc(who)}" data-date="${iso}">
+    ${clash ? `<span class="pabs" title="Prévu, mais absent ce jour-là : ${esc(pc[0])}">${icon('alert')}Absent</span>` : ''}
     ${pc ? `<span class="pcode" title="${esc(pc[0])}${pr.note ? ' · ' + esc(pr.note) : ''}">${esc(pr.code)}</span>` : ''}
     ${items
       .map(x => {
         const t = x.tacheId ? get('taches', x.tacheId) : null,
           k = t ? getKks(t.kksId) : null;
-        return `<button class="pit ${t ? 'task' : ''} ${done(x) ? 'done' : ''}" data-act="plan-edit" data-id="${x.id}" title="${esc(t ? t.titre : x.text)}"><span>${esc(t ? t.titre : x.text)}</span>${k ? `<small>${esc(k.code)}</small>` : ''}${t && x.text ? `<small>${esc(x.text)}</small>` : ''}${t ? `<span class="pdel" data-act="plan-del" data-id="${x.id}" role="button" aria-label="Retirer du planning" title="Retirer du planning">×</span>` : ''}</button>`;
+        return `<button class="pit ${t ? 'task' : ''} ${done(x) ? 'done' : ''} ${clash ? 'clash' : ''}" data-act="plan-edit" data-id="${x.id}" title="${esc(t ? t.titre : x.text)}"><span>${esc(t ? t.titre : x.text)}</span>${k ? `<small>${esc(k.code)}</small>` : ''}${t && x.text ? `<small>${esc(x.text)}</small>` : ''}${t ? `<span class="pdel" data-act="plan-del" data-id="${x.id}" role="button" aria-label="Retirer du planning" title="Retirer du planning">×</span>` : ''}</button>`;
       })
       .join('')}
     ${pr && pr.note ? `<span class="pnote">${esc(pr.note)}</span>` : ''}</div>`;
@@ -438,6 +458,15 @@ VIEWS.planning = {
         <span class="head-tools">${toolBtn(['plan-hide', 'Masquer des personnes (pour tous)', 'person', {}])}</span></div></header>
       ${planVueChips()}
       <div class="ptip-row"><p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez une case et tapez le travail : <b>Entrée</b> valide, <b>Tab</b> passe au jour suivant, <b>⋯</b> pour plus de choix.</p>${planLegend()}</div>
+      ${(() => {
+        const l = planClashes(days[0], days[nd - 1]);
+        return l.length
+          ? `<div class="pclash-bar" role="alert">${icon('alert')}<div><b>${nbs(l.length, 'chose prévue', 'choses prévues')} pour une personne absente</b><span>${l
+              .slice(0, 6)
+              .map(clashTxt)
+              .join('<br>')}${l.length > 6 ? `<br>et ${nbs(l.length - 6, 'autre', 'autres')}` : ''}</span></div></div>`
+          : '';
+      })()}
       <div class="pwrap ${S.pside ? '' : 'noside'}"><div class="wkgrid-wrap"><table class="wkgrid"><thead><tr><th></th>${days.map((d, i) => `<th class="${d === today ? 'today' : ''}">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>${S.pside ? planSideHTML(days, ppl) : ''}</div>
       ${
         conge.length
@@ -502,6 +531,7 @@ function planCheckDialog() {
     conge = planPeople.conge || [];
   const late = planSideTasks(days, ppl).filter(t => pKey(t, days[0], days[4]) === 'retard');
   const wk = planSideTasks(days, ppl).filter(t => pKey(t, days[0], days[4]) === 'semaine');
+  const abs = planClashes(days[0], isoAdd(mon, 6));
   const empty = ppl.filter(
     p => days.some(d => isDispo(presOf(p, d)?.code)) && !db.plan.some(x => x.who === p.id && x.date >= days[0] && x.date <= days[4])
   );
@@ -521,6 +551,7 @@ function planCheckDialog() {
     title: `Semaine ${isoWeek(mon)} : avant d’imprimer`,
     saveLabel: `${icon('printer')}Imprimer A3`,
     body: `<div class="pcheck">
+      ${row(!abs.length, 'bad', abs.length ? `${nbs(abs.length, 'chose prévue', 'choses prévues')} pour une personne absente` : 'Personne d’absent n’a de travail prévu', abs.length ? `<p>${abs.slice(0, 8).map(clashTxt).join('<br>')}</p>` : '')}
       ${row(!late.length, 'bad', late.length ? `${late.length} travail${late.length > 1 ? 'x' : ''} en retard pas encore placé${late.length > 1 ? 's' : ''}` : 'Aucun travail en retard oublié', late.length ? `<ul>${titles(late)}</ul>` : '')}
       ${row(!wk.length, 'warn', wk.length ? `${wk.length} travail${wk.length > 1 ? 'x' : ''} prévu${wk.length > 1 ? 's' : ''} cette semaine, pas encore placé${wk.length > 1 ? 's' : ''}` : 'Les travaux de la semaine sont placés', wk.length ? `<ul>${titles(wk)}</ul>` : '')}
       ${row(!empty.length, 'warn', empty.length ? `${empty.length} personne${empty.length > 1 ? 's' : ''} disponible${empty.length > 1 ? 's' : ''} sans rien de prévu` : 'Tout le monde a quelque chose de prévu', empty.length ? `<p>${names(empty)}</p>` : '')}

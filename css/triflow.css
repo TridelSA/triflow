@@ -2004,3 +2004,13 @@ main{padding-block:12px 40px}
 }
 /* Trait vert sous l'onglet choisi : position mesurée (onglets de largeurs différentes) */
 .ttabs.slide::after{width:var(--w,calc(100% / var(--n,3)));transform:translateX(var(--x,calc(var(--i,0) * 100%)))}
+
+/* Planning : quelque chose est prévu mais la personne est absente ce jour-là */
+.pc.pclash{outline:2px solid var(--bad);outline-offset:-2px;border-radius:var(--r-sm)}
+.pabs{display:inline-flex;align-items:center;gap:3px;align-self:flex-start;font-size:var(--t-2xs);font-weight:700;color:var(--bad);background:var(--bad-soft,#FDECEC);border-radius:var(--r-pill);padding:1px 7px}
+.pabs .ico{width:12px;height:12px}
+.pit.clash{text-decoration:line-through;text-decoration-color:var(--bad);opacity:.85}
+.pclash-bar{display:flex;gap:10px;align-items:flex-start;margin:0 0 10px;padding:10px 14px;border:1px solid color-mix(in srgb,var(--bad) 40%,transparent);background:var(--bad-soft,#FDECEC);color:var(--ink);border-radius:var(--r-lg);font-size:var(--t-sm)}
+.pclash-bar > .ico{color:var(--bad);width:18px;height:18px;flex:none;margin-top:2px}
+.pclash-bar b{display:block;color:var(--bad)}
+.p7 td.q7x{background:var(--bad-soft,#FDECEC);color:var(--bad);font-weight:700}

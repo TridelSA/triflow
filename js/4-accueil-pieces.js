@@ -77,6 +77,8 @@ VIEWS.accueil = {
         txt = items.map(x => (x.tacheId ? get('taches', x.tacheId)?.titre : x.text) || '').filter(Boolean),
         code = presOk ? presOf(p, d)?.code || '' : '',
         we = [0, 6].includes(new Date(d + 'T12:00:00').getDay());
+      if (code && !isDispo(code) && items.length)
+        return `<td class="q7a q7x" title="${esc(`Absent (${(PCODE[code] || [code])[0]}) mais prévu : ${txt.join(' · ') || 'noté au planning'}`)}">${esc(code)}!</td>`;
       if (code && !isDispo(code)) return `<td class="q7a${we ? ' we' : ''}" title="${esc((PCODE[code] || [code])[0])}">${esc(code)}</td>`;
       if (items.length) return `<td class="q7t" title="${esc(txt.join(' · ') || 'Noté au planning')}">${items.length}</td>`;
       if (code) return `<td class="q7p" title="Présent">✓</td>`;

@@ -121,6 +121,7 @@ const fmtDT = s =>
 
 /* ---------------- Icônes ---------------- */
 const ICONS = {
+  alert: 'M12 4L2.5 20h19L12 4zM12 10v4.5M12 17.4v.1',
   trash: 'M4 7h16M10 11v6M14 11v6M9 7V4h6v3M6 7l1 13h10l1-13',
   check: 'M5 12.5l4.5 4.5L19 7.5',
   repeat: 'M4 11V9a3 3 0 013-3h12M16 3l3 3-3 3M20 13v2a3 3 0 01-3 3H5M8 21l-3-3 3-3',
