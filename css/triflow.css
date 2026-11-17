@@ -1973,3 +1973,13 @@ main{padding-block:12px 40px}
 .revg tr.rsec th .link{float:right;margin:2px 0 0}
 .revg .rl{width:300px}
 .revg thead tr.rw th.rl{top:0}
+/* « À planifier » compact : métiers sur une ligne (pastille de couleur + nombre), cartes serrées, plus de texte d'aide */
+.ps-met{display:flex;flex-wrap:nowrap;gap:4px}
+.ps-m{padding:4px 9px;display:inline-flex;align-items:center;gap:5px}
+.ps-m .mdot{margin:0}
+.ps-t{padding:7px 10px;gap:3px}
+.ps-t .t{font-size:var(--t-md);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ps-t small{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;overflow:hidden;white-space:nowrap}
+.ps-t small .kks{font-size:.66rem;padding:0 4px}
+.ps-t small .when{margin-left:auto}
+.ps-t small .rep .ico{width:13px;height:13px}

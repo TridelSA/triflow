@@ -435,7 +435,7 @@ VIEWS.planning = {
             ? `<span class="chip ok plan-ready" title="Imprimée le ${fmtDT(r.at)}">${icon('check')}Prête${getPers(r.by) ? ' · ' + esc(getPers(r.by).nom) : ''}</span>`
             : '';
         })()}
-        ${menu([['plan-hide', 'Masquer des personnes (pour tous)', 'person', {}]])}</div></header>
+        <span class="head-tools">${toolBtn(['plan-hide', 'Masquer des personnes (pour tous)', 'person', {}])}</span></div></header>
       ${planVueChips()}
       <div class="ptip-row"><p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez une case et tapez le travail : <b>Entrée</b> valide, <b>Tab</b> passe au jour suivant, <b>⋯</b> pour plus de choix.</p>${planLegend()}</div>
       <div class="pwrap ${S.pside ? '' : 'noside'}"><div class="wkgrid-wrap"><table class="wkgrid"><thead><tr><th></th>${days.map((d, i) => `<th class="${d === today ? 'today' : ''}">${DAYN[i]}<small>${+d.slice(8)}.${d.slice(5, 7)}</small></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>${S.pside ? planSideHTML(days, ppl) : ''}</div>
@@ -557,7 +557,7 @@ function planSideHTML(days, ppl) {
     ts = met ? all.filter(t => tMet(t) === met) : all;
   const cnt = m => all.filter(t => (!m || tMet(t) === m) && P_URG.includes(pKey(t, start, end))).length;
   const chip = (k, lbl) =>
-    `<button role="tab" class="ychip" data-act="plan-met" data-m="${k}" aria-selected="${met === k}">${mdot(k)}${lbl} <small>${cnt(k)}</small></button>`;
+    `<button role="tab" class="ychip ps-m" data-act="plan-met" data-m="${k}" aria-selected="${met === k}" title="${esc(lbl)}" aria-label="${esc(lbl)} : ${cnt(k)}">${k ? mdot(k) : 'Tout '}<small>${cnt(k)}</small></button>`;
   const sec = {retard: [], semaine: [], asap: [], plus: [], arret: [], vieux: []};
   for (const t of ts) sec[pKey(t, start, end)].push(t);
   for (const k of ['retard', 'semaine', 'plus', 'arret', 'vieux'])
@@ -576,7 +576,7 @@ function planSideHTML(days, ppl) {
   };
   const card = (t, cls) => {
     const k = getKks(t.kksId);
-    return `<div class="ps-t ${cls} ${S.ppick === t.id ? 'picked' : ''}" draggable="true" data-tid="${t.id}" data-act="plan-pick" data-id="${t.id}" tabindex="0" title="Glissez dans une case, ou cliquez puis cliquez la case"><span class="t">${mdot(tMet(t))}${esc(t.titre)}</span><small>${isPetit(t) && prioOf(t) === 'haute' ? '<span class="chip prio bad">Haute</span>' : ''}${k ? `<span class="kks">${esc(k.code)}</span>` : ''}<span class="who">${esc(assignLabel(t.assign))}</span>${isPetit(t) ? '' : `<span class="rep">${icon('repeat')}${esc(freqLabel(t.freq))}</span>`}<span class="when">${when(t)}</span></small></div>`;
+    return `<div class="ps-t ${cls} ${S.ppick === t.id ? 'picked' : ''}" draggable="true" data-tid="${t.id}" data-act="plan-pick" data-id="${t.id}" tabindex="0" title="Glissez dans une case, ou cliquez puis cliquez la case"><span class="t">${mdot(tMet(t))}${esc(t.titre)}</span><small>${isPetit(t) && prioOf(t) === 'haute' ? '<span class="chip prio bad">Haute</span>' : ''}${k ? `<span class="kks">${esc(k.code)}</span>` : ''}${t.assign?.v ? `<span class="who">${esc(assignLabel(t.assign))}</span>` : ''}${isPetit(t) ? '' : `<span class="rep" title="${esc(freqLabel(t.freq))}">${icon('repeat')}</span>`}<span class="when">${when(t)}</span></small></div>`;
   };
   const block = (key, title, cls, open = true) => {
     const l = sec[key];
@@ -596,8 +596,7 @@ function planSideHTML(days, ppl) {
       <div class="ps-met" role="tablist" aria-label="Métier">${chip('', 'Tout')}${METIERS.map(m => chip(m[0], m[1])).join('')}</div>
       <input type="search" data-search="planside" data-pside="1" placeholder="Filtrer : mot, KKS, nom…" value="${esc(S.q.planside || '')}" aria-label="Filtrer les travaux à planifier"></div>
     ${pk ? `<div class="ps-pick">${icon('calendar')}<span>Cliquez la case où placer <b>${esc(pk.titre)}</b></span><button class="link" data-act="plan-pick" data-id="${pk.id}">Annuler</button></div>` : ''}
-    <div class="ps-l">${ts.length ? body : `<p class="empty-line" style="padding:12px">Rien à planifier${met ? ' pour ce métier' : ''}.</p>`}</div>
-    <p class="hint ps-f">Glissez un travail dans une case, ou cliquez-le puis cliquez la case. Les cases des personnes concernées s’éclairent.</p></aside>`;
+    <div class="ps-l">${ts.length ? body : `<p class="empty-line" style="padding:12px">Rien à planifier${met ? ' pour ce métier' : ''}.</p>`}</div></aside>`;
 }
 function planSuggest(tid) {
   $$('.wkgrid .pc.sug').forEach(x => x.classList.remove('sug'));

@@ -296,7 +296,7 @@ async def main():
         ok(await pg.evaluate("document.querySelectorAll('.wkgrid th.pn').length > 3"), 'planning affiché')
         ok(await pg.evaluate("![...document.querySelectorAll('.wkgrid th.pn')].some(x => x.textContent.includes('ECHO'))"), 'personne en vacances masquée du planning')
         await pg.evaluate("tx(() => db.taches.push({id:'t3', titre:'Contrôle éclairage', kksId:'', assign:{type:'groupe', v:'Électricien'}, freq:{n:1, unite:'once'}, prochaine:'', actif:true, kind:'petit', prio:'haute'})); S.pside = true; render()"); await pg.wait_for_timeout(300)
-        ok(await pg.evaluate("[...document.querySelectorAll('.pside [data-act=plan-met]')].map(b => b.textContent.replace(/\\s*\\d+$/, '').trim()).join('|') === 'Tout|Électricien|Automaticien|Mécanicien|Intendance'"), 'À planifier : pastilles par métier')
+        ok(await pg.evaluate("[...document.querySelectorAll('.pside [data-act=plan-met]')].map(b => b.title).join('|') === 'Tout|Électricien|Automaticien|Mécanicien|Intendance'"), 'À planifier : pastilles par métier')
         await pg.evaluate("ACT['plan-print']({f:'a3'})"); await pg.wait_for_timeout(300)
         ok(await pg.evaluate("document.querySelectorAll('dialog[open] .pcheck .pc-row').length >= 3"), 'planning : liste de contrôle avant impression')
         await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close())")
