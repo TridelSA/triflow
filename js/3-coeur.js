@@ -1990,6 +1990,70 @@ function meteoTitle() {
   const [, txt] = METEO_ICO(+(METEO.now ?? METEO.code));
   return `Lausanne : ${txt} · min ${Math.round(METEO.min)} °C, max ${Math.round(METEO.max)} °C`;
 }
+/* Ciel de la carte Tridel (barre latérale) : dépend du moment et du temps */
+function meteoSky() {
+  const h = new Date().getHours(),
+    day = METEO?.isDay != null ? !!METEO.isDay : h >= 7 && h < 19,
+    c = METEO ? +(METEO.now ?? METEO.code) : 0;
+  if (!day) return 'nuit';
+  if (c >= 51) return (c >= 71 && c <= 77) || c === 85 || c === 86 ? 'neige' : 'pluie';
+  if (c >= 3) return 'gris';
+  return 'clair';
+}
+/* Dessin du ciel pour la carte (200 × 84) : couleurs naturelles, comme un widget météo */
+function meteoCardSVG() {
+  const sky = meteoSky(),
+    c = METEO ? +(METEO.now ?? METEO.code) : 0;
+  const cloud = (x, y, w, hh, o, fill = '#FFFFFF') =>
+    `<g fill="${fill}" opacity="${o}"><rect x="${x}" y="${y + hh * 0.45}" width="${w}" height="${hh * 0.55}" rx="${hh * 0.27}"/><circle cx="${x + w * 0.3}" cy="${y + hh * 0.5}" r="${hh * 0.36}"/><circle cx="${x + w * 0.55}" cy="${y + hh * 0.36}" r="${hh * 0.5}"/><circle cx="${x + w * 0.78}" cy="${y + hh * 0.55}" r="${hh * 0.32}"/></g>`;
+  let body = '';
+  if (sky === 'nuit') {
+    const p = moonPhase(),
+      r = 10,
+      k = Math.cos(2 * Math.PI * p),
+      rx = Math.abs(k) * r,
+      waxing = p < 0.5;
+    const lit =
+      p < 0.02 || p > 0.98
+        ? ''
+        : Math.abs(p - 0.5) < 0.02
+          ? `<circle r="${r}" fill="#F3F1E4"/>`
+          : waxing
+            ? `<path d="M0 ${-r}A${r} ${r} 0 0 1 0 ${r}A${rx.toFixed(2)} ${r} 0 0 ${k > 0 ? 0 : 1} 0 ${-r}Z" fill="#F3F1E4"/>`
+            : `<path d="M0 ${-r}A${r} ${r} 0 0 0 0 ${r}A${rx.toFixed(2)} ${r} 0 0 ${k > 0 ? 1 : 0} 0 ${-r}Z" fill="#F3F1E4"/>`;
+    body += `<g fill="#FFFFFF">${[
+      [18, 14, 1],
+      [44, 30, 0.7],
+      [76, 10, 0.9],
+      [104, 34, 0.6],
+      [128, 12, 0.8],
+      [186, 40, 0.7]
+    ]
+      .map(([x, y, o]) => `<circle cx="${x}" cy="${y}" r="1.1" opacity="${o}"/>`)
+      .join(
+        ''
+      )}</g><g transform="translate(160 26)"><circle r="16" fill="#F3F1E4" opacity=".08"/><circle r="${r}" fill="#FFFFFF" opacity=".12"/>${lit}</g>`;
+  } else if (sky === 'clair' || c <= 2)
+    body += `<g transform="translate(160 26)"><circle r="20" fill="#FFE27A" opacity=".35"/><circle r="12" fill="#FFD23F"/></g>`;
+  const night = sky === 'nuit',
+    cf = night ? '#C9D3E3' : '#FFFFFF';
+  if (c >= 1 && c <= 2) body += cloud(112, 26, 62, 18, night ? 0.6 : 0.95, cf);
+  else if (c === 3) body += cloud(18, 14, 74, 18, night ? 0.45 : 0.85, cf) + cloud(100, 24, 86, 22, night ? 0.6 : 0.95, cf);
+  else if (c >= 45 && c <= 48)
+    body += `<g stroke="#FFFFFF" stroke-linecap="round" opacity=".55"><line x1="16" y1="34" x2="150" y2="34" stroke-width="5"/><line x1="40" y1="46" x2="190" y2="46" stroke-width="6"/></g>`;
+  else if (c >= 51) {
+    const snow = sky === 'neige',
+      storm = c >= 95;
+    body +=
+      cloud(14, 8, 92, 22, night ? 0.55 : 0.9, night ? cf : '#EEF2F6') +
+      cloud(88, 16, 96, 24, night ? 0.65 : 1, night ? cf : '#F7F9FB') +
+      (snow
+        ? `<g fill="#FFFFFF">${[30, 52, 74, 96, 118, 140, 162].map((x, i) => `<circle cx="${x}" cy="${50 + (i % 3) * 7}" r="2"/>`).join('')}</g>`
+        : `<g stroke="${night ? '#9DB4D6' : '#5C8FD1'}" stroke-width="2" stroke-linecap="round">${[34, 52, 70, 88, 106, 124, 142, 160].map((x, i) => `<line x1="${x}" y1="${44 + (i % 2) * 5}" x2="${x - 4}" y2="${54 + (i % 2) * 5}"/>`).join('')}</g>`) +
+      (storm ? '<path d="M118 40l-8 13h7l-4 11 12-15h-7l5-9z" fill="#FFD23F"/>' : '');
+  }
+  return `<svg viewBox="0 0 200 84" preserveAspectRatio="xMidYMin meet" aria-hidden="true">${body}</svg>`;
+}
 function meteoHero() {
   if (!(METEO?.day === todayISO() && Date.now() - METEO.at < 3600e3)) setTimeout(loadMeteo, 0);
   const hero = $('.hero-art');
@@ -2001,7 +2065,9 @@ function meteoHero() {
     w.className = 'hero-wx';
     hero.prepend(w);
   }
-  const html = meteoSVG();
+  const card = matchMedia('(min-width:1024px)').matches,
+    html = card ? meteoCardSVG() : meteoSVG();
+  hero.dataset.sky = meteoSky();
   if (w._h !== html) w.innerHTML = w._h = html;
   w.setAttribute('aria-hidden', 'true');
 }
