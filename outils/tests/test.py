@@ -231,6 +231,9 @@ async def main():
                         ("S.opt='personnes'; go('options')", 'options-personnes')]:
             await aller(js, 'ordi-' + nom)
         ok(await pg.evaluate("S.pweek === planWeek()"), 'le planning s’ouvre sur la semaine suivante')
+        trop = await pg.evaluate("""(async () => { const r = []; for (const v of ['accueil', 'taches', 'interventions', 'pieces', 'planning', 'options', 'kks']) { go(v); await new Promise(x => setTimeout(x, 250));
+          const a = document.querySelector('.app').getBoundingClientRect(); if (document.documentElement.scrollHeight > innerHeight + 1 || a.bottom > innerHeight + 1) r.push(v); } go('accueil'); return r.join(','); })()""")
+        ok(trop == '', 'ordinateur : chaque page tient dans la fenêtre (pas de défilement de la page)' + (f' — dépassent : {trop}' if trop else ''))
         ok(await pg.evaluate("(n => n.getBoundingClientRect().left < innerWidth / 2)(document.querySelector('#nav'))"), 'ordinateur : menu à gauche du bandeau')
         ok(await pg.evaluate("(go('interventions'), !/\\(s\\)/.test(document.body.innerText))"), 'pas de « (s) » dans les textes')
         await aller("go('accueil')", 'ordi-accueil', 900)

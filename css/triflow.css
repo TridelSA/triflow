@@ -1875,3 +1875,37 @@ main{padding-block:12px 40px}
   .hero-art .hero-wx{left:0;right:0;top:0;width:auto;height:64%}
   .hero-art .hero-wx svg{opacity:1;filter:none;mix-blend-mode:normal}
 }
+
+/* =====================================================================
+   TOUT TIENT DANS LA FENÊTRE (ordinateur ≥ 1024 px) : la page ne défile plus ;
+   seules les listes, fiches, cartes et grilles défilent dans leur propre cadre.
+   ===================================================================== */
+@media (min-width:1024px){
+  html,body{height:100%;overflow:hidden}
+  .app{height:100vh;grid-template-rows:auto minmax(0,1fr)}
+  .app > .hero,body:not([data-view=accueil]) .app > .hero{grid-row:1 / span 2}
+  .app > .hband{grid-row:1}
+  .app > .content{grid-row:2;min-height:0;overflow:hidden}
+  #main{flex:1;min-height:0;display:flex;flex-direction:column;overflow:auto;padding-bottom:16px}
+  #main > .page-head{flex:none}
+  /* Listes + fiche : chaque panneau défile seul */
+  #main > .split{flex:1;min-height:0;align-items:stretch}
+  #main > .split > .pane{min-height:0;max-height:none;overflow:auto}
+  #main > .split > .pane.detail{position:static;top:auto;height:auto;max-height:none}
+  /* Options : le menu reste, la partie droite défile */
+  #main > .opt{flex:1;min-height:0;align-items:stretch}
+  #main > .opt > .opt-nav{position:static;overflow:auto}
+  #main > .opt > .opt-body{min-height:0;overflow:auto;padding-bottom:8px}
+  /* Planning : la grille et « À planifier » prennent la hauteur restante */
+  #main > .pwrap{flex:1;min-height:0;align-items:stretch}
+  #main > .pwrap .wkgrid-wrap,#main > .pwrap .pside{max-height:none;min-height:0;height:100%;position:static}
+  /* Accueil : les cartes se partagent la hauteur, leur contenu défile si besoin */
+  #main > .bento{flex:1;min-height:0;grid-auto-rows:minmax(0,1fr)}
+  #main > .bento > .btile{min-height:0;overflow:auto}
+}
+@media (min-width:1024px){
+  /* Accueil : la carte Options double la barre latérale → retirée ; Planning prend toute la colonne */
+  #main > .bento > .bt-o{display:none}
+  #main > .bento > .bt-l{grid-column:3;grid-row:1 / span 2}
+  .bt-l .p7-wrap{flex:1;min-height:0;overflow:auto}
+}
