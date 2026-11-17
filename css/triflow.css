@@ -1439,9 +1439,12 @@ details.more > summary{flex-wrap:wrap;row-gap:0}
 @media (max-width:760px){ .page-head [data-act="scan"]{display:none} }
 /* iPhone : barre du bas toujours au-dessus de la barre d'adresse ; cachée quand le clavier est ouvert */
 @media (max-width:760px){
-  body > #nav{bottom:0;will-change:transform;-webkit-transform:translateZ(0)}
+  body > #nav{bottom:0}
   body.kbd > #nav{display:none}
-  html,body{min-height:100%;overscroll-behavior-y:none}
+  /* La page entière ne bouge jamais : seul le cadre .app défile. Safari garde sa barre d'adresse fixe
+     et la barre du bas ne peut plus glisser sous elle. */
+  html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+  .app{height:100%;box-sizing:border-box;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
 }
 /* Téléphone : toutes les fenêtres (même « larges », comme l'aide) en pleine largeur, collées en bas */
 @media (max-width:760px){
@@ -1983,3 +1986,12 @@ main{padding-block:12px 40px}
 .ps-t small .kks{font-size:.66rem;padding:0 4px}
 .ps-t small .when{margin-left:auto}
 .ps-t small .rep .ico{width:13px;height:13px}
+
+/* Téléphone : rien de coupé dans les rangées de pastilles (onglets Travaux, filtres) — elles se partagent la largeur
+   et passent à la ligne s'il le faut */
+@media (max-width:760px){
+  .wtabs{flex-wrap:wrap;overflow:visible;gap:6px}
+  .wtabs button{flex:1 1 auto;min-width:0;padding:9px 10px;justify-content:center;font-size:var(--t-sm)}
+  .wtabs button small{margin-left:2px}
+  .fchips,.pour-chips,.ps-met{flex-wrap:wrap;overflow:visible}
+}

@@ -87,6 +87,7 @@ function dialog({title, body, onSave, saveLabel = 'Enregistrer', wide = false, d
 }
 function scrollLock(on) {
   const b = document.body;
+  if (PHONE_MQ.matches) return; /* téléphone : la page ne défile pas, rien à bloquer */
   if (on) {
     if (scrollLock.n++) return;
     scrollLock.y = scrollY;

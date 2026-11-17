@@ -165,6 +165,14 @@ const ICONS = {
   tag: 'M3 12V4h8l10 10-8 8zM7.5 7.5h.5'
 };
 let menuSeq = 0;
+/* Défilement de la page : sur téléphone, c'est le cadre .app qui défile (la page entière reste fixe,
+   sinon Safari sur iPhone fait parfois descendre la barre du bas) ; ailleurs, la fenêtre */
+const PHONE_MQ = matchMedia('(max-width:760px)');
+const pageScroller = () => (PHONE_MQ.matches && document.querySelector('.app')) || document.scrollingElement || document.documentElement;
+const winY = () => pageScroller().scrollTop;
+const winTo = y => {
+  pageScroller().scrollTop = y;
+};
 /* Bouton outil : icône seule, son nom en bulle (même format qu'une entrée de menu : [action, nom, icône, données]) */
 const toolBtn = (it, cls = '') =>
   it

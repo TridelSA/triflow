@@ -328,6 +328,12 @@ async def main():
         for js, nom in [("go('accueil')", 'accueil'), ("S.sel.pieces=null; go('pieces')", 'pieces'), ("S.sel.taches=null; go('taches')", 'travaux'), ("S.sel.interventions=null; S.statut='terminee'; go('interventions')", 'travaux-fait'),
                         ("go('interventions','i1')", 'rapport'), ("go('planning')", 'planning'), ("go('accueil'); quickMove(getPiece('p1'))", 'sortie-rapide')]:
             await aller(js, 'tel-' + nom)
+        await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close()); S.sel.taches=null; go('taches')"); await pg.wait_for_timeout(300)
+        ok(await pg.evaluate("(() => { const a = document.querySelector('.app'), n = document.querySelector('#nav').getBoundingClientRect(); a.scrollTop = 400; return document.scrollingElement.scrollTop === 0 && a.scrollTop > 0 && Math.abs(n.bottom - innerHeight) < 2 && Math.abs(document.querySelector('#nav').getBoundingClientRect().bottom - innerHeight) < 2; })()"), 'téléphone : seule la liste défile, la barre du bas reste en bas')
+        ok(await pg.evaluate("[...document.querySelectorAll('.wtabs button, .pour-chips .ychip')].every(b => { const r = b.getBoundingClientRect(); return r.right <= innerWidth && r.left >= 0; })"), 'téléphone : onglets et filtres Travaux entiers (rien de coupé)')
+        await pg.evaluate("(() => { const r = __srv.rows.get('config|main'); r.data = JSON.parse(JSON.stringify(r.data)); r.data.reglages.comptes = {...(r.data.reglages.comptes || {})}; const k = meKey(); r.data.reglages.comptes[k] = {...(r.data.reglages.comptes[k] || {}), planVue: 'team'}; r.rev = (r.rev || 1) + 50; })()")
+        await pg.evaluate("catchUp()"); await pg.wait_for_timeout(600)
+        ok(await pg.evaluate("pref('planVue') === 'team'"), 'retour sur la page : les réglages changés sur un autre appareil sont relus')
         print('Premier chargement sur un nouveau poste')
         await pg.set_viewport_size({'width': 1300, 'height': 820})
         await pg.evaluate("localStorage.setItem('__slow', '2500'); IDB.del(CLOUD.cacheKey())"); await pg.wait_for_timeout(200)

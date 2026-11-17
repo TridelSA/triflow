@@ -342,7 +342,7 @@ const ACT = {
     S.arch[d.v] = !S.arch[d.v];
     S.sel[d.v] = null;
     render();
-    window.scrollTo(0, 0);
+    winTo(0);
   },
   'four-arch'(d) {
     tx(() => {
@@ -432,7 +432,7 @@ const ACT = {
     S.sel[S.view] = null;
     fillList();
     fillDetail();
-    window.scrollTo(0, 0);
+    winTo(0);
   },
   'nav-back'() {
     const b = S.back.pop();
@@ -443,7 +443,7 @@ const ACT = {
     requestAnimationFrame(() => {
       const l = $('#list');
       if (l) l.scrollTop = b.ls;
-      window.scrollTo(0, b.y);
+      winTo(b.y);
       const si = document.querySelector('.page-head input[type=search]');
       if (si && b.q[si.dataset.search]) {
         /* recherche conservée */
@@ -466,7 +466,7 @@ const ACT = {
         sysExp: new Set(S.sysExp),
         psort: S.psort,
         plimit: S.plimit,
-        y: window.scrollY,
+        y: winY(),
         ls: $('#list')?.scrollTop || 0
       });
       if (S.back.length > 20) S.back.shift();
@@ -690,9 +690,9 @@ const ACT = {
   'import-four': () => importFourDialog(),
   'four-open'(d) {
     S.fourOpen = S.fourOpen === d.name ? null : d.name;
-    const y = window.scrollY;
+    const y = winY();
     render();
-    window.scrollTo(0, y);
+    winTo(y);
   },
   'four-pieces'(d) {
     S.back.push({
@@ -703,7 +703,7 @@ const ACT = {
       sysExp: new Set(S.sysExp),
       psort: S.psort,
       plimit: S.plimit,
-      y: window.scrollY,
+      y: winY(),
       ls: 0
     });
     S.q.pieces = d.name;
@@ -1124,8 +1124,7 @@ if (CLOUD.cfg().url) {
     mq.addEventListener ? mq.addEventListener('change', place) : mq.addListener(place);
     place();
   }
-  /* iPhone : quand la barre d'adresse de Safari bouge, la barre du bas reste collée au bas de la partie visible ;
-     clavier ouvert : on la cache pour laisser la place à la saisie */
+  /* iPhone : clavier ouvert → on cache la barre du bas pour laisser la place à la saisie */
   if (window.visualViewport) {
     const vv = window.visualViewport;
     let raf = 0;
@@ -1135,12 +1134,10 @@ if (CLOUD.cfg().url) {
       if (!n || n.parentElement !== document.body) return;
       const off = Math.round(innerHeight - vv.height - vv.offsetTop);
       document.body.classList.toggle('kbd', off > 150);
-      n.style.transform = off > 0 && off <= 150 ? `translateY(${-off}px)` : '';
     };
     const ask = () => raf || (raf = requestAnimationFrame(fit));
     vv.addEventListener('resize', ask);
     vv.addEventListener('scroll', ask);
-    addEventListener('scroll', ask, {passive: true});
     fit();
   }
   /* Le site reste utilisable sans réseau (pas en test local) */

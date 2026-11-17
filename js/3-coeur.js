@@ -701,6 +701,26 @@ async function goOffline(pend) {
   CLOUD.status('offline');
   toast('Pas de réseau : vous travaillez sur la copie de cet appareil. Tout sera envoyé au retour du réseau.');
 }
+/* Retour sur la page (veille, autre onglet, téléphone en poche) : le temps réel a pu décrocher.
+   On relit ce qui a changé dans la base pendant l'absence (réglages du compte compris). */
+CLOUD.since = Date.now();
+async function catchUp() {
+  if (!CLOUD.on || CLOUD.loading || CLOUD.offline || !CLOUD.sb) return;
+  const since = new Date(CLOUD.since - 120000).toISOString();
+  CLOUD.since = Date.now();
+  try {
+    const {data, error} = await CLOUD.sb.from('docs').select('collection,id,data,rev').neq('collection', 'journal').gt('updated_at', since);
+    if (error || !data) return;
+    for (const r of data) CLOUD.applyRemote({eventType: 'UPDATE', new: r});
+  } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') CLOUD.hiddenAt = Date.now();
+  else if (Date.now() - (CLOUD.hiddenAt || Date.now()) > 20000) catchUp();
+});
+addEventListener('focus', () => {
+  if (Date.now() - CLOUD.since > 5 * 60000) catchUp();
+});
 addEventListener('online', () => {
   if (CLOUD.offline) {
     CLOUD.offline = false;
@@ -2242,7 +2262,7 @@ function fillDetail() {
   /* Téléphone : en ouvrant une fiche, on la montre depuis son début */
   if (!hadSel && $('#main .split.has-sel') && matchMedia('(max-width: 760px)').matches) {
     const r = $('#detail')?.getBoundingClientRect();
-    if (r) scrollTo({top: Math.max(0, scrollY + r.top - 10)});
+    if (r) winTo(Math.max(0, winY() + r.top - 10));
   }
   if (el && (S.view === 'interventions' || S.view === 'taches') && S.sel[S.view] && !el.querySelector('.placeholder'))
     el.insertAdjacentHTML(
@@ -2260,7 +2280,7 @@ function go(view, id) {
   closeSearch();
   render();
   if (id) scrollDetail();
-  else window.scrollTo(0, 0);
+  else winTo(0);
 }
 function scrollDetail() {
   if (matchMedia('(max-width: 980px)').matches)
