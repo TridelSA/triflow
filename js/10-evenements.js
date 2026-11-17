@@ -69,6 +69,43 @@ const ACT = {
     render();
   },
   'plan-hide': () => planHideDialog(),
+  'rev-new': () => revDialog(null),
+  'rev-edit': d => revDialog(get('taches', d.id)),
+  'rev-import': () => revImportDialog(),
+  'rev-l'(d) {
+    S.revL = d.v || '';
+    fillList();
+  },
+  'rev-ppl'() {
+    setPref('revPpl', !pref('revPpl', true));
+    fillList();
+  },
+  'rev-cancel'() {
+    S.revPick = null;
+    fillList();
+  },
+  'rev-day'(d) {
+    const t = get('taches', d.id);
+    if (!t) return;
+    if (S.revPick === t.id) {
+      let du = t.rev?.du || d.d,
+        au = d.d;
+      if (au < du) [du, au] = [au, du];
+      tx(() => {
+        t.rev = {...(t.rev || {}), du, au};
+        t.prochaine = du;
+      });
+      S.revPick = null;
+      toast(`${t.titre} : du ${fmtD(du)} au ${fmtD(au)}`, '', true);
+    } else {
+      tx(() => {
+        t.rev = {...(t.rev || {}), du: d.d, au: d.d};
+        t.prochaine = d.d;
+      });
+      S.revPick = t.id;
+    }
+    fillList();
+  },
   'acc-plan': () => accPlanDialog(),
   pvue(d) {
     setPref('planVue', d.v === 'all' ? '' : d.v);
@@ -202,6 +239,11 @@ const ACT = {
     toast(`Prochaine fois : ${fmtD(t.prochaine)}`, '', true);
   },
   wtab(d) {
+    if (d.w === 'revision') {
+      S.revPick = null;
+      go('revision');
+      return;
+    }
     const q = S.q[S.view === 'taches' ? 'taches' : 'interventions'] || '';
     if (['taches', 'interventions'].includes(S.view)) S.q.taches = S.q.interventions = q;
     if (d.w === 'afaire') {

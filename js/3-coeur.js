@@ -2103,7 +2103,7 @@ function render() {
     b.setAttribute(
       'aria-current',
       b.dataset.view === S.view ||
-        (b.dataset.view === 'taches' && S.view === 'interventions') ||
+        (b.dataset.view === 'taches' && (S.view === 'interventions' || S.view === 'revision')) ||
         (b.dataset.view === 'options' && S.view === 'kks') ||
         (b.classList.contains('nav-plus') && ['kks', 'options', 'planning', 'lieux'].includes(S.view))
         ? 'page'
@@ -2123,6 +2123,7 @@ function render() {
       lieux: 'les emplacements',
       interventions: 'le rapport',
       taches: 'le travail',
+      revision: 'la révision',
       options: 'les options'
     };
   const bl = bk

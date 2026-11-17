@@ -4,15 +4,15 @@
    À faire = les tâches (une seule fois ou qui reviennent) ; En cours = rapports pas terminés ;
    Fait = rapports terminés + travaux cochés sans rapport (t.faits : [{date, who:[ids]}]).
    t.rapport : '' = demander à chaque fois, 'oui' = toujours un rapport, 'non' = jamais. */
-const wTab = () => (S.view === 'taches' ? 'afaire' : S.statut === 'actives' ? 'encours' : 'fait');
+const wTab = () => (S.view === 'revision' ? 'revision' : S.view === 'taches' ? 'afaire' : S.statut === 'actives' ? 'encours' : 'fait');
 function wtabs() {
-  if (S.arch[S.view]) return '';
+  if (S.arch[S.view] && S.view !== 'revision') return '';
   const nT = db.taches.filter(t => live(t) && t.actif !== false && forWho(t, S.pour)).length,
     nE = db.interventions.filter(i => live(i) && i.statut !== 'terminee' && intFor(i, S.pour)).length,
     w = wTab();
   const b = (k, ic, t, n) =>
     `<button role="tab" data-act="wtab" data-w="${k}" aria-selected="${w === k}">${icon(ic)}${t}${n != null ? ` <small>${n}</small>` : ''}</button>`;
-  return `<div class="ttabs wtabs" role="tablist" aria-label="Étape">${b('afaire', 'list', 'À faire', nT)}${b('encours', 'wrench', 'En cours', nE)}${b('fait', 'check', 'Fait')}</div>`;
+  return `<div class="ttabs wtabs" role="tablist" aria-label="Étape">${b('afaire', 'list', 'À faire', nT)}${b('encours', 'wrench', 'En cours', nE)}${b('fait', 'check', 'Fait')}${b('revision', 'calendar', 'Révision', revJobs().filter(t => t.actif !== false).length || null)}</div>`;
 }
 function travauxShell() {
   const t = S.view === 'taches';
@@ -1013,6 +1013,320 @@ function signalDialog() {
       tx(() => db.taches.push(x));
       render();
       toast('Merci, c’est signalé. Le responsable du métier va le prendre en charge.', '', true);
+    }
+  });
+}
+
+/* =====================================================================
+   RÉVISION (arrêt de l'usine) : planning façon Excel « Planning révision L1 + L2 »
+   — en haut « Qui est là » (présences du Planning Tridel, jour par jour),
+   — en dessous les travaux de la révision (travaux marqués « pendant l'arrêt ») avec une barre par travail,
+     colorée selon la ligne (L1 rouge, L2 cyan, L1 + L2 bleu, commun ambre).
+   Un travail : t.arret = true, t.rev = {du, au, ligne, secteur, qui, mandat, notes{date: texte}}.
+   ===================================================================== */
+const REV_LIGNES = [
+  ['L1', 'Ligne 1', 'l1'],
+  ['L2', 'Ligne 2', 'l2'],
+  ['L12', 'L1 + L2', 'l12'],
+  ['commun', 'Commun', 'com']
+];
+const revLigneOf = v => {
+  const n = norm(v || '').replace(/\s/g, '');
+  return n === 'l1' ? 'L1' : n === 'l2' ? 'L2' : n.includes('l1') && n.includes('l2') ? 'L12' : n === 'l12' ? 'L12' : 'commun';
+};
+const revLcls = l => (REV_LIGNES.find(x => x[0] === l) || REV_LIGNES[3])[2];
+/* Jours fériés vaudois (Pâques par la méthode de Meeus) */
+const FERIES = {};
+function feriesVD(y) {
+  if (FERIES[y]) return FERIES[y];
+  const a = y % 19,
+    b = Math.floor(y / 100),
+    c = y % 100,
+    d = Math.floor(b / 4),
+    e = b % 4,
+    f = Math.floor((b + 8) / 25),
+    g = Math.floor((b - f + 1) / 3),
+    h = (19 * a + b - d - g + 15) % 30,
+    i = Math.floor(c / 4),
+    k = c % 4,
+    l = (32 + 2 * e + 2 * i - h - k) % 7,
+    m = Math.floor((a + 11 * h + 22 * l) / 451),
+    mo = Math.floor((h + l - 7 * m + 114) / 31),
+    da = ((h + l - 7 * m + 114) % 31) + 1;
+  const p = `${y}-${String(mo).padStart(2, '0')}-${String(da).padStart(2, '0')}`;
+  const sept1 = new Date(y, 8, 1).getDay(),
+    jeune = 1 + ((7 - sept1) % 7) + 14 + 1; /* lundi après le 3e dimanche de septembre */
+  return (FERIES[y] = new Set([
+    `${y}-01-01`,
+    `${y}-01-02`,
+    isoAdd(p, -2),
+    isoAdd(p, 1),
+    isoAdd(p, 39),
+    isoAdd(p, 50),
+    `${y}-08-01`,
+    `${y}-09-${String(jeune).padStart(2, '0')}`,
+    `${y}-12-25`
+  ]));
+}
+const isFerie = d => feriesVD(+d.slice(0, 4)).has(d);
+const isWE = d => [0, 6].includes(new Date(d + 'T12:00:00').getDay());
+const revJobs = () => db.taches.filter(t => live(t) && t.arret);
+/* Période affichée : dates de la révision (Travaux › Arrêt), élargie aux travaux qui en sortent */
+function revRange() {
+  const a = arretDates(),
+    ds = revJobs()
+      .flatMap(t => [t.rev?.du, t.rev?.au])
+      .filter(Boolean)
+      .sort();
+  let du = a.du || ds[0] || todayISO(),
+    au = a.au || ds[ds.length - 1] || isoAdd(du, 27);
+  if (ds[0] && ds[0] < du) du = ds[0];
+  if (ds.length && ds[ds.length - 1] > au) au = ds[ds.length - 1];
+  du = isoAdd(du, -((new Date(du + 'T12:00:00').getDay() + 6) % 7)); /* commence un lundi */
+  const n = Math.min(140, Math.max(7, daysBetween(du, au) + 1));
+  return Array.from({length: n}, (_, i) => isoAdd(du, i));
+}
+const daysBetween = (a, b) => Math.round((new Date(b + 'T12:00') - new Date(a + 'T12:00')) / 864e5);
+/* Qui fait le travail : texte libre (équipe, entreprise) ; relié à un corps de métier ou une entreprise si on le reconnaît */
+function revAssign(q) {
+  const n = norm(q || '');
+  const met = /electri/.test(n)
+    ? 'elec'
+    : /mecani/.test(n)
+      ? 'meca'
+      : /intendance|entretien/.test(n)
+        ? 'intend'
+        : /automat|informat/.test(n)
+          ? 'auto'
+          : '';
+  if (met) {
+    const g = db.listes.groupes.find(x => metOf(x) === met);
+    if (g) return {type: 'groupe', v: g};
+  }
+  const f = q && !/^equipe/i.test(norm(q)) ? fourMatch(q, db.listes.fournisseurs) : null;
+  return f ? {type: 'four', v: f} : {type: 'groupe', v: ''};
+}
+VIEWS.revision = {
+  shell:
+    () => `<header class="page-head"><h1>Travaux</h1><div class="tools">${searchBox('revision', 'Rechercher : travail, secteur, qui…')}<button class="btn primary" data-act="rev-new">${icon('plus')}Travail de révision</button><span class="head-tools">${toolBtn(['arret-dates', 'Dates de la révision', 'calendar', {}])}${canDel() ? toolBtn(['rev-import', 'Importer le planning de révision (fichier préparé)', 'save', {}]) : ''}</span></div></header>
+    <div class="rev-tabs">${wtabs()}</div><section class="pane rev" id="list"></section>`,
+  list() {
+    const days = revRange(),
+      today = todayISO(),
+      L = S.revL || '',
+      q = norm(S.q.revision || ''),
+      showP = pref('revPpl', true);
+    for (const y of new Set(days.map(d => d.slice(0, 4)))) loadPresence(y);
+    const jobs = revJobs()
+      .filter(t => !L || (t.rev?.ligne || 'commun') === L)
+      .filter(t => !q || norm([t.titre, t.rev?.secteur, t.rev?.qui, assignLabel(t.assign), t.rev?.mandat].join(' ')).includes(q))
+      .sort((a, b) => (a.rev?.du || '9').localeCompare(b.rev?.du || '9') || coll.compare(a.titre, b.titre));
+    const dcls = d => [isWE(d) ? 'we' : '', isFerie(d) ? 'fer' : '', d === today ? 'auj' : ''].join(' ');
+    /* en-tête : semaines puis jours */
+    const weeks = [];
+    for (const d of days) {
+      const w = isoWeek(d);
+      if (!weeks.length || weeks[weeks.length - 1][0] !== w) weeks.push([w, 0, d]);
+      weeks[weeks.length - 1][1]++;
+    }
+    const MO = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+    const DJ = ['di', 'lu', 'ma', 'me', 'je', 've', 'sa'];
+    const head = `<thead><tr class="rw"><th class="rl" rowspan="2"><span class="rcount">${nbs(jobs.length, 'travail', 'travaux')}</span></th>${weeks.map(([w, n, d]) => `<th colspan="${n}">sem. ${w} <small>${+d.slice(8)} ${MO[+d.slice(5, 7) - 1]}</small></th>`).join('')}</tr>
+      <tr class="rd">${days.map(d => `<th class="${dcls(d)}" title="${esc(fmtD(d))}${isFerie(d) ? ' · férié' : ''}">${DJ[new Date(d + 'T12:00:00').getDay()]}<b>${+d.slice(8)}</b></th>`).join('')}</tr></thead>`;
+    /* Qui est là */
+    let ppl = '';
+    if (showP) {
+      const persons = db.personnes.filter(p => live(p) && p.actif !== false),
+        groups = db.listes.groupes.filter(g => persons.some(p => p.groupe === g));
+      const cnt = days.map(d => persons.filter(p => isDispo(presOf(p, d)?.code)).length);
+      ppl = `<tbody class="rp"><tr class="rsec"><th class="rl">${icon('person')}Qui est là <button class="link" data-act="rev-ppl">Masquer</button></th>${cnt.map((n, i) => `<td class="rn ${dcls(days[i])}">${n || ''}</td>`).join('')}</tr>${groups
+        .map(
+          g =>
+            `<tr class="rg"><th class="rl">${mdot(metOf(g))}${esc(g)}</th>${days.map(d => `<td class="${dcls(d)}"></td>`).join('')}</tr>${persons
+              .filter(p => p.groupe === g)
+              .sort(persSort)
+              .map(
+                p =>
+                  `<tr class="rpp"><th class="rl">${esc(persName(p))}</th>${days
+                    .map(d => {
+                      const c = presOf(p, d)?.code || '';
+                      return !c || c === '0'
+                        ? `<td class="${dcls(d)}"></td>`
+                        : isDispo(c)
+                          ? `<td class="ok ${dcls(d)}" title="${esc(persName(p))} : présent (${esc(c)})"><i></i></td>`
+                          : `<td class="ab ${dcls(d)}" title="${esc(persName(p))} : ${esc((PCODE[c] || [c])[0])}">${esc(c)}</td>`;
+                    })
+                    .join('')}</tr>`
+              )
+              .join('')}`
+        )
+        .join('')}</tbody>`;
+    }
+    /* Travaux */
+    const rows = jobs
+      .map((t, n) => {
+        const r = t.rev || {},
+          lc = revLcls(r.ligne || 'commun'),
+          who = r.qui || assignLabel(t.assign),
+          off = t.actif === false,
+          pick = S.revPick === t.id;
+        return `<tr class="rj ${off ? 'done' : ''} ${pick ? 'pick' : ''}"><th class="rl"><button class="rt" data-act="rev-edit" data-id="${t.id}"><span class="rno">${n + 1}</span><span class="rti"><b>${esc(t.titre)}</b><small><span class="rlg ${lc}">${esc((REV_LIGNES.find(x => x[0] === (r.ligne || 'commun')) || REV_LIGNES[3])[1])}</span>${r.secteur ? esc(r.secteur) + ' · ' : ''}${esc(who === 'Non attribuée' ? '' : who)}</small></span>${off ? `<span class="rok">${icon('check')}</span>` : ''}</button></th>${days
+          .map(d => {
+            const inb = r.du && d >= r.du && d <= r.au,
+              note = r.notes?.[d] || '';
+            return `<td class="rc ${dcls(d)} ${inb ? 'on ' + lc + (d === r.du ? ' s' : '') + (d === r.au ? ' e' : '') : ''}" data-act="rev-day" data-id="${t.id}" data-d="${d}">${note ? `<span>${esc(note)}</span>` : ''}</td>`;
+          })
+          .join('')}</tr>`;
+      })
+      .join('');
+    const chips = `<div class="fchips rev-f" role="group" aria-label="Ligne">${[['', 'Tout'], ...REV_LIGNES.map(x => [x[0], x[1]])].map(([v, l]) => `<button class="ychip" data-act="rev-l" data-v="${v}" aria-pressed="${L === v}">${v ? `<i class="rlg-d ${revLcls(v)}"></i>` : ''}${l}</button>`).join('')}<span class="ysep" aria-hidden="true"></span>${showP ? '' : `<button class="ychip" data-act="rev-ppl">${icon('person')}Qui est là</button>`}${S.revPick ? `<span class="rev-hint">${icon('calendar')}Cliquez le dernier jour de « ${esc(get('taches', S.revPick)?.titre || '')} » <button class="link" data-act="rev-cancel">Annuler</button></span>` : `<span class="rev-hint muted">Pour dater un travail : cliquez son premier jour, puis son dernier.</span>`}</div>`;
+    return `${chips}<div class="rev-scroll"><table class="revg">${head}${ppl}<tbody class="rjs"><tr class="rsec"><th class="rl">${icon('wrench')}Travaux de la révision</th>${days.map(d => `<td class="${dcls(d)}"></td>`).join('')}</tr>${rows || `<tr><th class="rl muted">Aucun travail : « Travail de révision » pour en ajouter.</th>${days.map(d => `<td class="${dcls(d)}"></td>`).join('')}</tr>`}</tbody></table></div>`;
+  },
+  detail: () => ''
+};
+/* Fenêtre d'un travail de révision : simple et concret */
+function revDialog(t) {
+  const isNew = !t,
+    r = t?.rev || {},
+    days = revRange();
+  const secteurs = [
+      ...new Set(
+        revJobs()
+          .map(x => x.rev?.secteur)
+          .filter(Boolean)
+      )
+    ].sort(coll.compare),
+    quis = [
+      ...new Set([
+        ...revJobs()
+          .map(x => x.rev?.qui)
+          .filter(Boolean),
+        ...db.listes.groupes.map(g => 'Équipe ' + g.toLowerCase()),
+        ...db.listes.fournisseurs
+      ])
+    ].sort(coll.compare);
+  dialog({
+    title: isNew ? 'Travail de révision' : 'Modifier le travail',
+    cls: 'tdlg',
+    body: `<input class="t-title" name="titre" value="${esc(t?.titre || '')}" required placeholder="Quel travail ? ex. Vidange chaudière" aria-label="Quel travail ?" autocomplete="off">
+      <div class="fgrp"><span class="fl">${icon('plant')}Ligne</span><div class="pills" role="radiogroup" aria-label="Ligne">${REV_LIGNES.map(([v, l, c]) => sp('ligne', v, `<i class="rlg-d ${c}"></i>${l}`, r.ligne || 'commun')).join('')}</div></div>
+      <div class="grid2"><label>Secteur<input name="secteur" list="dl-rsect" value="${esc(r.secteur || '')}" placeholder="ex. chaudière, laveur…" autocomplete="off"></label><label>Qui ?<input name="qui" list="dl-rqui" value="${esc(r.qui || (t ? assignLabel(t.assign).replace('Non attribuée', '') : ''))}" placeholder="Équipe ou entreprise" autocomplete="off"></label></div>
+      <datalist id="dl-rsect">${secteurs.map(x => `<option value="${esc(x)}">`).join('')}</datalist><datalist id="dl-rqui">${quis.map(x => `<option value="${esc(x)}">`).join('')}</datalist>
+      <div class="grid2"><label>Du<input name="du" type="date" value="${esc(r.du || '')}"></label><label>Au<input name="au" type="date" value="${esc(r.au || '')}"></label></div>
+      <details class="more" ${r.mandat || t?.description ? 'open' : ''}><summary>${icon('chev')}Mandat et consignes</summary>
+      <label>Mandat / n° de tâche<input name="mandat" value="${esc(r.mandat || '')}" autocomplete="off"></label>
+      <label>Consignes<textarea name="description" rows="3">${esc(t?.description || '')}</textarea></label></details>`,
+    del: isNew ? null : archDel('taches', t, () => HARD.taches(t)),
+    onOpen(f) {
+      if (isNew) setTimeout(() => f.elements.titre.focus(), 30);
+    },
+    onSave(f) {
+      const titre = val(f, 'titre');
+      if (!titre) throw new Error('Indiquez le travail.');
+      let du = val(f, 'du'),
+        au = val(f, 'au') || du;
+      if (du && au < du) [du, au] = [au, du];
+      const qui = val(f, 'qui'),
+        rev = {
+          ...r,
+          ligne: f.querySelector('input[name=ligne]:checked')?.value || 'commun',
+          secteur: val(f, 'secteur'),
+          qui,
+          mandat: val(f, 'mandat'),
+          du,
+          au
+        };
+      tx(() => {
+        if (isNew) {
+          const x = {
+            id: uid(),
+            titre,
+            kind: 'petit',
+            freq: {n: 1, unite: 'once'},
+            prio: 'normale',
+            actif: true,
+            arret: true,
+            rapport: 'oui',
+            assign: revAssign(qui),
+            prochaine: du || '',
+            description: val(f, 'description'),
+            kksId: '',
+            rev
+          };
+          db.taches.push(x);
+        } else
+          Object.assign(t, {
+            titre,
+            description: val(f, 'description'),
+            assign: qui !== r.qui ? revAssign(qui) : t.assign,
+            prochaine: du || t.prochaine,
+            rev
+          });
+      });
+      render();
+      toast(isNew ? 'Travail ajouté à la révision' : 'Enregistré');
+    }
+  });
+}
+/* Import du planning de révision préparé depuis l'Excel (fichier JSON, jamais dans le dépôt) */
+function revImportDialog() {
+  dialog({
+    title: 'Importer le planning de révision',
+    saveLabel: 'Importer',
+    body: `<p>Choisissez le fichier <span class="mono">revision-triflow.json</span> préparé à partir du planning Excel. Les travaux déjà présents (même titre, même ligne, même secteur) ne sont pas ajoutés deux fois.</p><label>Fichier<input type="file" name="file" accept=".json,application/json"></label><p class="hint" data-prev></p>`,
+    onOpen(f, d) {
+      f.elements.file.addEventListener('change', async () => {
+        try {
+          d._j = JSON.parse(await f.elements.file.files[0].text());
+          $('[data-prev]', d).textContent =
+            `${nbs((d._j.travaux || []).length, 'travail', 'travaux')} du ${fmtD(d._j.debut)} au ${fmtD(d._j.fin)}`;
+        } catch (e) {
+          d._j = null;
+          $('[data-prev]', d).textContent = 'Fichier illisible.';
+        }
+      });
+    },
+    onSave(f, d) {
+      const j = d._j;
+      if (!j || !Array.isArray(j.travaux)) throw new Error('Choisissez le fichier revision-triflow.json.');
+      const key = (titre, ligne, secteur) => norm([titre, ligne, secteur].join('|'));
+      const have = new Set(revJobs().map(t => key(t.titre, t.rev?.ligne, t.rev?.secteur)));
+      let n = 0;
+      tx(() => {
+        for (const w of j.travaux) {
+          const ligne = revLigneOf(w.ligne),
+            k = key(w.titre, ligne, w.secteur);
+          if (!w.titre || have.has(k)) continue;
+          have.add(k);
+          db.taches.push({
+            id: uid(),
+            titre: w.titre,
+            kind: 'petit',
+            freq: {n: 1, unite: 'once'},
+            prio: 'normale',
+            actif: true,
+            arret: true,
+            rapport: 'oui',
+            assign: revAssign(w.qui),
+            prochaine: w.du || '',
+            description: '',
+            kksId: '',
+            rev: {
+              ligne,
+              secteur: w.secteur || '',
+              qui: w.qui || '',
+              mandat: [w.mandat, w.tache].filter(Boolean).join(' · '),
+              du: w.du || '',
+              au: w.au || w.du || '',
+              notes: w.notes || {}
+            }
+          });
+          n++;
+        }
+        if (!db.reglages.arret && j.debut && j.fin) db.reglages.arret = {du: j.debut, au: j.fin};
+      });
+      render();
+      toast(`${nbs(n, 'travail importé', 'travaux importés')} dans la révision`);
     }
   });
 }
