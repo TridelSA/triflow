@@ -701,6 +701,16 @@ async function goOffline(pend) {
   CLOUD.status('offline');
   toast('Pas de réseau : vous travaillez sur la copie de cet appareil. Tout sera envoyé au retour du réseau.');
 }
+/* Fenêtre redimensionnée : le trait vert des onglets suit l'onglet choisi */
+addEventListener('resize', () =>
+  $$('.ttabs.slide').forEach(t => {
+    const b = t.querySelector(':scope > button[aria-selected=true]');
+    if (b) {
+      t.style.setProperty('--x', b.offsetLeft + 'px');
+      t.style.setProperty('--w', b.offsetWidth + 'px');
+    }
+  })
+);
 /* Retour sur la page (veille, autre onglet, téléphone en poche) : le temps réel a pu décrocher.
    On relit ce qui a changé dans la base pendant l'absence (réglages du compte compris). */
 CLOUD.since = Date.now();
@@ -2180,6 +2190,12 @@ function render() {
     t.style.setProperty('--n', bs.length);
     t.style.setProperty('--i', Math.max(0, i));
     t.classList.toggle('slide', i >= 0);
+    /* onglets de largeurs différentes : le trait prend la place exacte de l'onglet */
+    const b = bs[i];
+    if (b) {
+      t.style.setProperty('--x', b.offsetLeft + 'px');
+      t.style.setProperty('--w', b.offsetWidth + 'px');
+    }
   });
   document.body.classList.toggle('placing', S.view === 'planning' && !!S.ppick);
   if (S.view === 'planning') planSuggest(S.ppick);

@@ -316,6 +316,10 @@ async def main():
         await aller("go('interventions'); interventionDialog(null)", 'dialogue-rapport', 300)
         ok(await pg.evaluate("!!document.querySelector('dialog[open] [data-padd]') && !document.querySelector('dialog[open] [data-pgrid]')"), 'intervenants par recherche seule')
 
+        for w in (1024, 1280):
+            await pg.set_viewport_size({'width': w, 'height': 800})
+            await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close()); S.sel.taches=null; go('taches')"); await pg.wait_for_timeout(300)
+            ok(await pg.evaluate("(() => { const t = document.querySelector('.wtabs').getBoundingClientRect(), b = document.querySelector('.wtabs [data-w=revision]').getBoundingClientRect(); return b.width > 40 && b.right <= t.right + 1; })()"), f'onglet « Révision » visible à {w} px de large')
         print('Pages (téléphone)')
         await pg.set_viewport_size({'width': 390, 'height': 844})
         await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close()); S.sel.taches=null; go('taches')"); await pg.wait_for_timeout(300)

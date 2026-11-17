@@ -1995,3 +1995,12 @@ main{padding-block:12px 40px}
   .wtabs button small{margin-left:2px}
   .fchips,.pour-chips,.ps-met{flex-wrap:wrap;overflow:visible}
 }
+/* Onglets Travaux sur un écran moyen : les quatre tiennent toujours (icônes cachées si la place manque) */
+@media (min-width:761px){
+  .wtabs button{flex:1 1 auto;min-width:0;padding-inline:8px;gap:6px}
+}
+@media (min-width:761px) and (max-width:1399px){
+  .wtabs button .ico{display:none}
+}
+/* Trait vert sous l'onglet choisi : position mesurée (onglets de largeurs différentes) */
+.ttabs.slide::after{width:var(--w,calc(100% / var(--n,3)));transform:translateX(var(--x,calc(var(--i,0) * 100%)))}
