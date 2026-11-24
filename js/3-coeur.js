@@ -2092,7 +2092,7 @@ function meteoCardSVG() {
   else if (c >= 45 && c <= 48)
     body += `<g stroke="#FFFFFF" stroke-linecap="round" opacity=".55"><line x1="16" y1="34" x2="150" y2="34" stroke-width="5"/><line x1="40" y1="46" x2="190" y2="46" stroke-width="6"/></g>`;
   else if (c >= 51) {
-    const snow = sky === 'neige',
+    const snow = (c >= 71 && c <= 77) || c === 85 || c === 86,
       storm = c >= 95;
     body +=
       cloud(14, 8, 92, 22, night ? 0.55 : 0.9, night ? cf : '#EEF2F6') +
@@ -2125,15 +2125,70 @@ const meteoHTML = () => (meteoHero(), sideTint(), '');
 /* Couleur de la barre latérale (ordinateur) selon le moment de la journée à Lausanne :
    claire le jour, dorée avant le coucher du soleil, puis de plus en plus foncée jusqu'au bleu nuit.
    Lever et coucher du soleil donnés par la météo (sinon heures moyennes de la saison). */
-const SIDE_C = {nuit: '#13203A', aube: '#E7D6C6', jour: '#F6F4EE', dore: '#EADBC3', soir: '#4A4A6A'};
+const SIDE_C = {nuit: '#101B33', aube: '#E9D5C4', jour: '#F6F4EE', dore: '#EFDDC0', soir: '#5A5476'};
+/* Bas du ciel (rejoint le ciel de l'image de l'usine) selon le temps */
+const SIDE_SKY = {clair: '#B5D9F4', gris: '#C3CDD6', pluie: '#97A6B5', neige: '#D3DCE5', nuit: '#1F3559'};
+const hexRGB = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+function mixHex(a, b, t) {
+  const A = hexRGB(a),
+    B = hexRGB(b),
+    k = Math.max(0, Math.min(1, t));
+  return (
+    '#' +
+    A.map((v, i) =>
+      Math.round(v + (B[i] - v) * k)
+        .toString(16)
+        .padStart(2, '0')
+    ).join('')
+  );
+}
+const lumOf = h => {
+  const [r, g, b] = hexRGB(h);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+};
+/* Étoiles : toujours aux mêmes places (tirage fixe), quelques-unes scintillent, une étoile filante de temps en temps */
+const SIDE_STARS = (() => {
+  let x = 7;
+  const rnd = () => ((x = (x * 16807) % 2147483647) - 1) / 2147483646;
+  let h = '';
+  for (let i = 0; i < 54; i++) {
+    const cx = (rnd() * 236).toFixed(1),
+      cy = (Math.pow(rnd(), 1.4) * 640).toFixed(1),
+      r = (0.5 + rnd() * rnd() * 1.3).toFixed(2),
+      o = (0.35 + rnd() * 0.6).toFixed(2),
+      tw =
+        rnd() < 0.3
+          ? ` class="tw" style="animation-delay:${(rnd() * 6).toFixed(1)}s;animation-duration:${(3 + rnd() * 4).toFixed(1)}s"`
+          : '';
+    h += `<circle cx="${cx}" cy="${cy}" r="${r}" opacity="${o}"${tw}/>`;
+  }
+  return `<svg class="stars" viewBox="0 0 236 700" preserveAspectRatio="xMidYMin slice" aria-hidden="true"><g fill="#fff">${h}</g></svg><i class="shoot"></i>`;
+})();
+const SIDE_CLOUD = `<svg viewBox="0 0 120 40" aria-hidden="true"><g fill="currentColor"><rect x="6" y="20" width="108" height="18" rx="9"/><circle cx="38" cy="22" r="14"/><circle cx="66" cy="16" r="16"/><circle cx="90" cy="24" r="11"/></g></svg>`;
 function sideTint() {
   const hero = $('.app > .hero');
   if (!hero) return;
   const wide = matchMedia('(min-width:1024px)').matches,
     dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  let back = $('#sidefx'),
+    front = $('#sidefx2');
   if (!wide || dark) {
-    for (const k of ['--side-bg', '--ink', '--muted', '--sunk', '--line']) hero.style.removeProperty(k);
+    for (const k of ['--side-bg', '--side-grad', '--ink', '--muted', '--sunk', '--line']) hero.style.removeProperty(k);
+    back?.remove();
+    front?.remove();
     return;
+  }
+  if (!back) {
+    back = document.createElement('div');
+    back.id = 'sidefx';
+    back.className = 'sidefx';
+    back.setAttribute('aria-hidden', 'true');
+    hero.prepend(back);
+    front = document.createElement('div');
+    front.id = 'sidefx2';
+    front.className = 'sidefx front';
+    front.setAttribute('aria-hidden', 'true');
+    hero.append(front);
   }
   const m = s => (s ? +s.slice(0, 2) * 60 + +s.slice(3, 5) : null),
     d = new Date(),
@@ -2143,40 +2198,53 @@ function sideTint() {
   const summer = Math.cos(((mo - 5.5) / 12) * 2 * Math.PI),
     sr = m(METEO?.sunrise) ?? Math.round(410 - 70 * summer),
     ss = m(METEO?.sunset) ?? Math.round(1110 + 130 * summer);
-  const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)),
-    mix = (a, b, t) => {
-      const A = hex(a),
-        B = hex(b),
-        k = Math.max(0, Math.min(1, t));
-      return (
-        '#' +
-        A.map((v, i) =>
-          Math.round(v + (B[i] - v) * k)
-            .toString(16)
-            .padStart(2, '0')
-        ).join('')
-      );
-    };
+  /* Transitions longues : l'aube dure 2 h, la fin d'après-midi se dore pendant 3 h, le soir fonce pendant 2 h 30 */
+  const code = METEO ? +(METEO.now ?? METEO.code) : 0,
+    wet = code >= 51,
+    snow = (code >= 71 && code <= 77) || code === 85 || code === 86,
+    grey = code >= 3;
+  const jour = wet ? '#E4E7E9' : grey ? '#EEEEEA' : SIDE_C.jour;
   let c;
-  if (now < sr - 60) c = SIDE_C.nuit;
-  else if (now < sr) c = mix(SIDE_C.nuit, SIDE_C.aube, (now - (sr - 60)) / 60);
-  else if (now < sr + 60) c = mix(SIDE_C.aube, SIDE_C.jour, (now - sr) / 60);
-  else if (now < ss - 120) c = SIDE_C.jour;
-  else if (now < ss) c = mix(SIDE_C.jour, SIDE_C.dore, (now - (ss - 120)) / 120);
-  else if (now < ss + 45) c = mix(SIDE_C.dore, SIDE_C.soir, (now - ss) / 45);
-  else if (now < ss + 105) c = mix(SIDE_C.soir, SIDE_C.nuit, (now - ss - 45) / 60);
+  if (now < sr - 90) c = SIDE_C.nuit;
+  else if (now < sr) c = mixHex(SIDE_C.nuit, SIDE_C.aube, (now - (sr - 90)) / 90);
+  else if (now < sr + 60) c = mixHex(SIDE_C.aube, jour, (now - sr) / 60);
+  else if (now < ss - 180) c = jour;
+  else if (now < ss) c = mixHex(jour, SIDE_C.dore, (now - (ss - 180)) / 180);
+  else if (now < ss + 60) c = mixHex(SIDE_C.dore, SIDE_C.soir, (now - ss) / 60);
+  else if (now < ss + 150) c = mixHex(SIDE_C.soir, SIDE_C.nuit, (now - ss - 60) / 90);
   else c = SIDE_C.nuit;
-  const [r, g, b] = hex(c),
-    lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  /* plus la barre est foncée, plus le ciel du bas tire vers la nuit */
+  const night = lumOf(c) < 0.3,
+    darkness = Math.max(0, Math.min(1, (0.85 - lumOf(c)) / 0.55)),
+    sky = mixHex(SIDE_SKY[snow ? 'neige' : wet ? 'pluie' : grey ? 'gris' : 'clair'], SIDE_SKY.nuit, darkness),
+    mid = mixHex(c, sky, 0.5);
+  /* Long dégradé : la couleur du moment en haut, qui glisse doucement vers le ciel de l'usine en bas */
   hero.style.setProperty('--side-bg', c);
-  if (lum < 0.55) {
-    /* barre foncée : texte clair */
+  hero.style.setProperty('--side-grad', `linear-gradient(180deg, ${c} 0%, ${c} 22%, ${mid} 62%, ${sky} 100%)`);
+  const darkTxt = lumOf(c) < 0.55;
+  if (darkTxt) {
     hero.style.setProperty('--ink', '#EEF1F6');
     hero.style.setProperty('--muted', 'rgba(238,241,246,.68)');
     hero.style.setProperty('--sunk', 'rgba(255,255,255,.09)');
     hero.style.setProperty('--line', 'rgba(255,255,255,.12)');
   } else for (const k of ['--ink', '--muted', '--sunk', '--line']) hero.style.removeProperty(k);
-  hero.dataset.tint = lum < 0.55 ? 'sombre' : 'clair';
+  hero.dataset.tint = darkTxt ? 'sombre' : 'clair';
+  /* Décor : étoiles la nuit par temps clair (moins s'il y a des nuages), nuages qui passent, pluie ou neige qui tombe */
+  const fx = [night && code < 45 ? (grey ? 'stars few' : 'stars') : '', code >= 1 && code < 45 ? 'clouds' : wet ? 'clouds heavy' : '']
+    .filter(Boolean)
+    .join(' ');
+  const key = fx + '|' + (wet ? (snow ? 'snow' : 'rain') : '') + '|' + (code >= 95 ? 'storm' : '');
+  if (back._k !== key) {
+    back._k = key;
+    back.className = 'sidefx ' + fx;
+    back.innerHTML =
+      (fx.includes('stars') ? SIDE_STARS : '') +
+      (fx.includes('clouds')
+        ? `<span class="cl c1">${SIDE_CLOUD}</span><span class="cl c2">${SIDE_CLOUD}</span>${wet ? `<span class="cl c3">${SIDE_CLOUD}</span>` : ''}`
+        : '');
+    front.className = 'sidefx front ' + (wet ? (snow ? 'snow' : 'rain') : '') + (code >= 95 ? ' storm' : '');
+    front.innerHTML = wet ? '<i class="l1"></i><i class="l2"></i>' : '';
+  }
 }
 setInterval(() => sideTint(), 5 * 60e3);
 function headBand() {

@@ -2091,3 +2091,65 @@ main{padding-block:12px 40px}
   .hero-inner .help-btn{margin-top:auto}
   .hero-inner .nav button[aria-current="page"]{box-shadow:0 6px 16px -8px rgba(12,110,62,.6)}
 }
+/* =====================================================================
+   BARRE LATÉRALE VIVANTE (ordinateur) : long dégradé vers le ciel de l'usine, étoiles la nuit
+   (quelques-unes scintillent, une étoile filante de temps en temps), nuages qui passent lentement,
+   pluie ou neige qui tombe. Tout reste discret pour ne pas gêner la lecture du menu ;
+   immobile si l'appareil demande moins d'animations.
+   ===================================================================== */
+@media (min-width:1024px){
+  .app > .hero,body:not([data-view=accueil]) .app > .hero{background:var(--side-grad,var(--side-bg,var(--bg))) !important;isolation:isolate}
+  .app > .hero > .hero-art{height:230px !important;-webkit-mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.55) 35%,#000 62%);mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.55) 35%,#000 62%)}
+  .sidefx{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+  .sidefx.front{z-index:3}
+  /* étoiles */
+  .sidefx .stars{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;animation:sfx-in 2.4s ease forwards}
+  .sidefx.few .stars{-webkit-mask-image:linear-gradient(115deg,#000 0 30%,transparent 45% 70%,#000 85%);mask-image:linear-gradient(115deg,#000 0 30%,transparent 45% 70%,#000 85%)}
+  .sidefx .stars .tw{animation:sfx-tw 4s ease-in-out infinite}
+  .sidefx .shoot{position:absolute;top:70px;left:150px;width:70px;height:1.5px;border-radius:2px;background:linear-gradient(90deg,rgba(255,255,255,0),#fff);
+    transform:rotate(-28deg) translateX(0);opacity:0;animation:sfx-shoot 17s ease-in 6s infinite}
+  /* nuages */
+  .sidefx .cl{position:absolute;display:block;color:#fff;opacity:.55;animation:sfx-drift linear infinite}
+  .app > .hero[data-tint=clair] .sidefx .cl{color:#fff;filter:drop-shadow(0 4px 8px rgba(60,80,110,.12))}
+  .app > .hero[data-tint=sombre] .sidefx .cl{color:#9FB0C8;opacity:.22}
+  .sidefx .cl svg{width:100%;height:auto;display:block}
+  .sidefx .c1{top:330px;width:96px;animation-duration:95s;animation-delay:-30s}
+  .sidefx .c2{top:400px;width:132px;animation-duration:140s;animation-delay:-90s;opacity:.4}
+  .sidefx .c3{top:250px;width:110px;animation-duration:120s;animation-delay:-10s;opacity:.35}
+  .sidefx.heavy .cl{color:#C7CED6}
+  /* pluie et neige : deux couches à vitesses différentes (profondeur) */
+  .sidefx.front i{position:absolute;inset:-120px 0 0;background:var(--fx-c,rgba(70,100,140,.42));
+    -webkit-mask-repeat:repeat;mask-repeat:repeat;animation:sfx-fall linear infinite}
+  .app > .hero[data-tint=sombre] .sidefx.front i{--fx-c:rgba(220,232,255,.38)}
+  .sidefx.rain i{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='120'%3E%3Cg stroke='black' stroke-width='1.2' stroke-linecap='round'%3E%3Cline x1='8' y1='6' x2='5' y2='22'/%3E%3Cline x1='30' y1='62' x2='27' y2='78'/%3E%3C/g%3E%3C/svg%3E");
+    mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='120'%3E%3Cg stroke='black' stroke-width='1.2' stroke-linecap='round'%3E%3Cline x1='8' y1='6' x2='5' y2='22'/%3E%3Cline x1='30' y1='62' x2='27' y2='78'/%3E%3C/g%3E%3C/svg%3E");--fall:120px}
+  .sidefx.rain .l1{animation-duration:.75s}
+  .sidefx.rain .l2{animation-duration:1.15s;opacity:.55;-webkit-mask-size:31px 86px;mask-size:31px 86px;--fall:86px}
+  .sidefx.snow i{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='120'%3E%3Cg fill='black'%3E%3Ccircle cx='12' cy='14' r='2'/%3E%3Ccircle cx='48' cy='52' r='1.6'/%3E%3Ccircle cx='26' cy='94' r='2.2'/%3E%3C/g%3E%3C/svg%3E");
+    mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='120'%3E%3Cg fill='black'%3E%3Ccircle cx='12' cy='14' r='2'/%3E%3Ccircle cx='48' cy='52' r='1.6'/%3E%3Ccircle cx='26' cy='94' r='2.2'/%3E%3C/g%3E%3C/svg%3E");--fall:120px;--fx-c:rgba(255,255,255,.9)}
+  .app > .hero[data-tint=clair] .sidefx.snow i{--fx-c:rgba(140,160,185,.55)}
+  .sidefx.snow .l1{animation-duration:9s}
+  .sidefx.snow .l2{animation-duration:14s;opacity:.6;-webkit-mask-size:50px 86px;mask-size:50px 86px;--fall:86px}
+  .sidefx.storm::after{content:'';position:absolute;inset:0;background:#fff;opacity:0;animation:sfx-flash 11s 3s infinite}
+  /* le menu reste lisible par-dessus le décor */
+  .hero-inner .nav button:not([aria-current="page"]):hover{background:color-mix(in srgb,var(--surface) 55%,transparent) !important;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+  .app > .hero[data-tint=sombre] .hero-inner .nav button:not([aria-current="page"]):hover{background:rgba(255,255,255,.1) !important}
+  .hero-inner .nav button{transition:background-color .18s ease,color .18s ease,transform .12s var(--ease-out,ease-out)}
+  .hero-inner .nav button:active{transform:scale(.97)}
+}
+@keyframes sfx-in{to{opacity:1}}
+@keyframes sfx-tw{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes sfx-shoot{0%{opacity:0;transform:rotate(-28deg) translateX(0)}1%{opacity:1}5%{opacity:0;transform:rotate(-28deg) translateX(-170px)}100%{opacity:0;transform:rotate(-28deg) translateX(-170px)}}
+@keyframes sfx-drift{from{transform:translateX(-160px)}to{transform:translateX(260px)}}
+@keyframes sfx-fall{from{transform:translateY(0)}to{transform:translateY(var(--fall,120px))}}
+@keyframes sfx-flash{0%,93%,100%{opacity:0}94%{opacity:.35}95%{opacity:0}96%{opacity:.22}}
+@media (prefers-reduced-motion:reduce){
+  .sidefx *,.sidefx::after{animation:none !important}
+  .sidefx .stars{opacity:1}
+  .sidefx .shoot{display:none}
+  .sidefx .c1{transform:translateX(120px)}.sidefx .c2{transform:translateX(10px)}
+}
+@media (min-width:1024px){
+  /* pluie et neige plus légères derrière le menu, plus présentes vers le bas */
+  .sidefx.front{-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.35) 0,rgba(0,0,0,.5) 45%,#000 80%);mask-image:linear-gradient(180deg,rgba(0,0,0,.35) 0,rgba(0,0,0,.5) 45%,#000 80%)}
+}

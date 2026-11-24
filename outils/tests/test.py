@@ -340,6 +340,11 @@ async def main():
         ok(await pg.evaluate("document.querySelector('.app > .hero').dataset.tint === 'sombre'"), 'barre latérale foncée le soir')
         await pg.evaluate("METEO = {...METEO, sunset: '17:00', isDay: 1}; sideTint(); meteoHero()"); await pg.wait_for_timeout(200)
         ok(await pg.evaluate("document.querySelector('.app > .hero').dataset.tint === 'clair'"), 'barre latérale claire le jour')
+        for nom, m in [('nuit', "{sunset: '06:00', sunrise: '07:40', now: 0, code: 0, isDay: 0}"), ('pluie', "{sunset: '17:00', sunrise: '07:40', now: 63, code: 63, isDay: 1}"), ('neige-soir', "{sunset: '08:45', sunrise: '07:40', now: 73, code: 73, isDay: 0}")]:
+            await pg.evaluate(f"METEO = {{...METEO, ...{m}}}; sideTint(); meteoHero()"); await pg.wait_for_timeout(2600)
+            await capture('ordi-barre-' + nom)
+        ok(await pg.evaluate("!!document.querySelector('#sidefx2.snow i') && document.querySelector('.app > .hero').dataset.tint === 'sombre'"), 'barre latérale : neige le soir')
+        await pg.evaluate("METEO = {...METEO, sunset: '17:00', now: 0, code: 0, isDay: 1}; sideTint(); meteoHero()")
         for w in (1024, 1280, 1550, 1920):
             await pg.set_viewport_size({'width': w, 'height': 800})
             await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close()); S.sel.taches=null; go('taches')"); await pg.wait_for_timeout(300)
