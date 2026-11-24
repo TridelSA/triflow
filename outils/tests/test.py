@@ -333,6 +333,13 @@ async def main():
           return [Math.round(ms), n]; })()""")
         print('     recherche 6000 pièces :', t[0], 'ms pour 6 frappes,', t[1], 'résultats')
         ok(t[0] < 1500 and t[1] > 0, 'recherche de pièces rapide (6000 pièces, plusieurs mots)')
+        # Barre latérale : couleur selon le moment de la journée (ici le soleil « se couche » à 8h30, il est 9h30)
+        await pg.set_viewport_size({'width': 1300, 'height': 820})
+        await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close()); go('accueil'); window.__m = METEO; METEO = {...(METEO || {}), day: todayISO(), at: Date.now(), sunrise: '07:40', sunset: '08:30', isDay: 0}; sideTint(); meteoHero()"); await pg.wait_for_timeout(400)
+        await capture('ordi-barre-soir')
+        ok(await pg.evaluate("document.querySelector('.app > .hero').dataset.tint === 'sombre'"), 'barre latérale foncée le soir')
+        await pg.evaluate("METEO = {...METEO, sunset: '17:00', isDay: 1}; sideTint(); meteoHero()"); await pg.wait_for_timeout(200)
+        ok(await pg.evaluate("document.querySelector('.app > .hero').dataset.tint === 'clair'"), 'barre latérale claire le jour')
         for w in (1024, 1280, 1550, 1920):
             await pg.set_viewport_size({'width': w, 'height': 800})
             await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close()); S.sel.taches=null; go('taches')"); await pg.wait_for_timeout(300)
@@ -365,18 +372,6 @@ async def main():
         await pg.evaluate("(() => { const r = __srv.rows.get('config|main'); r.data = JSON.parse(JSON.stringify(r.data)); r.data.reglages.comptes = {...(r.data.reglages.comptes || {})}; const k = meKey(); r.data.reglages.comptes[k] = {...(r.data.reglages.comptes[k] || {}), planVue: 'team'}; r.rev = (r.rev || 1) + 50; })()")
         await pg.evaluate("catchUp()"); await pg.wait_for_timeout(600)
         ok(await pg.evaluate("pref('planVue') === 'team'"), 'retour sur la page : les réglages changés sur un autre appareil sont relus')
-        if '--essais' in sys.argv:
-            # Essais de design (css/essai/x.css) : mêmes pages, pour comparer
-            for th in ['', 'a', 'b', 'c']:
-                await pg.evaluate(f"(() => {{ document.querySelectorAll('link[data-essai]').forEach(l => l.remove()); if ('{th}') {{ const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'css/essai/{th}.css?v=' + Date.now(); l.dataset.essai = 1; document.head.append(l); }} }})()"); await pg.wait_for_timeout(600)
-                nom = th or 'actuel'
-                await pg.set_viewport_size({'width': 1440, 'height': 860})
-                for js, page in [("go('accueil')", 'accueil'), ("S.sel.taches=null; go('taches')", 'travaux'), ("go('pieces','p1')", 'pieces'), ("go('planning')", 'planning')]:
-                    await aller(js, f'essai-{nom}-ordi-{page}')
-                await pg.set_viewport_size({'width': 390, 'height': 844})
-                for js, page in [("go('accueil')", 'accueil'), ("S.sel.taches=null; go('taches')", 'travaux')]:
-                    await aller(js, f'essai-{nom}-tel-{page}')
-            await pg.evaluate("document.querySelectorAll('link[data-essai]').forEach(l => l.remove())")
         print('Premier chargement sur un nouveau poste')
         await pg.set_viewport_size({'width': 1300, 'height': 820})
         await pg.evaluate("localStorage.setItem('__slow', '2500'); IDB.del(CLOUD.cacheKey())"); await pg.wait_for_timeout(200)

@@ -1951,7 +1951,7 @@ async function loadMeteo() {
   meteoBusy = true;
   try {
     const r = await fetch(
-      'https://api.open-meteo.com/v1/forecast?latitude=46.52&longitude=6.63&daily=weather_code,temperature_2m_max,temperature_2m_min&current=weather_code,is_day&timezone=Europe%2FZurich&forecast_days=1'
+      'https://api.open-meteo.com/v1/forecast?latitude=46.52&longitude=6.63&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset&current=weather_code,is_day&timezone=Europe%2FZurich&forecast_days=1'
     );
     const j = await r.json();
     METEO = {
@@ -1961,7 +1961,9 @@ async function loadMeteo() {
       now: j.current?.weather_code ?? j.daily.weather_code[0],
       isDay: j.current?.is_day,
       min: j.daily.temperature_2m_min[0],
-      max: j.daily.temperature_2m_max[0]
+      max: j.daily.temperature_2m_max[0],
+      sunrise: j.daily.sunrise?.[0]?.slice(11, 16),
+      sunset: j.daily.sunset?.[0]?.slice(11, 16)
     };
     try {
       localStorage.setItem('tf-meteo', JSON.stringify(METEO));
@@ -2119,7 +2121,64 @@ function meteoHero() {
   if (w._h !== html) w.innerHTML = w._h = html;
   w.setAttribute('aria-hidden', 'true');
 }
-const meteoHTML = () => (meteoHero(), '');
+const meteoHTML = () => (meteoHero(), sideTint(), '');
+/* Couleur de la barre latérale (ordinateur) selon le moment de la journée à Lausanne :
+   claire le jour, dorée avant le coucher du soleil, puis de plus en plus foncée jusqu'au bleu nuit.
+   Lever et coucher du soleil donnés par la météo (sinon heures moyennes de la saison). */
+const SIDE_C = {nuit: '#13203A', aube: '#E7D6C6', jour: '#F6F4EE', dore: '#EADBC3', soir: '#4A4A6A'};
+function sideTint() {
+  const hero = $('.app > .hero');
+  if (!hero) return;
+  const wide = matchMedia('(min-width:1024px)').matches,
+    dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  if (!wide || dark) {
+    for (const k of ['--side-bg', '--ink', '--muted', '--sunk', '--line']) hero.style.removeProperty(k);
+    return;
+  }
+  const m = s => (s ? +s.slice(0, 2) * 60 + +s.slice(3, 5) : null),
+    d = new Date(),
+    mo = d.getMonth(),
+    now = d.getHours() * 60 + d.getMinutes();
+  /* heures moyennes à Lausanne si la météo n'a pas répondu (hiver ≈ 8h00–17h00, été ≈ 5h45–21h15) */
+  const summer = Math.cos(((mo - 5.5) / 12) * 2 * Math.PI),
+    sr = m(METEO?.sunrise) ?? Math.round(410 - 70 * summer),
+    ss = m(METEO?.sunset) ?? Math.round(1110 + 130 * summer);
+  const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)),
+    mix = (a, b, t) => {
+      const A = hex(a),
+        B = hex(b),
+        k = Math.max(0, Math.min(1, t));
+      return (
+        '#' +
+        A.map((v, i) =>
+          Math.round(v + (B[i] - v) * k)
+            .toString(16)
+            .padStart(2, '0')
+        ).join('')
+      );
+    };
+  let c;
+  if (now < sr - 60) c = SIDE_C.nuit;
+  else if (now < sr) c = mix(SIDE_C.nuit, SIDE_C.aube, (now - (sr - 60)) / 60);
+  else if (now < sr + 60) c = mix(SIDE_C.aube, SIDE_C.jour, (now - sr) / 60);
+  else if (now < ss - 120) c = SIDE_C.jour;
+  else if (now < ss) c = mix(SIDE_C.jour, SIDE_C.dore, (now - (ss - 120)) / 120);
+  else if (now < ss + 45) c = mix(SIDE_C.dore, SIDE_C.soir, (now - ss) / 45);
+  else if (now < ss + 105) c = mix(SIDE_C.soir, SIDE_C.nuit, (now - ss - 45) / 60);
+  else c = SIDE_C.nuit;
+  const [r, g, b] = hex(c),
+    lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  hero.style.setProperty('--side-bg', c);
+  if (lum < 0.55) {
+    /* barre foncée : texte clair */
+    hero.style.setProperty('--ink', '#EEF1F6');
+    hero.style.setProperty('--muted', 'rgba(238,241,246,.68)');
+    hero.style.setProperty('--sunk', 'rgba(255,255,255,.09)');
+    hero.style.setProperty('--line', 'rgba(255,255,255,.12)');
+  } else for (const k of ['--ink', '--muted', '--sunk', '--line']) hero.style.removeProperty(k);
+  hero.dataset.tint = lum < 0.55 ? 'sombre' : 'clair';
+}
+setInterval(() => sideTint(), 5 * 60e3);
 function headBand() {
   const sub = $('#hsub');
   if (sub) sub.textContent = PAGE_L[S.view] || 'Maintenance Tridel';

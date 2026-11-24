@@ -2041,3 +2041,53 @@ main{padding-block:12px 40px}
 }
 /* Options : chaque carte garde sa hauteur entière ; c'est la colonne qui défile s'il y a plus de contenu */
 #main > .opt > .opt-body > *{flex-shrink:0}
+
+/* =====================================================================
+   THÈME « CHALEUREUX » (novembre 2026, choisi par Thomas parmi trois essais) : papier clair légèrement chaud, grands arrondis, titres en Manrope,
+   pastilles de couleur des métiers plus présentes, boutons ronds. Accueillant, facile.
+   ===================================================================== */
+:root{
+  --bg:#F6F4EE; --surface:#FFFEFB; --sunk:#F0EDE5; --ink:#1E1C17; --muted:#6C675C; --line:#E7E2D6;
+  --accent:#0C6E3E; --accent-soft:#E6F1E8;
+  --r-sm:10px; --r-md:14px; --r-lg:18px; --r-xl:24px; --r:14px;
+  --sh-2:0 1px 2px rgba(60,45,20,.05),0 18px 36px -22px rgba(60,45,20,.28);
+  --f-display:"Manrope","Inter",sans-serif;
+  --tile-w:#FFE9D2; --tile-p:#FFF4C2; --tile-r:#DFF0E3;
+}
+@media (prefers-color-scheme:dark){:root{--bg:#14120E; --surface:#1C1A15; --sunk:#221F19; --ink:#EEEAE0; --muted:#A39D8F; --line:#2E2A22}}
+.page-head h1{font-family:var(--f-display) !important;font-weight:800 !important;font-size:2.2rem !important;letter-spacing:-.035em !important}
+.btile h2,.pane h2,.mh-h{font-family:var(--f-display)}
+.btn{border-radius:var(--r-pill);padding-inline:18px}
+.btn.icon-only{border-radius:50%}
+.ychip{padding:7px 15px}
+.btile{border:0;box-shadow:var(--sh-2)}
+.pane{border:0;box-shadow:var(--sh-2)}
+.hband{border:0 !important;border-radius:var(--r-lg) !important;box-shadow:var(--sh-2) !important;margin-top:12px}
+.hband::before{left:18px;right:18px;border-radius:3px}
+@media (min-width:1024px){
+  .app > .hero{background:transparent !important;border-right:0 !important}
+  .hero-inner .nav button{border-radius:var(--r-pill) !important;padding:10px 16px}
+  .hero-inner .nav button[aria-current="page"]{background:var(--accent) !important;color:#fff !important}
+  .hero-inner .nav button[aria-current="page"] .ico{color:#fff !important}
+  .app > .hero > .hero-art{border-radius:22px}
+}
+/* titres plus grands, cartes plus douces, chiffres affirmés */
+.btile h2{font-size:1.15rem;font-weight:800;letter-spacing:-.02em}
+.bt-n > b{font-family:var(--f-display);font-weight:800;font-size:3rem;letter-spacing:-.05em}
+.myday{border:0;box-shadow:var(--sh-2);background:linear-gradient(135deg,#E6F1E8,var(--surface) 60%) !important}
+.mh-h,.myday h2{font-family:var(--f-display);font-weight:800}
+.bt-rows li{border-radius:var(--r-pill);padding-left:16px}
+.bt-i{border-radius:50% !important}
+.ov-h{font-family:var(--f-display);font-size:1.25rem;font-weight:800;color:var(--ink);letter-spacing:-.02em;text-transform:none}
+
+/* Barre latérale (ordinateur) : sa couleur suit la journée (sideTint() dans 3-coeur.js : claire le jour,
+   dorée en fin d'après-midi, bleu nuit le soir) ; l'usine et la météo occupent tout le bas, sans cadre,
+   le ciel se fond dans la barre */
+@media (min-width:1024px){
+  .app > .hero,body:not([data-view=accueil]) .app > .hero{background:var(--side-bg,var(--bg)) !important;color:var(--ink);padding-bottom:212px;transition:background-color 1.2s ease}
+  .app > .hero > .hero-art{left:0 !important;right:0 !important;bottom:0 !important;height:200px !important;border-radius:0 !important;box-shadow:none !important;
+    -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 46%);mask-image:linear-gradient(180deg,transparent 0,#000 46%)}
+  .hero-art .hero-wx{top:18px !important;height:56% !important}
+  .hero-inner .help-btn{margin-top:auto}
+  .hero-inner .nav button[aria-current="page"]{box-shadow:0 6px 16px -8px rgba(12,110,62,.6)}
+}
