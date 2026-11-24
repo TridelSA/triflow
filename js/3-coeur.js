@@ -2086,21 +2086,9 @@ function meteoCardSVG() {
   } else if (sky === 'clair' || c <= 2) body += ''; /* le soleil est dessiné en haut de la barre (halo), un seul soleil */
   const night = sky === 'nuit',
     cf = night ? '#C9D3E3' : '#FFFFFF';
-  if (c >= 1 && c <= 2) body += cloud(112, 26, 62, 18, night ? 0.6 : 0.95, cf);
-  else if (c === 3) body += cloud(18, 14, 74, 18, night ? 0.45 : 0.85, cf) + cloud(100, 24, 86, 22, night ? 0.6 : 0.95, cf);
-  else if (c >= 45 && c <= 48)
+  /* nuages, pluie, neige : animés sur toute la barre (sideTint) ; ici seulement la lune et le brouillard */
+  if (c >= 45 && c <= 48)
     body += `<g stroke="#FFFFFF" stroke-linecap="round" opacity=".55"><line x1="16" y1="34" x2="150" y2="34" stroke-width="5"/><line x1="40" y1="46" x2="190" y2="46" stroke-width="6"/></g>`;
-  else if (c >= 51) {
-    const snow = (c >= 71 && c <= 77) || c === 85 || c === 86,
-      storm = c >= 95;
-    body +=
-      cloud(14, 8, 92, 22, night ? 0.55 : 0.9, night ? cf : '#EEF2F6') +
-      cloud(88, 16, 96, 24, night ? 0.65 : 1, night ? cf : '#F7F9FB') +
-      (snow
-        ? `<g fill="#FFFFFF">${[30, 52, 74, 96, 118, 140, 162].map((x, i) => `<circle cx="${x}" cy="${50 + (i % 3) * 7}" r="2"/>`).join('')}</g>`
-        : `<g stroke="${night ? '#9DB4D6' : '#5C8FD1'}" stroke-width="2" stroke-linecap="round">${[34, 52, 70, 88, 106, 124, 142, 160].map((x, i) => `<line x1="${x}" y1="${44 + (i % 2) * 5}" x2="${x - 4}" y2="${54 + (i % 2) * 5}"/>`).join('')}</g>`) +
-      (storm ? '<path d="M118 40l-8 13h7l-4 11 12-15h-7l5-9z" fill="#FFD23F"/>' : '');
-  }
   return `<svg viewBox="0 0 200 84" preserveAspectRatio="xMidYMin meet" aria-hidden="true">${body}</svg>`;
 }
 function meteoHero() {
@@ -2152,7 +2140,7 @@ const SIDE_STARS = (() => {
   let h = '';
   for (let i = 0; i < 54; i++) {
     const cx = (rnd() * 236).toFixed(1),
-      cy = (Math.pow(rnd(), 1.4) * 640).toFixed(1),
+      cy = (Math.pow(rnd(), 1.15) * 690).toFixed(1),
       r = (0.5 + rnd() * rnd() * 1.3).toFixed(2),
       o = (0.35 + rnd() * 0.6).toFixed(2),
       tw =
@@ -2248,7 +2236,7 @@ function sideTint() {
       (fx.includes('stars') ? SIDE_STARS : '') +
       (fx.includes('sun') ? SIDE_SUN : '') +
       (fx.includes('clouds')
-        ? `<span class="cl c1">${SIDE_CLOUD}</span><span class="cl c2">${SIDE_CLOUD}</span>${wet ? `<span class="cl c3">${SIDE_CLOUD}</span>` : ''}`
+        ? `<span class="cl c1">${SIDE_CLOUD}</span><span class="cl c2">${SIDE_CLOUD}</span><span class="cl c4">${SIDE_CLOUD}</span><span class="cl c5">${SIDE_CLOUD}</span>${wet ? `<span class="cl c3">${SIDE_CLOUD}</span><span class="cl c6">${SIDE_CLOUD}</span>` : ''}`
         : '');
     front.className = 'sidefx front ' + (wet ? (snow ? 'snow' : 'rain') : '') + (code >= 95 ? ' storm' : '');
     front.innerHTML = wet ? '<i class="l1"></i><i class="l2"></i>' : '';
