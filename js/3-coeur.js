@@ -2083,8 +2083,7 @@ function meteoCardSVG() {
       .join(
         ''
       )}</g><g transform="translate(160 26)"><circle r="16" fill="#F3F1E4" opacity=".08"/><circle r="${r}" fill="#FFFFFF" opacity=".12"/>${lit}</g>`;
-  } else if (sky === 'clair' || c <= 2)
-    body += `<g data-sun transform="translate(160 26)"><circle r="20" fill="#FFE27A" opacity=".35"/><circle r="12" fill="#FFD23F"/></g>`;
+  } else if (sky === 'clair' || c <= 2) body += ''; /* le soleil est dessiné en haut de la barre (halo), un seul soleil */
   const night = sky === 'nuit',
     cf = night ? '#C9D3E3' : '#FFFFFF';
   if (c >= 1 && c <= 2) body += cloud(112, 26, 62, 18, night ? 0.6 : 0.95, cf);
@@ -2233,7 +2232,7 @@ function sideTint() {
   hero.dataset.tint = darkTxt ? 'sombre' : 'clair';
   /* Décor : étoiles la nuit par temps clair (moins s'il y a des nuages), nuages qui passent, pluie ou neige qui tombe */
   /* jour de beau temps : soleil doux en haut, rayons qui tournent lentement, oiseaux de temps en temps */
-  const sunny = !darkTxt && code <= 2 && now > sr + 30 && now < ss - 20;
+  const sunny = !darkTxt && code <= 2 && now > sr && now < ss;
   const fx = [
     night && code < 45 ? (grey ? 'stars few' : 'stars') : '',
     sunny ? 'sun' : '',
