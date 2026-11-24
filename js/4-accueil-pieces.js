@@ -199,27 +199,40 @@ VIEWS.accueil = {
   detail: () => ''
 };
 /* ---------- Pièces ---------- */
+/* Texte de recherche d'une pièce (référence, nom, fabricant, KKS, emplacements…), calculé une fois
+   puis gardé tant que les données ne changent pas */
+const PTXT = new WeakMap();
+function pieceText(p) {
+  const key = REV + '|' + (CLOUD.ver || 0),
+    c = PTXT.get(p);
+  if (c && c.k === key) return c.t;
+  const t = norm(
+    [
+      p.ref,
+      p.designation,
+      p.fabricant,
+      p.fournisseur,
+      ...(p.fours || []),
+      p.refFab,
+      p.categorie,
+      ...(p.kks || []).map(id => getKks(id)?.code),
+      ...(p.stock || []).map(s => lieuCode(getLieu(s.lieuId)))
+    ].join(' ')
+  );
+  PTXT.set(p, {k: key, t});
+  return t;
+}
 function filteredPieces() {
-  const q = norm(S.q.pieces);
+  const q = norm(S.q.pieces).trim();
+  /* plusieurs mots : chacun doit se trouver quelque part (« bekomat 13 » trouve « Kit Bekomat 13-13 ») */
+  const words = q.split(/\s+/).filter(Boolean);
   let rows = db.pieces
     .filter(p => (S.arch.pieces ? p.arch : !p.arch))
-    .filter(
-      p =>
-        !q ||
-        norm(
-          [
-            p.ref,
-            p.designation,
-            p.fabricant,
-            p.fournisseur,
-            ...(p.fours || []),
-            p.refFab,
-            p.categorie,
-            ...p.kks.map(id => getKks(id)?.code),
-            ...p.stock.map(s => lieuCode(getLieu(s.lieuId)))
-          ].join(' ')
-        ).includes(q)
-    );
+    .filter(p => {
+      if (!words.length) return true;
+      const t = pieceText(p);
+      return words.every(w => t.includes(w));
+    });
   if (S.lowOnly) rows = rows.filter(isLow);
   if (S.zeroOnly) rows = rows.filter(p => isOut(p));
   if (S.ploc) {

@@ -986,6 +986,10 @@ document.addEventListener('input', e => {
     $('#opt-list').innerHTML = optKksTable(
       db.kks.filter(x => live(x) && (!q || norm(`${x.code} ${x.designation} ${x.aic || ''}`).includes(q))).sort(kksSort)
     );
+  } else if (k === 'pieces') {
+    /* frappe rapide : on attend la fin d'une rafale de lettres avant de refaire la liste */
+    clearTimeout(fillList.t);
+    fillList.t = setTimeout(fillList, 90);
   } else fillList();
 });
 document.addEventListener('change', e => {

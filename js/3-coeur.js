@@ -769,7 +769,25 @@ function undoLast(rev) {
 }
 
 /* ---------------- Accès ---------------- */
-const get = (col, id) => db[col].find(x => x.id === id);
+/* Retrouver une fiche par son id : index par collection (au lieu de parcourir toute la liste à chaque fois).
+   L'index se refait tout seul si la liste a été remplacée, a changé de taille, ou si la fiche n'est plus à sa place. */
+const IDX = {};
+function get(col, id) {
+  const arr = db[col];
+  if (!arr) return undefined;
+  let x = IDX[col];
+  if (x && x.arr === arr) {
+    const i = x.m.get(id);
+    if (i !== undefined && arr[i] && arr[i].id === id) return arr[i];
+    /* pas dans l'index : on vérifie dans la liste (fiche ajoutée entre-temps), sinon elle n'existe pas */
+    if (i === undefined && x.len === arr.length && !arr.some(y => y && y.id === id)) return undefined;
+  }
+  const m = new Map();
+  for (let i = 0; i < arr.length; i++) if (arr[i]) m.set(arr[i].id, i);
+  IDX[col] = {arr, len: arr.length, m};
+  const i = m.get(id);
+  return i === undefined ? undefined : arr[i];
+}
 const getSalle = id => get('salles', id),
   getLieu = id => get('lieux', id),
   getPiece = id => get('pieces', id),

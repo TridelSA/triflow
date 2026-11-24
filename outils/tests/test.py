@@ -320,6 +320,19 @@ async def main():
         await aller("go('interventions'); interventionDialog(null)", 'dialogue-rapport', 300)
         ok(await pg.evaluate("!!document.querySelector('dialog[open] [data-padd]') && !document.querySelector('dialog[open] [data-pgrid]')"), 'intervenants par recherche seule')
 
+        # Recherche de pièces rapide, même avec beaucoup de pièces
+        t = await pg.evaluate("""(() => { const k = db.kks.map(x => x.id), l = db.lieux.map(x => x.id), keep = db.pieces;
+          for (let i = 0; i < 6000; i++) db.kks.push({id: 'pk' + i, code: '0XYZ' + i, designation: 'Équipement ' + i});
+          db.pieces = keep.concat(Array.from({length: 6000}, (_, i) => ({id: 'pp' + i, ref: String(100000 + i), designation: 'Pièce de test ' + i + (i % 7 ? ' joint' : ' roulement'), fabricant: 'Fab ' + (i % 50), kks: ['pk' + i, ...k.slice(0, 1)], stock: l.length ? [{lieuId: l[i % l.length], qte: i % 5}] : [], arch: false})));
+          S.view = 'pieces'; S.sel.pieces = null; render();
+          const t0 = performance.now();
+          for (const q of ['r', 'ro', 'rou', 'roul', 'roulement 12', '0xyz59']) { S.q.pieces = q; fillList(); }
+          const ms = performance.now() - t0;
+          const n = (S.q.pieces = 'roulement 12', filteredPieces().length);
+          db.pieces = keep; db.kks = db.kks.filter(x => !String(x.id).startsWith('pk')); S.q.pieces = ''; render();
+          return [Math.round(ms), n]; })()""")
+        print('     recherche 6000 pièces :', t[0], 'ms pour 6 frappes,', t[1], 'résultats')
+        ok(t[0] < 1500 and t[1] > 0, 'recherche de pièces rapide (6000 pièces, plusieurs mots)')
         for w in (1024, 1280, 1550, 1920):
             await pg.set_viewport_size({'width': w, 'height': 800})
             await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close()); S.sel.taches=null; go('taches')"); await pg.wait_for_timeout(300)

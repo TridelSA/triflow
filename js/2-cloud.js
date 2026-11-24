@@ -398,6 +398,7 @@ const CLOUD = {
       const base = this.synced.has(k) ? JSON.parse(this.synced.get(k)) : null,
         local = this.docsOf(db).get(k);
       this.revs.set(k, ev.new.rev);
+      this.ver = (this.ver || 0) + 1;
       this.synced.set(k, JSON.stringify(ev.new.data));
       if (row.collection === 'config') {
         const m = local ? this.mergeDoc(base, JSON.parse(JSON.stringify(local)), ev.new.data) : ev.new.data;
