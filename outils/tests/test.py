@@ -300,7 +300,7 @@ async def main():
         ok(await pg.evaluate("[...document.querySelectorAll('.wkgrid th.pn')].some(x => x.textContent.includes('ECHO')) && !!document.querySelector('.wkgrid .pc.pclash .pabs') && /personne absente/.test(document.querySelector('.pclash-bar')?.textContent || '')"), 'travail prévu pour une personne absente : signalé dans la case et en haut')
         await pg.evaluate("tx(() => { db.plan = db.plan.filter(x => x.id !== 'pclash1'); }); render()"); await pg.wait_for_timeout(200)
         await pg.evaluate("tx(() => db.taches.push({id:'t3', titre:'Contrôle éclairage', kksId:'', assign:{type:'groupe', v:'Électricien'}, freq:{n:1, unite:'once'}, prochaine:'', actif:true, kind:'petit', prio:'haute'})); S.pside = true; render()"); await pg.wait_for_timeout(300)
-        ok(await pg.evaluate("[...document.querySelectorAll('.pside [data-act=plan-met]')].map(b => b.title).join('|') === 'Tout|Électricien|Automaticien|Mécanicien|Intendance'"), 'À planifier : pastilles par métier')
+        ok(await pg.evaluate("[...document.querySelectorAll('.pside [data-act=plan-met]')].map(b => b.title).join('|') === 'Tout|Électricien|Automaticien|Mécanicien|Intendance|Chauffeur-grutier|Cadres'"), 'À planifier : pastilles par métier')
         await pg.evaluate("ACT['plan-print']({f:'a3'})"); await pg.wait_for_timeout(300)
         ok(await pg.evaluate("document.querySelectorAll('dialog[open] .pcheck .pc-row').length >= 3"), 'planning : liste de contrôle avant impression')
         await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close())")
@@ -320,10 +320,13 @@ async def main():
         await aller("go('interventions'); interventionDialog(null)", 'dialogue-rapport', 300)
         ok(await pg.evaluate("!!document.querySelector('dialog[open] [data-padd]') && !document.querySelector('dialog[open] [data-pgrid]')"), 'intervenants par recherche seule')
 
-        for w in (1024, 1280):
+        for w in (1024, 1280, 1550, 1920):
             await pg.set_viewport_size({'width': w, 'height': 800})
             await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close()); S.sel.taches=null; go('taches')"); await pg.wait_for_timeout(300)
-            ok(await pg.evaluate("(() => { const t = document.querySelector('.wtabs').getBoundingClientRect(), b = document.querySelector('.wtabs [data-w=revision]').getBoundingClientRect(); return b.width > 40 && b.right <= t.right + 1; })()"), f'onglet « Révision » visible à {w} px de large')
+            # police plus large (Windows sans Inter) et grands nombres, comme en vrai
+            r = await pg.evaluate("(() => { const st = document.createElement('style'); st.id = 'wfont'; st.textContent = '.wtabs, .wtabs * {font-family: Verdana, Arial, sans-serif !important}'; document.head.append(st); document.querySelectorAll('.wtabs small').forEach(x => x.textContent = '374'); const t = document.querySelector('.wtabs').getBoundingClientRect(), b = document.querySelector('.wtabs [data-w=revision]'), rb = b.getBoundingClientRect(); const res = rb.width > 40 && rb.right <= t.right + 1 && [...document.querySelectorAll('.wtabs button')].every(x => x.scrollWidth <= x.clientWidth + 1); st.remove(); return res ? 'ok' : [...document.querySelectorAll('.wtabs button')].map(x => x.textContent.trim() + ' ' + x.scrollWidth + '/' + x.clientWidth).join(' | ') + ' tabs ' + Math.round(t.width); })()")
+            print('    ', w, r)
+            ok(r == 'ok', f'onglet « Révision » visible à {w} px de large')
         print('Pages (téléphone)')
         await pg.set_viewport_size({'width': 390, 'height': 844})
         await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close()); S.sel.taches=null; go('taches')"); await pg.wait_for_timeout(300)

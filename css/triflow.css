@@ -29,7 +29,7 @@
   /* Point d'état de la connexion (sur le bandeau vert) */
   --dot-ok:#6FD08A; --dot-wait:#F2C14E; --dot-bad:#FF6B5E;
   /* Couleurs des métiers (planning) */
-  --m-elec:#E3A008; --m-auto:#7C5CD6; --m-meca:#D2622E; --m-intend:#2E8FC2;
+  --m-elec:#E3A008; --m-auto:#7C5CD6; --m-meca:#D2622E; --m-intend:#2E8FC2; --m-chauf:#14917B; --m-cadre:#C2457A;
   /* Pastilles d'icône des cartes de l'accueil */
   --tile-w:#FDE7D3; --tile-w-ink:#C2560C; --tile-p:#E3EEF9; --tile-p-ink:#2563A6; --tile-r:#EFE8FB; --tile-r-ink:#6B46C1; --tile-glow:#FFF6EC;
   color-scheme:light;
@@ -1047,7 +1047,7 @@ body.placing .wkgrid .pc{cursor:copy}
 
 /* Métiers (planning) : même pastille de couleur dans « À planifier » et dans la grille */
 .mdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:1px;flex:none}
-.m-elec{background:var(--m-elec)}.m-auto{background:var(--m-auto)}.m-meca{background:var(--m-meca)}.m-intend{background:var(--m-intend)}
+.m-elec{background:var(--m-elec)}.m-auto{background:var(--m-auto)}.m-meca{background:var(--m-meca)}.m-intend{background:var(--m-intend)}.m-chauf{background:var(--m-chauf)}.m-cadre{background:var(--m-cadre)}
 .ps-met{display:flex;flex-wrap:wrap;gap:5px}
 .ps-met .ychip{font-size:var(--t-sm);padding:4px 9px}
 .ps-met .ychip small{color:inherit;font-size:var(--t-xs)}
@@ -2029,3 +2029,15 @@ main{padding-block:12px 40px}
   .rev-hint{display:none}
   .rev-scroll{max-height:calc(100dvh - 300px)}
 }
+/* Accueil (ordinateur) : Travaux à gauche, Planning (hauteur selon le nombre de personnes) puis Rapports au milieu,
+   Pièces sur toute la hauteur à droite */
+@media (min-width:1024px){
+  #main > .bento{grid-template-rows:fit-content(64%) minmax(0,1fr);grid-auto-rows:auto}
+  #main > .bento > .bt-w{grid-column:1;grid-row:1 / span 2}
+  #main > .bento > .bt-l{grid-column:2;grid-row:1;max-height:none}
+  #main > .bento > .bt-r{grid-column:2;grid-row:2}
+  #main > .bento > .bt-p{grid-column:3;grid-row:1 / span 2}
+  #main > .bento > .bt-l .p7-wrap{flex:0 1 auto;min-height:150px}
+}
+/* Options : chaque carte garde sa hauteur entière ; c'est la colonne qui défile s'il y a plus de contenu */
+#main > .opt > .opt-body > *{flex-shrink:0}

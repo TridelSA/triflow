@@ -457,7 +457,7 @@ VIEWS.planning = {
         })()}
         <span class="head-tools">${toolBtn(['plan-hide', 'Masquer des personnes (pour tous)', 'person', {}])}</span></div></header>
       ${planVueChips()}
-      <div class="ptip-row"><p class="hint ptip">${P && !P.loading && !P.byNom.size ? 'Présences indisponibles (Planning Tridel non joignable). ' : ''}Cliquez une case et tapez le travail : <b>Entrée</b> valide, <b>Tab</b> passe au jour suivant, <b>⋯</b> pour plus de choix.</p>${planLegend()}</div>
+      ${P && !P.loading && !P.byNom.size ? '<p class="hint ptip">Présences indisponibles (Planning Tridel non joignable).</p>' : ''}
       ${(() => {
         const l = planClashes(days[0], days[nd - 1]);
         return l.length
@@ -501,7 +501,9 @@ const METIERS = [
   ['elec', 'Électricien', /^elec/],
   ['auto', 'Automaticien', /^auto/],
   ['meca', 'Mécanicien', /^meca/],
-  ['intend', 'Intendance', /^intend/]
+  ['intend', 'Intendance', /^intend/],
+  ['chauf', 'Chauffeur-grutier', /^chauf|grut/],
+  ['cadre', 'Cadres', /^cadre/]
 ];
 const metOf = g => (METIERS.find(m => m[2].test(norm(g || ''))) || [''])[0];
 const tMet = t => metOf(t.assign?.type === 'personne' ? getPers(t.assign.v)?.groupe : t.assign?.v);
