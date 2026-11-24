@@ -2467,10 +2467,16 @@ const searchBox = (key, ph) =>
   `<input type="search" class="search" id="q-${key}" data-search="${key}" placeholder="${ph}" value="${esc(S.q[key])}" aria-label="${ph}">`;
 function mvTable(list, withPiece) {
   if (!list.length) return '<p class="empty-line">Aucun mouvement enregistré.</p>';
-  return `<div class="tbl-wrap"><table class="tbl compact"><thead><tr><th>Date</th>${withPiece ? '<th>Pièce</th>' : ''}<th>Emplacement</th><th class="num">Qté</th><th>Motif</th></tr></thead><tbody>${list
+  return `<div class="tbl-wrap"><table class="tbl compact"><thead><tr><th>Date</th>${withPiece ? '<th>Pièce</th>' : ''}<th>Emplacement</th><th class="num">Qté</th><th>Détail</th></tr></thead><tbody>${list
     .map(m => {
       const p = getPiece(m.pieceId);
-      return `<tr><td class="qty">${fmtD(m.date)}</td>${withPiece ? `<td>${p ? esc(p.designation) : '—'}</td>` : ''}<td>${plate(getLieu(m.lieuId))}</td><td class="num qty" style="color:var(${m.qte < 0 ? '--bad' : '--ok'})">${m.qte > 0 ? '+' : '−'}${num(Math.abs(m.qte))}</td><td>${esc(m.motif)}${m.ref ? ` <span class="ref">${esc(m.ref)}</span>` : ''}</td></tr>`;
+      return `<tr><td class="qty">${fmtD(m.date)}</td>${withPiece ? `<td>${p ? esc(p.designation) : '—'}</td>` : ''}<td>${plate(getLieu(m.lieuId))}</td><td class="num qty" style="color:var(${m.qte < 0 ? '--bad' : '--ok'})">${m.qte > 0 ? '+' : '−'}${num(Math.abs(m.qte))}</td><td>${esc(m.motif)}${(() => {
+        if (!m.ref) return '';
+        const ri = db.interventions.find(i => i.num === m.ref);
+        return ri
+          ? ` <button class="link ref" data-act="goto" data-view="interventions" data-id="${ri.id}">${esc(m.ref)}</button>`
+          : ` <span class="ref">${esc(m.ref)}</span>`;
+      })()}</td></tr>`;
     })
     .join('')}</tbody></table></div>`;
 }

@@ -267,16 +267,37 @@ function rapportsPourPieces() {
       (a, b) => (b.intervenants || []).includes(me) - (a.intervenants || []).includes(me) || (b.date || '').localeCompare(a.date || '')
     );
 }
+/* Quantité d'une pièce prise pour un rapport (tous emplacements) */
+const takenFor = (i, p) => round((i.pieces || []).filter(x => x.pieceId === p.id).reduce((s, x) => s + (+x.qte || 0), 0));
+/* Rapports où cette pièce a été prise (pour un retour) */
+const rapportsAvecPiece = p =>
+  db.interventions.filter(i => live(i) && takenFor(i, p) > 0).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+/* Lier un mouvement à un rapport : q > 0 = pièces prises pour le rapport, q < 0 = pièces rendues.
+   On ne peut pas rendre plus que ce que le rapport a pris ; le retour se retire d'abord de la ligne du même emplacement. */
 function linkPieceToReport(i, p, lieuId, q) {
-  const l = i.pieces.find(x => x.pieceId === p.id && x.lieuId === lieuId);
-  if (l) l.qte = round(l.qte + q);
-  else if (q > 0) i.pieces.push({pieceId: p.id, lieuId, qte: q});
+  i.pieces = i.pieces || [];
+  if (q > 0) {
+    const l = i.pieces.find(x => x.pieceId === p.id && x.lieuId === lieuId);
+    if (l) l.qte = round(l.qte + q);
+    else i.pieces.push({pieceId: p.id, lieuId, qte: q});
+  } else if (q < 0) {
+    let rest = -q;
+    if (rest > takenFor(i, p) + 1e-9)
+      throw new Error(`Le rapport ${i.num} n’a pris que ${num(takenFor(i, p))} ${p.unite} de cette pièce : on ne peut pas en rendre plus.`);
+    const lines = i.pieces.filter(x => x.pieceId === p.id).sort((a, b) => (b.lieuId === lieuId) - (a.lieuId === lieuId));
+    for (const l of lines) {
+      const k = Math.min(rest, l.qte);
+      l.qte = round(l.qte - k);
+      rest = round(rest - k);
+      if (!rest) break;
+    }
+  }
   i.pieces = i.pieces.filter(x => x.qte > 0);
 }
 function quickMove(p) {
   const places = sortedStock(p).filter(x => !isStatut(getLieu(x.lieuId))),
     mp = mainPlace(p),
-    reps = rapportsPourPieces().slice(0, 30);
+    reps = [...new Set([...rapportsPourPieces().slice(0, 30), ...rapportsAvecPiece(p).slice(0, 10)])];
   const place = s => {
     const l = getLieu(s.lieuId);
     return `<label class="qm-loc"><input type="radio" name="lieu" value="${l.id}" ${mp && mp.id === l.id ? 'checked' : ''}><span><b>${esc(lieuCode(l))}</b><small>${num(s.qte)} ${esc(p.unite)}</small></span></label>`;
@@ -364,11 +385,8 @@ function moveDialog(p0, type = 'sortie') {
         )
         .join('')}</fieldset>
       <div class="grid2"><label><span data-lbl-lieu>Emplacement</span><input name="lieu" list="dl-lieux" autocomplete="off" placeholder="ex. E1.11 C45 A"></label><label data-dest hidden>Vers l’emplacement<input name="dest" list="dl-lieux" autocomplete="off"></label></div>
-      <div class="grid2"><label><span data-lbl-qte>Quantité</span><input name="qte" type="number" min="0" step="any" required></label><label>Motif<input name="motif" placeholder="ex. bon de livraison, travail sur…"></label></div>
-      <label data-rapw>Pour quel rapport ? <span class="muted">(facultatif)</span><select name="rap"><option value="">Aucun</option>${rapportsPourPieces()
-        .slice(0, 30)
-        .map(i => `<option value="${i.id}">${esc(i.num)} · ${esc(i.titre || 'Sans titre')}</option>`)
-        .join('')}</select></label>
+      <label><span data-lbl-qte>Quantité</span><input name="qte" type="number" min="0" step="any" required></label>
+      <label data-rapw><span data-lbl-rap>Pour quel rapport ?</span> <span class="muted">(facultatif)</span><select name="rap"></select></label>
       <p class="hint" data-dispo></p>`,
     onOpen(f, d) {
       const P = () => p0 || findPiece(val(f, 'piece'));
@@ -377,7 +395,24 @@ function moveDialog(p0, type = 'sortie') {
         const t = val(f, 'type'),
           p = P();
         $('[data-dest]', d).hidden = t !== 'transfert';
-        $('[data-rapw]', d).hidden = t !== 'sortie' || !rapportsPourPieces().length;
+        /* Sortie : pour quel rapport (pièces prises) ; Entrée : retour d'un rapport (seulement ceux qui ont pris cette pièce) */
+        const reps = t === 'sortie' ? rapportsPourPieces().slice(0, 30) : t === 'entree' && p ? rapportsAvecPiece(p).slice(0, 30) : [],
+          sel = f.elements.rap,
+          keyR = t + '|' + (p ? p.id : '') + '|' + reps.map(i => i.id).join(',');
+        if (sel._k !== keyR) {
+          const cur = sel.value;
+          sel._k = keyR;
+          sel.innerHTML =
+            `<option value="">Aucun</option>` +
+            reps
+              .map(
+                i =>
+                  `<option value="${i.id}" ${i.id === cur ? 'selected' : ''}>${esc(i.num)} · ${esc(i.titre || 'Sans titre')}${t === 'entree' ? ` (${num(takenFor(i, p))} ${esc(p.unite)} pris)` : i.statut !== 'terminee' ? ' (en cours)' : ''}</option>`
+              )
+              .join('');
+        }
+        $('[data-rapw]', d).hidden = !reps.length;
+        $('[data-lbl-rap]', d).textContent = t === 'entree' ? 'Retour d’un rapport ?' : 'Pour quel rapport ?';
         $('[data-lbl-lieu]', d).textContent = t === 'transfert' ? 'Depuis l’emplacement' : 'Emplacement';
         $('[data-lbl-qte]', d).textContent = t === 'inventaire' ? 'Quantité comptée' : 'Quantité';
         $('button[type=submit]', d).textContent = MV[t][3];
@@ -406,28 +441,31 @@ function moveDialog(p0, type = 'sortie') {
       const p = p0 || findPiece(val(f, 'piece'));
       if (!p) throw new Error('Choisissez une pièce dans la liste proposée.');
       const t = val(f, 'type'),
-        q = +val(f, 'qte'),
-        motif = val(f, 'motif');
+        q = +val(f, 'qte');
       const l = findLieu(val(f, 'lieu'));
       if (!l) throw new Error('Choisissez un emplacement existant.');
       if (val(f, 'qte') === '' || !(q >= 0)) throw new Error('Indiquez une quantité valide.');
       if (t !== 'inventaire' && q <= 0) throw new Error('La quantité doit être supérieure à zéro.');
+      if ((t === 'sortie' || t === 'transfert') && q > stockAt(p, l.id))
+        throw new Error(`Il n’y en a que ${num(stockAt(p, l.id))} ${p.unite} en ${lieuCode(l)}.`);
+      const ri = (t === 'sortie' || t === 'entree') && val(f, 'rap') ? getInt(val(f, 'rap')) : null;
       tx(() => {
-        if (t === 'entree') addStock(p, l.id, q, motif || 'Entrée');
-        else if (t === 'sortie') {
-          const ri = val(f, 'rap') ? getInt(val(f, 'rap')) : null;
-          addStock(p, l.id, -q, motif || (ri ? 'Sortie intervention' : 'Sortie'), ri ? ri.num : '');
+        if (t === 'entree') {
+          addStock(p, l.id, q, ri ? 'Retour intervention' : 'Entrée', ri ? ri.num : '');
+          if (ri) linkPieceToReport(ri, p, l.id, -q);
+        } else if (t === 'sortie') {
+          addStock(p, l.id, -q, ri ? 'Sortie intervention' : 'Sortie', ri ? ri.num : '');
           if (ri) linkPieceToReport(ri, p, l.id, q);
         } else if (t === 'transfert') {
           const d2 = findLieu(val(f, 'dest'));
           if (!d2) throw new Error('Choisissez l’emplacement de destination.');
           if (d2 === l) throw new Error('Les deux emplacements sont identiques.');
-          addStock(p, l.id, -q, motif || `Déplacé vers ${lieuCode(d2)}`);
-          addStock(p, d2.id, q, motif || `Déplacé depuis ${lieuCode(l)}`);
+          addStock(p, l.id, -q, `Déplacé vers ${lieuCode(d2)}`);
+          addStock(p, d2.id, q, `Déplacé depuis ${lieuCode(l)}`);
         } else {
           const delta = round(q - stockAt(p, l.id));
           if (!p.stock.find(s => s.lieuId === l.id)) p.stock.push({lieuId: l.id, qte: 0});
-          if (delta) addStock(p, l.id, delta, motif || 'Inventaire');
+          if (delta) addStock(p, l.id, delta, 'Inventaire');
         }
       });
       render();
