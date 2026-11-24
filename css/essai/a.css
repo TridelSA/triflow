@@ -1,0 +1,40 @@
+/* ESSAI A — « Épuré » : comme un outil pro (Linear, Notion). Fond blanc, filets fins, pas d'ombres,
+   petits arrondis, une seule police (Inter), le vert seulement pour agir. Dense et calme. */
+:root{
+  --bg:#FAFAF9; --surface:#FFFFFF; --sunk:#F3F4F2; --ink:#16181A; --muted:#6B7069; --line:#E8EAE6;
+  --accent:#0C6E3E; --accent-soft:#EEF5F0; --accent-line:#BFD9C8;
+  --r-sm:6px; --r-md:7px; --r-lg:9px; --r-xl:11px; --r:7px;
+  --sh-1:none; --sh-2:none;
+  --f-display:"Inter",-apple-system,"Segoe UI",sans-serif;
+  --tile-w:#F3F4F2; --tile-w-ink:#16181A; --tile-p:#F3F4F2; --tile-p-ink:#16181A; --tile-r:#F3F4F2; --tile-r-ink:#16181A;
+}
+@media (prefers-color-scheme:dark){:root{--bg:#111312; --surface:#171A18; --sunk:#1D201E; --ink:#ECEEEB; --muted:#8D948C; --line:#262A27;
+  --tile-w:#1D201E; --tile-w-ink:#ECEEEB; --tile-p:#1D201E; --tile-p-ink:#ECEEEB; --tile-r:#1D201E; --tile-r-ink:#ECEEEB}}
+body{font-size:14.5px}
+.page-head h1{font-family:var(--f-body) !important;font-weight:650 !important;font-size:1.65rem !important;letter-spacing:-.02em !important}
+.btile,.pane,.hband{box-shadow:none !important}
+.btile{border-radius:var(--r-xl)}
+.btile:hover{transform:none !important;border-color:color-mix(in srgb,var(--ink) 18%,transparent)}
+.hband{border:0 !important;border-bottom:1px solid var(--line) !important;border-radius:0 !important;background:transparent !important;padding-inline:0 !important}
+.hband::before{display:none}
+.btn{min-height:34px;padding:5px 12px;font-weight:550;box-shadow:none !important}
+.btn.primary{box-shadow:none}
+.ychip{background:transparent;border:1px solid var(--line);border-radius:var(--r-sm);padding:4px 10px;font-weight:550}
+.ychip[aria-selected=true],.ychip[aria-pressed=true]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.prow,.tbl td{padding-block:9px}
+@media (min-width:1024px){
+  .app > .hero{background:var(--sunk) !important}
+  .hero-inner .nav button{padding:7px 10px;font-size:var(--t-md)}
+  .hero-inner .nav button[aria-current="page"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+  .hero-inner .nav button[aria-current="page"] .ico{color:var(--accent)}
+  .app{column-gap:28px}
+}
+/* plus de fonds teintés : tout est blanc, séparé par des filets */
+.bt-w,.myday{background:var(--surface) !important}
+.myday{box-shadow:none;border-radius:var(--r-xl)}
+.bt-rows{gap:0}
+.bt-rows li{background:transparent;border-radius:0;border-bottom:1px solid var(--line);padding-inline:4px}
+.bt-rows li:last-child{border-bottom:0}
+.bt-i{background:transparent !important;color:var(--muted) !important;width:auto !important;padding:0 !important}
+.bt-n > b{font-weight:650;letter-spacing:-.03em}
+.ov-h{display:none}

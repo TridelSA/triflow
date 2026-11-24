@@ -365,6 +365,18 @@ async def main():
         await pg.evaluate("(() => { const r = __srv.rows.get('config|main'); r.data = JSON.parse(JSON.stringify(r.data)); r.data.reglages.comptes = {...(r.data.reglages.comptes || {})}; const k = meKey(); r.data.reglages.comptes[k] = {...(r.data.reglages.comptes[k] || {}), planVue: 'team'}; r.rev = (r.rev || 1) + 50; })()")
         await pg.evaluate("catchUp()"); await pg.wait_for_timeout(600)
         ok(await pg.evaluate("pref('planVue') === 'team'"), 'retour sur la page : les réglages changés sur un autre appareil sont relus')
+        if '--essais' in sys.argv:
+            # Essais de design (css/essai/x.css) : mêmes pages, pour comparer
+            for th in ['', 'a', 'b', 'c']:
+                await pg.evaluate(f"(() => {{ document.querySelectorAll('link[data-essai]').forEach(l => l.remove()); if ('{th}') {{ const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'css/essai/{th}.css?v=' + Date.now(); l.dataset.essai = 1; document.head.append(l); }} }})()"); await pg.wait_for_timeout(600)
+                nom = th or 'actuel'
+                await pg.set_viewport_size({'width': 1440, 'height': 860})
+                for js, page in [("go('accueil')", 'accueil'), ("S.sel.taches=null; go('taches')", 'travaux'), ("go('pieces','p1')", 'pieces'), ("go('planning')", 'planning')]:
+                    await aller(js, f'essai-{nom}-ordi-{page}')
+                await pg.set_viewport_size({'width': 390, 'height': 844})
+                for js, page in [("go('accueil')", 'accueil'), ("S.sel.taches=null; go('taches')", 'travaux')]:
+                    await aller(js, f'essai-{nom}-tel-{page}')
+            await pg.evaluate("document.querySelectorAll('link[data-essai]').forEach(l => l.remove())")
         print('Premier chargement sur un nouveau poste')
         await pg.set_viewport_size({'width': 1300, 'height': 820})
         await pg.evaluate("localStorage.setItem('__slow', '2500'); IDB.del(CLOUD.cacheKey())"); await pg.wait_for_timeout(200)

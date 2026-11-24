@@ -13,6 +13,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <link rel="stylesheet" href="css/triflow.css?v=202611241150">
+<script>/* Essai de design : ?essai=a | b | c (gardé sur cet appareil), ?essai=0 pour revenir */
+(function(){try{var m=/[?&]essai=([a-z0-9]+)/.exec(location.search),k=m?m[1]:localStorage.getItem('tf-essai');if(m){if(k==='0')localStorage.removeItem('tf-essai');else localStorage.setItem('tf-essai',k)}if(k&&k!=='0'&&/^[abc]$/.test(k))document.write('<link rel="stylesheet" href="css/essai/'+k+'.css?v=1">')}catch(e){}})();</script>
 </head>
 <body>
 <div class="app">
