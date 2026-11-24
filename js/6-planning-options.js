@@ -746,7 +746,7 @@ function orderDialog() {
         }
         if (e.target.closest('[data-ord-xl]'))
           downloadXlsx(xlName('a-commander'), 'À commander', [
-            ['Fournisseur', 'ID', 'Désignation', 'Réf. fabricant', 'En stock', 'Minimum', 'À commander', 'Unité'],
+            ['Fournisseur', 'Code article', 'Désignation', 'Réf. fabricant', 'En stock', 'Minimum', 'À commander', 'Unité'],
             ...rows.map(r => [
               r.four,
               /^\d+$/.test(r.p.ref) ? +r.p.ref : r.p.ref,

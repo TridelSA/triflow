@@ -2214,3 +2214,13 @@ main{padding-block:12px 40px}
   .sidefx .c6{top:auto;bottom:150px;width:100px;animation-duration:85s;animation-delay:-70s;opacity:.45}
   .sidefx .birds{top:auto;bottom:150px}
 }
+/* États du stock, mêmes couleurs partout : sous le minimum = orange (à commander), à zéro = gris (rien à commander) */
+.stp.out{background:var(--sunk);color:var(--muted)}
+.sbar.out > i{background:var(--muted)}
+.pd-stock.st-out{border-color:var(--line)}
+.stdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.stdot.low{background:var(--warn)}
+.stdot.out{background:var(--muted);opacity:.6}
+.ychip[aria-selected=true] .stdot{box-shadow:0 0 0 2px rgba(255,255,255,.7)}
+/* Révision : dans le menu de gauche (ordinateur, tablette) ; au téléphone, sous la pastille du compte */
+@media (max-width:760px){ #nav .nav-rev{display:none} }

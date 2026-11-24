@@ -136,7 +136,7 @@ function pieceDialog(p, kksId) {
   dialog({
     title: isNew ? 'Nouvelle pièce' : 'Modifier la pièce',
     wide: true,
-    body: `<div class="grid3"><label>ID<input name="ref" value="${esc(v.ref)}" readonly tabindex="-1" class="ro" title="Attribué automatiquement"></label><label>Catégorie<select name="categorie">${optList(db.listes.categories, v.categorie, '—')}</select></label><label>Unité<select name="unite">${optList(db.listes.unites, v.unite)}</select></label></div>
+    body: `<div class="grid3"><label>Code article<input name="ref" value="${esc(v.ref)}" readonly tabindex="-1" class="ro" title="Attribué automatiquement"></label><label>Catégorie<select name="categorie">${optList(db.listes.categories, v.categorie, '—')}</select></label><label>Unité<select name="unite">${optList(db.listes.unites, v.unite)}</select></label></div>
       <label>Désignation<input name="designation" value="${esc(v.designation)}" required placeholder="ex. Roulement à billes 6205-2RS"></label>
       <fieldset><legend>Marque et fournisseur</legend>
         <div class="grid2"><label>Marque<input name="fabricant" list="dl-marques" value="${esc(v.fabricant)}" autocomplete="off" placeholder="ex. SKF"></label><label>Réf. de la marque<input name="refFab" value="${esc(v.refFab)}" placeholder="ex. 6205-2RSH"></label></div>
@@ -212,8 +212,8 @@ function pieceDialog(p, kksId) {
       const ref = isNew ? nextRef() : p.ref,
         designation = val(f, 'designation'),
         min = val(f, 'stockMin');
-      if (!ref) throw new Error('Indiquez un ID.');
-      if (db.pieces.some(x => x.ref.toUpperCase() === ref && x !== p)) throw new Error(`L’ID ${ref} existe déjà.`);
+      if (!ref) throw new Error('Indiquez un code article.');
+      if (db.pieces.some(x => x.ref.toUpperCase() === ref && x !== p)) throw new Error(`Le code article ${ref} existe déjà.`);
       if (!designation) throw new Error('Indiquez une désignation.');
       if (min && !(+min >= 0)) throw new Error('Le stock minimum doit être un nombre positif.');
       const data = {
@@ -1279,7 +1279,7 @@ function pieceLabelsDialog(ids) {
           ]
             .map(([v, t], i) => `<label><input type="radio" name="which" value="${v}" ${i === 0 ? 'checked' : ''}>${t}</label>`)
             .join('')}</div>
-      <input name="piece" list="dl-pieces" placeholder="ID ou désignation" aria-label="Pièce" autocomplete="off" data-w="one"><input name="place" list="dl-lieux" placeholder="ex. E1.11 ou E1.11 C40" aria-label="Emplacement ou salle" autocomplete="off" data-w="place" hidden><p class="hint" data-count></p></fieldset>`
+      <input name="piece" list="dl-pieces" placeholder="Code article ou désignation" aria-label="Pièce" autocomplete="off" data-w="one"><input name="place" list="dl-lieux" placeholder="ex. E1.11 ou E1.11 C40" aria-label="Emplacement ou salle" autocomplete="off" data-w="place" hidden><p class="hint" data-count></p></fieldset>`
         : ''
     }
       ${fmtBody()}`,

@@ -12,7 +12,7 @@ function wtabs() {
     w = wTab();
   const b = (k, ic, t, n) =>
     `<button role="tab" data-act="wtab" data-w="${k}" aria-selected="${w === k}">${icon(ic)}${t}${n != null ? ` <small>${n}</small>` : ''}</button>`;
-  return `<div class="ttabs wtabs" role="tablist" aria-label="Étape">${b('afaire', 'list', 'À faire', nT)}${b('encours', 'wrench', 'En cours', nE)}${b('fait', 'check', 'Fait')}${b('revision', 'calendar', 'Révision', revJobs().filter(t => t.actif !== false).length || null)}</div>`;
+  return `<div class="ttabs wtabs" role="tablist" aria-label="Étape">${b('afaire', 'list', 'À faire', nT)}${b('encours', 'wrench', 'En cours', nE)}${b('fait', 'check', 'Fait')}</div>`;
 }
 function travauxShell() {
   const t = S.view === 'taches';
@@ -44,8 +44,8 @@ function doTache(t, opts = {}) {
     info: true,
     body: `<p class="task-note">${icon('check')}<span><b>${esc(t.titre)}</b>${nx ? ` · reviendra le ${fmtD(nx)}` : ''}</span></p>
     <p class="hint" style="margin:0 0 8px">Faut-il un rapport ?</p><div class="kind-pick">
-      <button type="button" class="kind" data-r="non">${icon('check')}<b>Non, juste cocher</b><span>Pour les petites choses : une ampoule, un nettoyage…</span></button>
-      <button type="button" class="kind" data-r="oui">${icon('report')}<b>Oui, faire un rapport</b><span>Noter ce qui a été fait, les pièces utilisées, qui était là.</span></button></div>
+      <button type="button" class="kind" data-r="non">${icon('check')}<b>Non, juste cocher</b></button>
+      <button type="button" class="kind" data-r="oui">${icon('report')}<b>Oui, faire un rapport</b></button></div>
     <label class="toggle" style="margin-top:12px"><input type="checkbox" name="keep"> Retenir mon choix pour ce travail</label>`,
     onOpen(f, d) {
       $$('[data-r]', d).forEach(
@@ -1107,8 +1107,8 @@ function revAssign(q) {
 }
 VIEWS.revision = {
   shell:
-    () => `<header class="page-head"><h1>Travaux</h1><div class="tools">${searchBox('revision', 'Rechercher : travail, secteur, qui…')}<button class="btn primary" data-act="rev-new">${icon('plus')}Travail de révision</button><span class="head-tools">${toolBtn(['arret-dates', 'Dates de la révision', 'calendar', {}])}${canDel() ? toolBtn(['rev-import', 'Importer le planning de révision (fichier préparé)', 'save', {}]) : ''}</span></div></header>
-    <div class="rev-tabs">${wtabs()}</div><section class="pane rev" id="list"></section>`,
+    () => `<header class="page-head"><h1>Révision</h1><div class="tools">${searchBox('revision', 'Rechercher : travail, secteur, qui…')}<button class="btn primary" data-act="rev-new">${icon('plus')}Travail de révision</button><span class="head-tools">${toolBtn(['arret-dates', 'Dates de la révision', 'calendar', {}])}${canDel() ? toolBtn(['rev-import', 'Importer le planning de révision (fichier préparé)', 'save', {}]) : ''}</span></div></header>
+    <section class="pane rev" id="list"></section>`,
   list() {
     const days = revRange(),
       today = todayISO(),

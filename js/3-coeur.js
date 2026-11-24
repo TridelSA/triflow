@@ -1356,7 +1356,7 @@ const archDel = (col, x, hard) =>
       };
 const archBanner = (col, x) =>
   x && x.arch
-    ? `<div class="arch-banner">${icon('archive')}<span><strong>${ARCH_LBL[col][0]}</strong> le ${fmtD(x.arch)}${x.mergedInto ? ` · fusionnée dans l’ID ${esc(x.mergedInto)}` : ''}. Elle n’apparaît plus dans les listes.</span><button class="btn small" data-act="unarch" data-col="${col}" data-id="${x.id}">Restaurer</button></div>`.replace(
+    ? `<div class="arch-banner">${icon('archive')}<span><strong>${ARCH_LBL[col][0]}</strong> le ${fmtD(x.arch)}${x.mergedInto ? ` · fusionnée dans l’article ${esc(x.mergedInto)}` : ''}. Elle n’apparaît plus dans les listes.</span><button class="btn small" data-act="unarch" data-col="${col}" data-id="${x.id}">Restaurer</button></div>`.replace(
         'Elle n’apparaît',
         /archivé$/.test(ARCH_LBL[col][0]) ? 'Il n’apparaît' : 'Elle n’apparaît'
       )
@@ -1911,6 +1911,7 @@ const PAGE_L = {
   pieces: 'Pièces',
   lieux: 'Emplacements',
   planning: 'Planning',
+  revision: 'Révision',
   options: 'Options',
   kks: 'Installation'
 };
@@ -2274,7 +2275,7 @@ function render() {
     b.setAttribute(
       'aria-current',
       b.dataset.view === S.view ||
-        (b.dataset.view === 'taches' && (S.view === 'interventions' || S.view === 'revision')) ||
+        (b.dataset.view === 'taches' && S.view === 'interventions') ||
         (b.dataset.view === 'options' && S.view === 'kks') ||
         (b.classList.contains('nav-plus') && ['kks', 'options', 'planning', 'lieux'].includes(S.view))
         ? 'page'

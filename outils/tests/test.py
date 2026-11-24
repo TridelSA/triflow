@@ -229,7 +229,7 @@ async def main():
             {'titre': 'Vidange chaudière test', 'ligne': 'L1', 'secteur': 'chaudière', 'qui': 'Equipe mécanique', 'du': '2026-11-10', 'au': '2026-11-13', 'notes': {'2026-11-10': '05h00'}},
             {'titre': 'Contrôle laveur test', 'ligne': 'L2', 'secteur': 'laveur', 'qui': 'Entreprise Test SA', 'du': '2026-11-16', 'au': '2026-11-20', 'notes': {}},
             {'titre': 'Livraison container test', 'ligne': 'commun', 'secteur': 'commun', 'qui': 'Equipe intendance', 'du': '', 'au': '', 'notes': {}}]}))
-        await pg.evaluate("go('taches')"); await pg.wait_for_timeout(200); await pg.click('.wtabs [data-w=revision]'); await pg.wait_for_timeout(300)
+        await pg.evaluate("go('taches')"); await pg.wait_for_timeout(200); await pg.click('#nav [data-view=revision]'); await pg.wait_for_timeout(300)
         await pg.evaluate("revImportDialog()"); await pg.set_input_files('dialog[open] input[name=file]', rj); await pg.wait_for_timeout(300); await pg.click('dialog[open] button[type=submit]'); await pg.wait_for_timeout(500)
         ok(await pg.evaluate("S.view === 'revision' && document.querySelectorAll('.revg tr.rj').length === 3 && document.querySelectorAll('.revg td.rc.on.l1').length === 4 && !!document.querySelector('.revg tr.rpp td.ok, .revg tr.rpp td.ab') && document.querySelectorAll('.revg thead tr.rd th.fer, .revg thead tr.rd th.we').length >= 6"), 'révision : import, barres par ligne, qui est là, week-ends')
         await pg.evaluate("revDialog(null)"); await pg.wait_for_timeout(200); await pg.fill('dialog[open] input[name=titre]', 'Montage échafaudage test'); await pg.click('dialog[open] .sp:has(input[name=ligne][value=L2])'); await pg.click('dialog[open] button[type=submit]'); await pg.wait_for_timeout(400)
@@ -346,13 +346,10 @@ async def main():
         ok(await pg.evaluate("!document.querySelector('.hero-inner .help-btn').offsetWidth"), 'plus de bouton Aide dans la barre')
         ok(await pg.evaluate("!!document.querySelector('#sidefx2.snow i') && document.querySelector('.app > .hero').dataset.tint === 'sombre'"), 'barre latérale : neige le soir')
         await pg.evaluate("METEO = {...METEO, sunset: '17:00', now: 0, code: 0, isDay: 1}; sideTint(); meteoHero()")
-        for w in (1024, 1280, 1550, 1920):
+        for w in (1024, 1280, 1920):
             await pg.set_viewport_size({'width': w, 'height': 800})
-            await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close()); S.sel.taches=null; go('taches')"); await pg.wait_for_timeout(300)
-            # police plus large (Windows sans Inter) et grands nombres, comme en vrai
-            r = await pg.evaluate("(() => { const st = document.createElement('style'); st.id = 'wfont'; st.textContent = '.wtabs, .wtabs * {font-family: Verdana, Arial, sans-serif !important}'; document.head.append(st); document.querySelectorAll('.wtabs small').forEach(x => x.textContent = '374'); const t = document.querySelector('.wtabs').getBoundingClientRect(), b = document.querySelector('.wtabs [data-w=revision]'), rb = b.getBoundingClientRect(); const res = rb.width > 40 && rb.right <= t.right + 1 && [...document.querySelectorAll('.wtabs button')].every(x => x.scrollWidth <= x.clientWidth + 1); st.remove(); return res ? 'ok' : [...document.querySelectorAll('.wtabs button')].map(x => x.textContent.trim() + ' ' + x.scrollWidth + '/' + x.clientWidth).join(' | ') + ' tabs ' + Math.round(t.width); })()")
-            print('    ', w, r)
-            ok(r == 'ok', f'onglet « Révision » visible à {w} px de large')
+            await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close()); go('accueil')"); await pg.wait_for_timeout(300)
+            ok(await pg.evaluate("(() => { const p = document.querySelector('#nav [data-view=planning]').getBoundingClientRect(), r = document.querySelector('#nav [data-view=revision]').getBoundingClientRect(); return r.width > 100 && Math.abs(r.left - p.left) < 2 && r.top > p.top && !document.querySelector('.wtabs [data-w=revision]'); })()"), f'Révision dans le menu de gauche, sous Planning ({w} px)')
         # Mouvement de stock lié à un rapport : plus de « motif » ; prise puis retour, sans pouvoir rendre plus que pris
         await pg.set_viewport_size({'width': 1300, 'height': 820})
         await pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d => d.close()); tx(() => { db.interventions.push({id:'imv', num:'R26-950', date:todayISO(), type:'', statut:'encours', titre:'Test mouvement', kksId:'', constat:'', travaux:'', intervenants:[], pieces:[]}); const p = getPiece('p1'); p.stock[0].qte = 10; })")

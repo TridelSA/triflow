@@ -214,7 +214,7 @@ function scanDialog() {
     title: 'Scanner un QR code',
     saveLabel: 'Fermer',
     body: `<div class="scanbox"><video playsinline muted></video><span class="scan-frame"></span></div><p class="hint" data-sm>Visez l’étiquette QR d’une pièce ou d’un emplacement.</p>
-      <label>Ou tapez le code<input name="code" placeholder="ID de pièce, emplacement, KKS ou n° de rapport" autocomplete="off"></label>`,
+      <label>Ou tapez le code<input name="code" placeholder="Code article, emplacement, KKS ou n° de rapport" autocomplete="off"></label>`,
     onSave(f) {
       const v = val(f, 'code');
       if (!v) return;

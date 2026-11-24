@@ -572,7 +572,7 @@ function reportHTML(i) {
     ${i.cause ? `<p><b>Cause de la panne :</b> ${esc(i.cause)}</p>` : ''}
     <h2>Pièces consommées</h2>${
       i.pieces.length
-        ? `<table class="rpt-tbl"><thead><tr><th>ID</th><th>Désignation</th><th>Prélevé en</th><th class="n">Qté</th></tr></thead><tbody>${i.pieces
+        ? `<table class="rpt-tbl"><thead><tr><th>Code article</th><th>Désignation</th><th>Prélevé en</th><th class="n">Qté</th></tr></thead><tbody>${i.pieces
             .map(x => {
               const s = lineInfo(x, i);
               return `<tr><td class="mono">${esc(s.ref)}</td><td>${esc(s.designation)}</td><td class="mono">${esc(s.lieu)}</td><td class="n">${num(x.qte)} ${esc(s.unite || '')}</td></tr>`;
@@ -903,7 +903,7 @@ function xlPieces() {
   const rows = filteredPieces(),
     out = [
       [
-        'ID',
+        'Code article',
         'Désignation',
         'Marque',
         'Réf. marque',
@@ -1027,7 +1027,7 @@ function xlKks() {
 function exportStock() {
   const rows = [
     [
-      'ID',
+      'Code article',
       'Désignation',
       'Catégorie',
       'Marque',
@@ -1115,7 +1115,7 @@ function exportInts() {
   toast('Export des rapports téléchargé');
 }
 function exportKksLinks() {
-  const rows = [['Repère KKS', 'Équipement', 'Système', 'ID pièce', 'Désignation pièce', 'Stock']];
+  const rows = [['Repère KKS', 'Équipement', 'Système', 'Code article', 'Désignation pièce', 'Stock']];
   for (const k of [...db.kks].sort((a, b) => coll.compare(a.code, b.code))) {
     const ps = db.pieces.filter(p => p.kks.includes(k.id));
     if (!ps.length) rows.push([k.code, k.designation, sysLabel(k.code), '', '', '']);

@@ -47,7 +47,7 @@ VIEWS.accueil = {
     /* Pièces */
     const live_p = db.pieces.filter(live),
       low = live_p.filter(isLow),
-      zero = live_p.filter(isOut).length;
+      zero = live_p.filter(isZero).length;
     const lm = db.mouvements.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0],
       lp = lm && getPiece(lm.pieceId);
     const pieces = `<section class="btile bt-p">${head('pieces', 'box', 'Pièces', 'p')}
@@ -234,7 +234,7 @@ function filteredPieces() {
       return words.every(w => t.includes(w));
     });
   if (S.lowOnly) rows = rows.filter(isLow);
-  if (S.zeroOnly) rows = rows.filter(p => isOut(p));
+  if (S.zeroOnly) rows = rows.filter(isZero);
   if (S.ploc) {
     const P = S.ploc;
     rows = rows.filter(p =>
@@ -262,7 +262,10 @@ function filteredPieces() {
   return rows.sort((a, b) => idn(a) - idn(b) || coll.compare(a.ref, b.ref));
 }
 /* État du stock d'une pièce : en stock / stock bas / épuisé, et petite jauge par rapport au minimum (le minimum est au milieu) */
-const stockSt = p => (isOut(p) ? ['out', 'Épuisé'] : isLow(p) ? ['low', 'Stock bas'] : ['ok', 'En stock']);
+/* Un seul état par pièce, avec les mêmes mots partout (filtres, liste, fiche) :
+   sous le minimum (à commander) > à zéro (vide, sans minimum : rien à commander) > en stock */
+const isZero = p => isOut(p) && !isLow(p);
+const stockSt = p => (isLow(p) ? ['low', 'Sous le minimum'] : isOut(p) ? ['out', 'À zéro'] : ['ok', 'En stock']);
 const stockBar = (p, big = false) => {
   if (!(p.stockMin > 0)) return '';
   const pct = Math.max(dispo(p) > 0 ? 4 : 0, Math.min(100, (dispo(p) / (p.stockMin * 2)) * 100));
@@ -281,14 +284,14 @@ VIEWS.pieces = {
     if (!db.pieces.length) return empty('Aucune pièce', '<p>Créez la première avec « Nouvelle pièce ».</p>');
     const lv = S.arch.pieces ? [] : db.pieces.filter(live),
       nLow = lv.filter(isLow).length,
-      nZero = lv.filter(isOut).length,
+      nZero = lv.filter(isZero).length,
       pf = S.zeroOnly ? 'zero' : S.lowOnly ? 'low' : '';
     const chips = S.arch.pieces
       ? ''
       : `<div class="fchips" role="tablist" aria-label="Quelles pièces">${[
           ['', 'Toutes', lv.length, ''],
-          ['low', 'Stock bas', nLow, 'warn'],
-          ['zero', 'Épuisées', nZero, '']
+          ['low', '<i class="stdot low"></i>Sous le minimum', nLow, ''],
+          ['zero', '<i class="stdot out"></i>À zéro', nZero, '']
         ]
           .map(
             ([f, t, n, tone]) =>
@@ -308,8 +311,8 @@ VIEWS.pieces = {
             ))
       );
     const more = `${chips}<div class="list-bar"><span class="muted">${nbs(rows.length, 'pièce', 'pièces')}</span><span class="lb-r lb-sort"><label><select class="mini" data-change="psort" aria-label="Trier les pièces">${[
-      ['iddesc', 'Par ID (décroissant)'],
-      ['id', 'Par ID (croissant)'],
+      ['iddesc', 'Par code article (décroissant)'],
+      ['id', 'Par code article (croissant)'],
       ['alpha', 'Alphabétique'],
       ['recent', 'Mouvement le plus récent'],
       ['old', 'Mouvement le plus ancien']
@@ -349,6 +352,7 @@ VIEWS.pieces = {
       .split('\n')
       .reduce((acc, ln) => {
         const m = ln.match(/^([^:]{2,30}?)\s:\s(.*)$/);
+        if (m && /^code\s*article$/i.test(m[1].trim()) && m[2].trim() === String(p.ref)) return acc;
         if (m) acc.push([m[1], m[2]]);
         else if (ln.trim()) {
           if (acc.length && acc[acc.length - 1][0] !== '') acc[acc.length - 1][1] += '\n' + ln;
@@ -357,7 +361,7 @@ VIEWS.pieces = {
         return acc;
       }, []);
     const low = p.stockMin > 0 && dispo(p) < p.stockMin;
-    return `<button class="btn small m-only back-list" data-act="desel">${icon('chev')}Liste des pièces</button>${archBanner('pieces', p)}<div class="pd-head"><span class="pd-id">ID ${esc(p.ref)}</span><div class="pd-tools"><button class="btn small" data-act="edit-piece" data-id="${p.id}">${icon('edit')}Modifier</button>${toolBtn(['add-place', 'Ajouter un emplacement', 'shelf', {id: p.id}])}${toolBtn(['labels-one', 'Imprimer l’étiquette QR', 'qr', {id: p.id}])}${toolBtn(['print-piece', 'Imprimer la fiche', 'printer', {id: p.id}])}${toolBtn(p.arch ? ['unarch', 'Restaurer la pièce', 'archive', {col: 'pieces', id: p.id}] : ['arch', 'Archiver la pièce', 'archive', {col: 'pieces', id: p.id}])}${toolBtn(hardItem('pieces', p.id), 'danger-ghost')}</div></div>
+    return `<button class="btn small m-only back-list" data-act="desel">${icon('chev')}Liste des pièces</button>${archBanner('pieces', p)}<div class="pd-head"><span class="pd-id" title="Code article">${esc(p.ref)}</span><div class="pd-tools"><button class="btn small" data-act="edit-piece" data-id="${p.id}">${icon('edit')}Modifier</button>${toolBtn(['add-place', 'Ajouter un emplacement', 'shelf', {id: p.id}])}${toolBtn(['labels-one', 'Imprimer l’étiquette QR', 'qr', {id: p.id}])}${toolBtn(['print-piece', 'Imprimer la fiche', 'printer', {id: p.id}])}${toolBtn(p.arch ? ['unarch', 'Restaurer la pièce', 'archive', {col: 'pieces', id: p.id}] : ['arch', 'Archiver la pièce', 'archive', {col: 'pieces', id: p.id}])}${toolBtn(hardItem('pieces', p.id), 'danger-ghost')}</div></div>
       <div class="pd-hero">${p.photos?.length ? `<span class="pd-ph">${photoImg(p.photos[0].path)}</span>` : `<span class="pd-ph none">${icon('box')}</span>`}<div class="pd-hl">
         <h2 class="pd-title">${esc(p.designation)}</h2>
         ${p.fabricant || p.refFab ? `<p class="pd-sub">${esc(p.fabricant || '')}${p.refFab ? ` <span class="muted">· réf.</span> <span class="mono">${esc(p.refFab)}</span>` : ''}</p>` : ''}</div></div>
@@ -385,7 +389,7 @@ VIEWS.pieces = {
       ${
         true
           ? `<section class="pd-sec"><h3>${icon('list')}Fiche</h3><dl class="pd-info pd-fiche">
-        <dt>ID</dt><dd class="mono">${esc(p.ref)}</dd>
+        <dt>Code article</dt><dd class="mono">${esc(p.ref)}</dd>
         ${p.fabricant ? `<dt>Fabricant</dt><dd>${esc(p.fabricant)}</dd>` : ''}
         ${p.refFab ? `<dt>Réf. fabricant</dt><dd class="mono">${esc(p.refFab)}</dd>` : ''}
         ${p.fournisseur && p.fournisseur !== p.fabricant ? `<dt>Fournisseur</dt><dd>${esc(p.fournisseur)}</dd>` : ''}
@@ -457,8 +461,8 @@ function mergePieces(keep, others) {
       for (const st of o.stock.filter(x => x.qte)) {
         if (getLieu(st.lieuId)) {
           const q = st.qte;
-          addStock(o, st.lieuId, -q, 'Fusion doublon', `vers ID ${keep.ref}`);
-          addStock(keep, st.lieuId, q, 'Fusion doublon', `de l’ID ${o.ref}`);
+          addStock(o, st.lieuId, -q, 'Fusion doublon', `vers l’article ${keep.ref}`);
+          addStock(keep, st.lieuId, q, 'Fusion doublon', `de l’article ${o.ref}`);
         } else {
           const k = keep.stock.find(x => x.lieuId === st.lieuId);
           if (k) k.qte = round(k.qte + st.qte);
@@ -480,7 +484,7 @@ function mergePieces(keep, others) {
           hk = {id: keep.id, l: []};
           db.histo.push(hk);
         }
-        hk.l = [...hk.l, ...ho.l.map(h => ({...h, t: `${h.t} (ID ${o.ref})`}))].sort((a, b) => String(b.d).localeCompare(String(a.d)));
+        hk.l = [...hk.l, ...ho.l.map(h => ({...h, t: `${h.t} (article ${o.ref})`}))].sort((a, b) => String(b.d).localeCompare(String(a.d)));
       }
       o.arch = todayISO();
       o.mergedInto = keep.ref;
@@ -496,11 +500,11 @@ function dupDialog() {
       .map(g => {
         const gid = g.map(p => p.id).join(',');
         return `<div class="dupg" data-g="${gid}"><div class="dup-t">${esc(g[0].designation)}${g[0].fabricant ? ` <span class="muted">· ${esc(g[0].fabricant)}</span>` : ''}${g[0].refFab ? ` <span class="muted">· réf. <span class="mono">${esc(g[0].refFab)}</span></span>` : ''}</div>
-      <p class="hint" style="margin:0 0 4px">Ouvrez chaque fiche pour comparer si besoin :${g.map(p => ` <button type="button" class="link" data-dopen="${p.id}">ID ${esc(p.ref)}</button>`).join(',')}</p>
+      <p class="hint" style="margin:0 0 4px">Ouvrez chaque fiche pour comparer si besoin :${g.map(p => ` <button type="button" class="link" data-dopen="${p.id}">${esc(p.ref)}</button>`).join(',')}</p>
       ${g
         .map((p, n) => {
           const ls = sortedStock(p);
-          return `<label class="dup-p"><input type="radio" name="keep-${g[0].id}" value="${p.id}" ${n === 0 ? 'checked' : ''}><span class="pid">ID ${esc(p.ref)}</span><span class="t">${ls.length ? ls.map(x => `${plate(getLieu(x.lieuId), false)} ${num(x.qte)}`).join(' ') : '<span class="muted">sans emplacement</span>'}</span><span class="muted">${p.kks.length} KKS · ${pieceHistory(p).length} mvt</span></label>`;
+          return `<label class="dup-p"><input type="radio" name="keep-${g[0].id}" value="${p.id}" ${n === 0 ? 'checked' : ''}><span class="pid">${esc(p.ref)}</span><span class="t">${ls.length ? ls.map(x => `${plate(getLieu(x.lieuId), false)} ${num(x.qte)}`).join(' ') : '<span class="muted">sans emplacement</span>'}</span><span class="muted">${p.kks.length} KKS · ${pieceHistory(p).length} mvt</span></label>`;
         })
         .join('')}
       <div class="dup-a"><button type="button" class="btn small primary" data-dmerge="${gid}">${icon('merge')}Fusionner dans la pièce cochée</button><button type="button" class="btn small" data-dnot="${gid}">Ce ne sont pas des doublons</button></div></div>`;
@@ -530,12 +534,12 @@ function dupDialog() {
           if (!keep || !others.length) return;
           if (!mb.dataset.armed) {
             mb.dataset.armed = 1;
-            mb.innerHTML = `Confirmer : garder l’ID ${esc(keep.ref)}, archiver ${others.map(o => 'l’ID ' + esc(o.ref)).join(', ')}`;
+            mb.innerHTML = `Confirmer : garder l’article ${esc(keep.ref)}, archiver ${others.map(o => 'l’article ' + esc(o.ref)).join(', ')}`;
             return;
           }
           try {
             mergePieces(keep, others);
-            toast(`Fusionné dans l’ID ${keep.ref} · ${nbs(others.length, 'pièce archivée', 'pièces archivées')}`, '', true);
+            toast(`Fusionné dans l’article ${keep.ref} · ${nbs(others.length, 'pièce archivée', 'pièces archivées')}`, '', true);
           } catch (x) {
             toast(x.message, 'bad');
           }
@@ -620,7 +624,7 @@ function travauxHTML(t) {
             const des = m ? m[2] : l.replace(/^·\s*/, ''),
               q = m && m[1] ? m[1] : '',
               p = matPiece(des);
-            return `<div class="matl-r"><span class="q">${q ? esc(q) + ' ×' : ''}</span>${p ? `<button class="link" data-act="goto" data-view="pieces" data-id="${p.id}" title="Ouvrir la pièce ID ${esc(p.ref)}">${esc(des)}</button><span class="pid">ID ${esc(p.ref)}</span>` : `<span>${esc(des)}</span>`}</div>`;
+            return `<div class="matl-r"><span class="q">${q ? esc(q) + ' ×' : ''}</span>${p ? `<button class="link" data-act="goto" data-view="pieces" data-id="${p.id}" title="Ouvrir l’article ${esc(p.ref)}">${esc(des)}</button><span class="pid">${esc(p.ref)}</span>` : `<span>${esc(des)}</span>`}</div>`;
           })
           .join('')}</div>`
       : ''
