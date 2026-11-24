@@ -76,6 +76,27 @@ const ACT = {
     S.revL = d.v || '';
     fillList();
   },
+  'rev-y'(d) {
+    S.revY = d.v;
+    S.revPick = null;
+    fillList();
+  },
+  'rev-pad'() {
+    setPref('revPad', !pref('revPad', true));
+    fillList();
+  },
+  'rev-showhid'() {
+    S.revShowHid = !S.revShowHid;
+    fillList();
+  },
+  /* masquer / réafficher une personne ou un travail (réglage du compte) */
+  'rev-hide'(d) {
+    const k = d.k === 'p' ? 'revHideP' : 'revHideT',
+      l = new Set(pref(k, []));
+    l.has(d.id) ? l.delete(d.id) : l.add(d.id);
+    setPref(k, [...l]);
+    fillList();
+  },
   'rev-ppl'() {
     setPref('revPpl', !pref('revPpl', true));
     fillList();
@@ -657,21 +678,27 @@ const ACT = {
   },
   'print-taches': () => doPrint(tachesSheetHTML()),
   'arret-dates': () => {
-    const a = arretDates();
+    const y = revY(),
+      a = revPeriod(y) || {};
     dialog({
-      title: 'Dates de l’arrêt',
-      body: `<p class="hint">Pendant ces jours, les travaux marqués « pendant l’arrêt » passent dans « Cette semaine » et au planning.</p><div class="grid2"><label>Du<input name="du" type="date" value="${esc(a.du || '')}"></label><label>Au<input name="au" type="date" value="${esc(a.au || '')}"></label></div>`,
+      title: `Dates de la révision ${y}`,
+      body: `<div class="grid2"><label>Du<input name="du" type="date" value="${esc(a.du || '')}"></label><label>Au<input name="au" type="date" value="${esc(a.au || '')}"></label></div>`,
       onSave(f) {
         const du = val(f, 'du'),
           au = val(f, 'au');
         if (!du !== !au) throw new Error('Indiquez les deux dates, ou aucune.');
         if (du && au < du) throw new Error('La fin doit être après le début.');
+        const yy = du ? du.slice(0, 4) : y;
         tx(() => {
-          if (du) db.reglages.arret = {du, au};
-          else delete db.reglages.arret;
+          const A = arretsAll();
+          delete A[y];
+          if (du) A[yy] = {du, au};
+          db.reglages.arrets = A;
+          delete db.reglages.arret;
         });
+        S.revY = yy;
         render();
-        toast(du ? 'Dates de l’arrêt enregistrées' : 'Dates de l’arrêt retirées');
+        toast(du ? `Révision ${yy} : du ${fmtD(du)} au ${fmtD(au)}` : 'Dates de la révision retirées');
       }
     });
   },
@@ -996,6 +1023,10 @@ document.addEventListener('change', e => {
   const c = e.target.dataset?.change;
   if (!c) return;
   if (c === 'lowOnly') S.lowOnly = !!e.target.value;
+  if (c === 'revqui') {
+    S.revQui = e.target.value;
+    return fillList();
+  }
   if (c === 'statut') S.statut = e.target.value;
   if (c === 'resp') {
     if (!canDel()) {

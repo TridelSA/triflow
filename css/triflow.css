@@ -2224,3 +2224,21 @@ main{padding-block:12px 40px}
 .ychip[aria-selected=true] .stdot{box-shadow:0 0 0 2px rgba(255,255,255,.7)}
 /* Révision : dans le menu de gauche (ordinateur, tablette) ; au téléphone, sous la pastille du compte */
 @media (max-width:760px){ #nav .nav-rev{display:none} }
+/* Révision : colonne des noms étroite (la largeur des noms), boutons « masquer » au survol, point vert bien visible */
+.revg .rl{min-width:150px !important;max-width:150px !important;padding:0 6px 0 10px !important;position:sticky}
+.revg th.rl{white-space:nowrap}
+.revg .rln{display:inline-block;max-width:118px;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+.revg .rt{max-width:126px}
+.revg .rti b,.revg .rti small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.revg tr.rpp th.rl,.revg tr.rj th.rl{padding-right:26px !important}
+.revg .rx{all:unset;cursor:pointer;position:absolute;right:4px;top:50%;transform:translateY(-50%);width:22px;height:22px;display:grid;place-items:center;border-radius:6px;color:var(--muted);opacity:0;transition:opacity .15s}
+.revg .rx .ico{width:14px;height:14px}
+.revg tr:hover .rx,.revg .rx:focus-visible,.revg tr.hid .rx{opacity:1}
+.revg .rx:hover{background:var(--sunk);color:var(--ink)}
+.revg tr.hid th,.revg tr.hid td{opacity:.4}
+.revg tr.hid .rx{opacity:1 !important}
+.revg td.ok i{width:9px;height:9px;opacity:1;background:#1FA35B}
+.rev-f2{border-top:0;padding-top:0}
+.rev-per{display:inline-flex;align-items:center;gap:6px;margin-left:auto;font-size:var(--t-sm)}
+.rev-per .ico{width:15px;height:15px;color:var(--accent)}
+@media (max-width:760px){ .revg .rl{min-width:118px !important;max-width:118px !important} .revg .rln{max-width:86px} .revg .rt{max-width:94px} .rev-per{margin-left:0;flex-basis:100%} }

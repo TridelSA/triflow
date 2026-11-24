@@ -106,7 +106,21 @@ function doneHTML(t) {
   return `<div class="tbl-wrap"><table class="tbl compact itbl"><tbody>${rows.map(r => r.h).join('')}</tbody></table></div>`;
 }
 /* Arrêt de l'usine (révision) : travaux marqués « arret », dates dans reglages.arret {du, au} */
-const arretDates = () => db.reglages.arret || {};
+/* Une période par année : reglages.arrets {AAAA: {du, au}} (l'ancien reglages.arret compte pour son année) */
+function arretsAll() {
+  const A = {...(db.reglages.arrets || {})},
+    a = db.reglages.arret;
+  if (a?.du && !A[a.du.slice(0, 4)]) A[a.du.slice(0, 4)] = a;
+  return A;
+}
+/* La révision en cours ou la prochaine (sinon la dernière) */
+const arretDates = () => {
+  const t = todayISO(),
+    L = Object.values(arretsAll())
+      .filter(x => x?.du && x?.au)
+      .sort((x, y) => x.du.localeCompare(y.du));
+  return L.find(x => x.au >= t) || L[L.length - 1] || {};
+};
 const arretOn = (from = todayISO(), to = from) => {
   const a = arretDates();
   return !!(a.du && a.au && a.du <= to && a.au >= from);
@@ -1070,19 +1084,64 @@ function feriesVD(y) {
 const isFerie = d => feriesVD(+d.slice(0, 4)).has(d);
 const isWE = d => [0, 6].includes(new Date(d + 'T12:00:00').getDay());
 const revJobs = () => db.taches.filter(t => live(t) && t.arret);
-/* Période affichée : dates de la révision (Travaux › Arrêt), élargie aux travaux qui en sortent */
-function revRange() {
-  const a = arretDates(),
-    ds = revJobs()
-      .flatMap(t => [t.rev?.du, t.rev?.au])
-      .filter(Boolean)
-      .sort();
-  let du = a.du || ds[0] || todayISO(),
-    au = a.au || ds[ds.length - 1] || isoAdd(du, 27);
+/* Petit bouton « masquer / réafficher » au bout d'une ligne (personne ou travail), gardé avec le compte */
+const revHideBtn = (k, id, hid, name) =>
+  `<button class="rx" data-act="rev-hide" data-k="${k}" data-id="${id}" title="${hid ? 'Réafficher' : 'Masquer'} ${esc(name)}" aria-label="${hid ? 'Réafficher' : 'Masquer'} ${esc(name)}">${icon(hid ? 'plus' : 'eyeoff')}</button>`;
+/* Période affichée : dates de la révision de l'année choisie, une semaine avant et après */
+/* Année d'un travail de révision : sa date, sinon l'année notée à sa création, sinon l'année de l'import */
+const revOldYear = () =>
+  revJobs()
+    .map(t => (t.rev?.du || '').slice(0, 4))
+    .filter(Boolean)
+    .sort()[0] || todayISO().slice(0, 4);
+const revYearOf = t => (t.rev?.du || '').slice(0, 4) || t.rev?.annee || revOldYear();
+const revDatesOf = y =>
+  revJobs()
+    .filter(t => revYearOf(t) === y)
+    .flatMap(t => [t.rev?.du, t.rev?.au])
+    .filter(Boolean)
+    .sort();
+/* Année affichée par défaut : la révision en cours ou à venir ; une fois celle de l'année passée, l'année suivante */
+function revDefaultYear() {
+  const t = todayISO(),
+    A = arretsAll(),
+    up = Object.entries(A)
+      .filter(([, a]) => a?.au >= t)
+      .sort((x, y) => x[1].du.localeCompare(y[1].du))[0];
+  if (up) return up[0];
+  const y = t.slice(0, 4),
+    end = A[y]?.au || revDatesOf(y).pop();
+  return end && end < t ? String(+y + 1) : y;
+}
+const revY = () => (/^\d{4}$/.test(S.revY || '') ? S.revY : revDefaultYear());
+function revYears() {
+  const ys = new Set([...Object.keys(arretsAll()), ...revJobs().map(revYearOf), revDefaultYear(), revY(), String(+todayISO().slice(0, 4) + 1)]);
+  return [...ys].filter(y => /^\d{4}$/.test(y)).sort();
+}
+/* Période d'une année : dates fixées, sinon d'après ses travaux, sinon estimée d'après l'année d'avant (mêmes semaines) */
+function revPeriod(y) {
+  const A = arretsAll();
+  if (A[y]?.du) return {du: A[y].du, au: A[y].au, src: 'fixe'};
+  const ds = revDatesOf(y);
+  if (ds.length) return {du: ds[0], au: ds[ds.length - 1], src: 'travaux'};
+  const py = String(+y - 1),
+    pd = revDatesOf(py),
+    p = A[py]?.du ? A[py] : pd.length ? {du: pd[0], au: pd[pd.length - 1]} : null;
+  return p ? {du: isoAdd(p.du, 364), au: isoAdd(p.au, 364), src: 'estime', from: py} : null;
+}
+/* Jours affichés : la période, avec une semaine avant et après (réglable), en commençant un lundi */
+function revRange(y = revY()) {
+  const p = revPeriod(y),
+    ds = revDatesOf(y);
+  let du = p ? p.du : `${y}-05-03`,
+    au = p ? p.au : isoAdd(du, 55);
   if (ds[0] && ds[0] < du) du = ds[0];
   if (ds.length && ds[ds.length - 1] > au) au = ds[ds.length - 1];
-  du = isoAdd(du, -((new Date(du + 'T12:00:00').getDay() + 6) % 7)); /* commence un lundi */
-  const n = Math.min(140, Math.max(7, daysBetween(du, au) + 1));
+  const pad = pref('revPad', true) ? 7 : 0;
+  du = isoAdd(du, -pad);
+  au = isoAdd(au, pad);
+  du = isoAdd(du, -((new Date(du + 'T12:00:00').getDay() + 6) % 7));
+  const n = Math.min(210, Math.max(7, daysBetween(du, au) + 1));
   return Array.from({length: n}, (_, i) => isoAdd(du, i));
 }
 const daysBetween = (a, b) => Math.round((new Date(b + 'T12:00') - new Date(a + 'T12:00')) / 864e5);
@@ -1110,13 +1169,22 @@ VIEWS.revision = {
     () => `<header class="page-head"><h1>Révision</h1><div class="tools">${searchBox('revision', 'Rechercher : travail, secteur, qui…')}<button class="btn primary" data-act="rev-new">${icon('plus')}Travail de révision</button><span class="head-tools">${toolBtn(['arret-dates', 'Dates de la révision', 'calendar', {}])}${canDel() ? toolBtn(['rev-import', 'Importer le planning de révision (fichier préparé)', 'save', {}]) : ''}</span></div></header>
     <section class="pane rev" id="list"></section>`,
   list() {
-    const days = revRange(),
+    const y = revY(),
+      days = revRange(y),
       today = todayISO(),
       L = S.revL || '',
       q = norm(S.q.revision || ''),
-      showP = pref('revPpl', true);
+      showP = pref('revPpl', true),
+      hideP = new Set(pref('revHideP', [])),
+      hideT = new Set(pref('revHideT', [])),
+      showHid = !!S.revShowHid,
+      QUI = S.revQui || '';
+    const yJobs = revJobs().filter(t => revYearOf(t) === y),
+      quiOf = t => t.rev?.qui || (t.assign?.v ? assignLabel(t.assign) : '');
     for (const y of new Set(days.map(d => d.slice(0, 4)))) loadPresence(y);
-    const jobs = revJobs()
+    const jobs = yJobs
+      .filter(t => showHid || !hideT.has(t.id))
+      .filter(t => !QUI || quiOf(t) === QUI)
       .filter(t => !L || (t.rev?.ligne || 'commun') === L)
       .filter(t => !q || norm([t.titre, t.rev?.secteur, t.rev?.qui, assignLabel(t.assign), t.rev?.mandat].join(' ')).includes(q))
       .sort((a, b) => (a.rev?.du || '9').localeCompare(b.rev?.du || '9') || coll.compare(a.titre, b.titre));
@@ -1135,9 +1203,9 @@ VIEWS.revision = {
     /* Qui est là */
     let ppl = '';
     if (showP) {
-      const persons = db.personnes.filter(p => live(p) && p.actif !== false),
+      const persons = db.personnes.filter(p => live(p) && p.actif !== false && (showHid || !hideP.has(p.id))),
         groups = db.listes.groupes.filter(g => persons.some(p => p.groupe === g));
-      const cnt = days.map(d => persons.filter(p => isDispo(presOf(p, d)?.code)).length);
+      const cnt = days.map(d => persons.filter(p => !hideP.has(p.id) && isDispo(presOf(p, d)?.code)).length);
       ppl = `<tbody class="rp"><tr class="rsec"><th class="rl">${icon('person')}Qui est là <button class="link" data-act="rev-ppl">Masquer</button></th>${cnt.map((n, i) => `<td class="rn ${dcls(days[i])}">${n || ''}</td>`).join('')}</tr>${groups
         .map(
           g =>
@@ -1146,7 +1214,7 @@ VIEWS.revision = {
               .sort(persSort)
               .map(
                 p =>
-                  `<tr class="rpp"><th class="rl">${esc(persName(p))}</th>${days
+                  `<tr class="rpp ${hideP.has(p.id) ? 'hid' : ''}"><th class="rl"><span class="rln" title="${esc(persName(p))}">${esc(persName(p))}</span>${revHideBtn('p', p.id, hideP.has(p.id), persName(p))}</th>${days
                     .map(d => {
                       const c = presOf(p, d)?.code || '';
                       return !c || c === '0'
@@ -1169,7 +1237,7 @@ VIEWS.revision = {
           who = r.qui || assignLabel(t.assign),
           off = t.actif === false,
           pick = S.revPick === t.id;
-        return `<tr class="rj ${off ? 'done' : ''} ${pick ? 'pick' : ''}"><th class="rl"><button class="rt" data-act="rev-edit" data-id="${t.id}"><span class="rno">${n + 1}</span><span class="rti"><b>${esc(t.titre)}</b><small><span class="rlg ${lc}">${esc((REV_LIGNES.find(x => x[0] === (r.ligne || 'commun')) || REV_LIGNES[3])[1])}</span>${r.secteur ? esc(r.secteur) + ' · ' : ''}${esc(who === 'Non attribuée' ? '' : who)}</small></span>${off ? `<span class="rok">${icon('check')}</span>` : ''}</button></th>${days
+        return `<tr class="rj ${off ? 'done' : ''} ${pick ? 'pick' : ''} ${hideT.has(t.id) ? 'hid' : ''}"><th class="rl" title="${esc(t.titre)}${who && who !== 'Non attribuée' ? ' · ' + esc(who) : ''}"><button class="rt" data-act="rev-edit" data-id="${t.id}"><span class="rno">${n + 1}</span><span class="rti"><b>${esc(t.titre)}</b><small><span class="rlg ${lc}">${esc((REV_LIGNES.find(x => x[0] === (r.ligne || 'commun')) || REV_LIGNES[3])[1])}</span>${r.secteur ? esc(r.secteur) + ' · ' : ''}${esc(who === 'Non attribuée' ? '' : who)}</small></span>${off ? `<span class="rok">${icon('check')}</span>` : ''}</button>${revHideBtn('t', t.id, hideT.has(t.id), t.titre)}</th>${days
           .map(d => {
             const inb = r.du && d >= r.du && d <= r.au,
               note = r.notes?.[d] || '';
@@ -1178,7 +1246,25 @@ VIEWS.revision = {
           .join('')}</tr>`;
       })
       .join('');
-    const chips = `<div class="fchips rev-f" role="group" aria-label="Ligne">${[['', 'Tout'], ...REV_LIGNES.map(x => [x[0], x[1]])].map(([v, l]) => `<button class="ychip" data-act="rev-l" data-v="${v}" aria-pressed="${L === v}">${v ? `<i class="rlg-d ${revLcls(v)}"></i>` : ''}${l}</button>`).join('')}<span class="ysep" aria-hidden="true"></span>${showP ? '' : `<button class="ychip" data-act="rev-ppl">${icon('person')}Qui est là</button>`}${S.revPick ? `<span class="rev-hint">${icon('calendar')}Cliquez le dernier jour de « ${esc(get('taches', S.revPick)?.titre || '')} » <button class="link" data-act="rev-cancel">Annuler</button></span>` : `<span class="rev-hint muted">Pour dater un travail : cliquez son premier jour, puis son dernier.</span>`}</div>`;
+    const quis = [...new Set(yJobs.map(quiOf).filter(x => x && x !== 'Non attribuée'))].sort(coll.compare),
+      nHid = yJobs.filter(t => hideT.has(t.id)).length + db.personnes.filter(p => hideP.has(p.id)).length,
+      per = revPeriod(y),
+      MOL = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'],
+      dl = d => `${+d.slice(8)} ${MOL[+d.slice(5, 7) - 1]}`;
+    const chips = `<div class="fchips rev-f" role="group" aria-label="Révision">${revYears()
+      .map(v => `<button class="ychip" data-act="rev-y" data-v="${v}" aria-pressed="${v === y}">${v}</button>`)
+      .join(
+        ''
+      )}<span class="rev-per">${per ? `${icon('calendar')}<b>${dl(per.du)} – ${dl(per.au)}</b>${per.src === 'estime' ? ` <span class="muted">estimée d’après ${per.from}</span>` : ''}` : '<span class="muted">Dates à fixer</span>'} <button class="link" data-act="arret-dates">${per?.src === 'fixe' ? 'Changer' : 'Fixer les dates'}</button></span></div>
+      <div class="fchips rev-f2" role="group" aria-label="Filtres">${[['', 'Tout'], ...REV_LIGNES.map(x => [x[0], x[1]])].map(([v, l]) => `<button class="ychip" data-act="rev-l" data-v="${v}" aria-pressed="${L === v}">${v ? `<i class="rlg-d ${revLcls(v)}"></i>` : ''}${l}</button>`).join('')}${
+        quis.length
+          ? `<select class="mini pour ${QUI ? 'on' : ''}" data-change="revqui" aria-label="Entreprise ou équipe"><option value="">Toutes les entreprises</option>${quis.map(x => opt(x, x, QUI)).join('')}</select>`
+          : ''
+      }<span class="ysep" aria-hidden="true"></span><button class="ychip" data-act="rev-pad" aria-pressed="${pref('revPad', true)}" title="Afficher aussi la semaine avant et la semaine après">± 1 semaine</button>${showP ? '' : `<button class="ychip" data-act="rev-ppl">${icon('person')}Qui est là</button>`}${
+        nHid
+          ? `<button class="ychip" data-act="rev-showhid" aria-pressed="${showHid}">${showHid ? 'Cacher les masqués' : `Masqués <small>${nHid}</small>`}</button>`
+          : ''
+      }${S.revPick ? `<span class="rev-hint">${icon('calendar')}Cliquez le dernier jour de « ${esc(get('taches', S.revPick)?.titre || '')} » <button class="link" data-act="rev-cancel">Annuler</button></span>` : ''}</div>`;
     return `${chips}<div class="rev-scroll"><table class="revg">${head}${ppl}<tbody class="rjs"><tr class="rsec"><th class="rl">${icon('wrench')}Travaux de la révision</th>${days.map(d => `<td class="${dcls(d)}"></td>`).join('')}</tr>${rows || `<tr><th class="rl muted">Aucun travail : « Travail de révision » pour en ajouter.</th>${days.map(d => `<td class="${dcls(d)}"></td>`).join('')}</tr>`}</tbody></table></div>`;
   },
   detail: () => ''
@@ -1233,7 +1319,8 @@ function revDialog(t) {
           qui,
           mandat: val(f, 'mandat'),
           du,
-          au
+          au,
+          annee: (du || '').slice(0, 4) || r.annee || revY()
         };
       tx(() => {
         if (isNew) {
@@ -1317,12 +1404,16 @@ function revImportDialog() {
               mandat: [w.mandat, w.tache].filter(Boolean).join(' · '),
               du: w.du || '',
               au: w.au || w.du || '',
+              annee: (w.du || j.debut || todayISO()).slice(0, 4),
               notes: w.notes || {}
             }
           });
           n++;
         }
-        if (!db.reglages.arret && j.debut && j.fin) db.reglages.arret = {du: j.debut, au: j.fin};
+        if (j.debut && j.fin && !arretsAll()[j.debut.slice(0, 4)]) {
+          db.reglages.arrets = {...arretsAll(), [j.debut.slice(0, 4)]: {du: j.debut, au: j.fin}};
+          delete db.reglages.arret;
+        }
       });
       render();
       toast(`${nbs(n, 'travail importé', 'travaux importés')} dans la révision`);

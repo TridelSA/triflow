@@ -1406,6 +1406,9 @@ const OPT = {};
 /* Tableau des réglages du compte : libellé et valeur lisible de chaque réglage connu */
 const PREFS = {
   revPpl: ['Révision : « Qui est là » affiché', v => (v === false ? 'Non' : 'Oui')],
+  revPad: ['Révision : une semaine avant et après', v => (v === false ? 'Non' : 'Oui')],
+  revHideP: ['Révision : personnes masquées', v => (Array.isArray(v) ? v.map(id => persName(getPers(id) || {nom: '?'})).join(', ') : '')],
+  revHideT: ['Révision : travaux masqués', v => (Array.isArray(v) ? nbs(v.length, 'travail', 'travaux') : '')],
   accPlan: ['Planning de l’accueil', () => accPlan().label],
   accTeam: ['Mon équipe', v => (Array.isArray(v) ? v.map(id => persName(getPers(id) || {nom: '?'})).join(', ') : '')],
   planVue: ['Personnes visibles au planning', v => (v === 'all' ? 'Tout le monde' : v === 'team' ? 'Mon équipe' : String(v).slice(2))],
