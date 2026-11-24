@@ -340,9 +340,10 @@ async def main():
         ok(await pg.evaluate("document.querySelector('.app > .hero').dataset.tint === 'sombre'"), 'barre latérale foncée le soir')
         await pg.evaluate("METEO = {...METEO, sunset: '17:00', isDay: 1}; sideTint(); meteoHero()"); await pg.wait_for_timeout(200)
         ok(await pg.evaluate("document.querySelector('.app > .hero').dataset.tint === 'clair'"), 'barre latérale claire le jour')
-        for nom, m in [('nuit', "{sunset: '06:00', sunrise: '07:40', now: 0, code: 0, isDay: 0}"), ('pluie', "{sunset: '17:00', sunrise: '07:40', now: 63, code: 63, isDay: 1}"), ('neige-soir', "{sunset: '08:45', sunrise: '07:40', now: 73, code: 73, isDay: 0}")]:
+        for nom, m in [('soleil', "{sunset: '17:00', sunrise: '07:40', now: 0, code: 0, isDay: 1}"), ('nuit', "{sunset: '06:00', sunrise: '07:40', now: 0, code: 0, isDay: 0}"), ('pluie', "{sunset: '17:00', sunrise: '07:40', now: 63, code: 63, isDay: 1}"), ('neige-soir', "{sunset: '08:45', sunrise: '07:40', now: 73, code: 73, isDay: 0}")]:
             await pg.evaluate(f"METEO = {{...METEO, ...{m}}}; sideTint(); meteoHero()"); await pg.wait_for_timeout(2600)
             await capture('ordi-barre-' + nom)
+        ok(await pg.evaluate("!document.querySelector('.hero-inner .help-btn').offsetWidth"), 'plus de bouton Aide dans la barre')
         ok(await pg.evaluate("!!document.querySelector('#sidefx2.snow i') && document.querySelector('.app > .hero').dataset.tint === 'sombre'"), 'barre latérale : neige le soir')
         await pg.evaluate("METEO = {...METEO, sunset: '17:00', now: 0, code: 0, isDay: 1}; sideTint(); meteoHero()")
         for w in (1024, 1280, 1550, 1920):
@@ -394,7 +395,7 @@ async def main():
         await pg.evaluate("localStorage.removeItem('__fail')")
         for w in (1024, 1366):
             await pg.set_viewport_size({'width': w, 'height': 768}); await pg.evaluate("go('accueil')"); await pg.wait_for_timeout(300); await capture(f'ordi-{w}-accueil')
-            ok(await pg.evaluate("(() => { const n = document.querySelector('#nav').getBoundingClientRect(), h = document.querySelector('.help-btn').getBoundingClientRect(), t = document.querySelector('.hero-copy').getBoundingClientRect(); return n.left < 40 && n.width > 180 && n.top > t.bottom && h.top > n.bottom && document.documentElement.scrollWidth <= innerWidth; })()"), f'barre latérale bien placée à {w} px de large')
+            ok(await pg.evaluate("(() => { const n = document.querySelector('#nav').getBoundingClientRect(), h = document.querySelector('.help-btn').getBoundingClientRect(), t = document.querySelector('.hero-copy').getBoundingClientRect(); return n.left < 40 && n.width > 180 && n.top > t.bottom && h.width === 0 && document.documentElement.scrollWidth <= innerWidth; })()"), f'barre latérale bien placée à {w} px de large')
         await b.close()
     srv.shutdown()
     if CAPTURES: comparer(echecs)

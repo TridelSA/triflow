@@ -2153,3 +2153,28 @@ main{padding-block:12px 40px}
   /* pluie et neige plus légères derrière le menu, plus présentes vers le bas */
   .sidefx.front{-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.35) 0,rgba(0,0,0,.5) 45%,#000 80%);mask-image:linear-gradient(180deg,rgba(0,0,0,.35) 0,rgba(0,0,0,.5) 45%,#000 80%)}
 }
+/* Beau temps de jour : halo de soleil chaud en haut à droite, rayons qui tournent très lentement, petit vol d'oiseaux */
+@media (min-width:1024px){
+  .sidefx .sun-glow{position:absolute;right:-90px;top:-90px;width:300px;height:300px;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,226,140,.75) 0,rgba(255,214,120,.38) 28%,rgba(255,206,110,.12) 52%,transparent 70%);animation:sfx-in 2s ease forwards,sfx-breathe 9s ease-in-out infinite}
+  .sidefx .sun-rays{position:absolute;right:-260px;top:-260px;width:640px;height:640px;border-radius:50%;opacity:.5;
+    background:repeating-conic-gradient(from 0deg,rgba(255,236,170,.55) 0 4deg,transparent 4deg 18deg);
+    -webkit-mask-image:radial-gradient(circle,#000 0,rgba(0,0,0,.55) 22%,transparent 55%);mask-image:radial-gradient(circle,#000 0,rgba(0,0,0,.55) 22%,transparent 55%);
+    animation:sfx-spin 160s linear infinite}
+  .sidefx .birds{position:absolute;left:0;top:190px;width:100%;height:60px;color:rgba(40,55,70,.55)}
+  .sidefx .birds .b{position:absolute;left:0;display:block;width:16px;opacity:0;animation:sfx-fly 38s linear infinite}
+  .sidefx .birds .b svg{width:100%;height:auto;display:block;animation:sfx-flap .9s ease-in-out infinite}
+  .sidefx .birds .b0{top:10px;animation-delay:4s}
+  .sidefx .birds .b1{top:22px;width:12px;animation-delay:4.7s}
+  .sidefx .birds .b2{top:2px;width:11px;animation-delay:5.3s}
+  .sidefx .birds .b1 svg{animation-delay:-.3s}.sidefx .birds .b2 svg{animation-delay:-.6s}
+  /* Aide : retirée de la barre (inutile sur ordinateur) */
+  .hero-inner .help-btn{display:none !important}
+}
+@keyframes sfx-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes sfx-spin{to{transform:rotate(360deg)}}
+@keyframes sfx-fly{0%{opacity:0;transform:translate(-30px,20px)}2%{opacity:1}22%{opacity:1;transform:translate(260px,-30px)}23%,100%{opacity:0;transform:translate(260px,-30px)}}
+@keyframes sfx-flap{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.45)}}
+@media (prefers-reduced-motion:reduce){ .sidefx .birds{display:none} }
+/* un seul soleil : quand le halo est dans la barre, celui de l'image de l'usine est caché */
+@media (min-width:1024px){ .app > .hero:has(.sidefx.sun) .hero-wx [data-sun]{display:none} }

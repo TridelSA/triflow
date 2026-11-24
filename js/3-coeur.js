@@ -2084,7 +2084,7 @@ function meteoCardSVG() {
         ''
       )}</g><g transform="translate(160 26)"><circle r="16" fill="#F3F1E4" opacity=".08"/><circle r="${r}" fill="#FFFFFF" opacity=".12"/>${lit}</g>`;
   } else if (sky === 'clair' || c <= 2)
-    body += `<g transform="translate(160 26)"><circle r="20" fill="#FFE27A" opacity=".35"/><circle r="12" fill="#FFD23F"/></g>`;
+    body += `<g data-sun transform="translate(160 26)"><circle r="20" fill="#FFE27A" opacity=".35"/><circle r="12" fill="#FFD23F"/></g>`;
   const night = sky === 'nuit',
     cf = night ? '#C9D3E3' : '#FFFFFF';
   if (c >= 1 && c <= 2) body += cloud(112, 26, 62, 18, night ? 0.6 : 0.95, cf);
@@ -2165,6 +2165,8 @@ const SIDE_STARS = (() => {
   return `<svg class="stars" viewBox="0 0 236 700" preserveAspectRatio="xMidYMin slice" aria-hidden="true"><g fill="#fff">${h}</g></svg><i class="shoot"></i>`;
 })();
 const SIDE_CLOUD = `<svg viewBox="0 0 120 40" aria-hidden="true"><g fill="currentColor"><rect x="6" y="20" width="108" height="18" rx="9"/><circle cx="38" cy="22" r="14"/><circle cx="66" cy="16" r="16"/><circle cx="90" cy="24" r="11"/></g></svg>`;
+const SIDE_BIRD = `<svg viewBox="0 0 24 10" aria-hidden="true"><path d="M1 6c3-3 6-3 11 1 5-4 8-4 11-1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+const SIDE_SUN = `<i class="sun-glow"></i><i class="sun-rays"></i><span class="birds">${[0, 1, 2].map(i => `<i class="b b${i}">${SIDE_BIRD}</i>`).join('')}</span>`;
 function sideTint() {
   const hero = $('.app > .hero');
   if (!hero) return;
@@ -2230,7 +2232,13 @@ function sideTint() {
   } else for (const k of ['--ink', '--muted', '--sunk', '--line']) hero.style.removeProperty(k);
   hero.dataset.tint = darkTxt ? 'sombre' : 'clair';
   /* Décor : étoiles la nuit par temps clair (moins s'il y a des nuages), nuages qui passent, pluie ou neige qui tombe */
-  const fx = [night && code < 45 ? (grey ? 'stars few' : 'stars') : '', code >= 1 && code < 45 ? 'clouds' : wet ? 'clouds heavy' : '']
+  /* jour de beau temps : soleil doux en haut, rayons qui tournent lentement, oiseaux de temps en temps */
+  const sunny = !darkTxt && code <= 2 && now > sr + 30 && now < ss - 20;
+  const fx = [
+    night && code < 45 ? (grey ? 'stars few' : 'stars') : '',
+    sunny ? 'sun' : '',
+    code >= 1 && code < 45 ? 'clouds' : wet ? 'clouds heavy' : ''
+  ]
     .filter(Boolean)
     .join(' ');
   const key = fx + '|' + (wet ? (snow ? 'snow' : 'rain') : '') + '|' + (code >= 95 ? 'storm' : '');
@@ -2239,6 +2247,7 @@ function sideTint() {
     back.className = 'sidefx ' + fx;
     back.innerHTML =
       (fx.includes('stars') ? SIDE_STARS : '') +
+      (fx.includes('sun') ? SIDE_SUN : '') +
       (fx.includes('clouds')
         ? `<span class="cl c1">${SIDE_CLOUD}</span><span class="cl c2">${SIDE_CLOUD}</span>${wet ? `<span class="cl c3">${SIDE_CLOUD}</span>` : ''}`
         : '');
