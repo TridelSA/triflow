@@ -443,12 +443,11 @@ VIEWS.planning = {
         return h;
       })()}</div>`;
     return `<header class="page-head"><h1>Planning</h1><div class="tools">
-        <div class="pweek"><button class="btn icon-only" data-act="pweek" data-n="-7" aria-label="Semaine précédente">${icon('chev')}</button><div class="pw-l"><b>Semaine ${isoWeek(mon)}</b><span>${range}</span></div><button class="btn icon-only" data-act="pweek" data-n="7" aria-label="Semaine suivante">${icon('chev')}</button></div>
+        <div class="pweek"><button class="btn icon-only" data-act="pweek" data-n="-7" aria-label="Semaine précédente">${icon('chev')}</button>${mon !== planWeek() ? `<button class="pw-l pw-back" data-act="pweek" data-n="0" title="Revenir à la semaine prochaine">` : '<div class="pw-l">'}<b>Semaine ${isoWeek(mon)}</b><span>${range}</span>${mon !== planWeek() ? '</button>' : '</div>'}<button class="btn icon-only" data-act="pweek" data-n="7" aria-label="Semaine suivante">${icon('chev')}</button></div>
         <button class="btn side-tg ${S.pside ? 'on' : ''}" data-act="plan-side" title="Liste des travaux à glisser dans le planning">${icon('list')}Travaux à planifier${(() => {
           const n = planSideCount(days, ppl);
           return n ? ` <span class="badge">${n}</span>` : '';
         })()}</button>
-        ${mon !== planWeek() ? `<button class="btn" data-act="pweek" data-n="0">Semaine prochaine</button>` : `<button class="btn" data-act="pweek" data-n="-7">Cette semaine</button>`}
         <button class="btn primary" data-act="plan-print" data-f="a3" title="Imprimer la semaine sur une feuille A3 paysage">${icon('printer')}Imprimer A3</button>${(() => {
           const r = db.reglages.planPret?.[mon];
           return r
@@ -1423,7 +1422,7 @@ OPT.prefs = () => {
       .filter(k => !PREFS[k])
       .map(k => [esc(k), esc(JSON.stringify(p[k]))])
   ];
-  return `<section class="opt-sec"><div class="head"><h2>Mes réglages</h2></div><div class="pad"><p class="hint">Ils sont gardés avec votre compte (<b>${esc(meKey())}</b>) : vous les retrouvez sur tous les appareils où vous êtes connecté.</p>
+  return `<section class="opt-sec"><div class="head"><h2>Mes réglages</h2></div><div class="pad">
     <table class="tbl compact prefs-t"><tbody>${rows.map(([l, v]) => `<tr><th>${l}</th><td>${l === 'Qui je suis' ? esc(v) : v}</td></tr>`).join('')}</tbody></table></div></section>`;
 };
 /* Mon compte = qui je suis, mon accueil, connexion */
@@ -1434,7 +1433,7 @@ OPT.compte = () => {
 };
 /* Mon accueil : réglages personnels de la page d'accueil */
 OPT.accueil = () =>
-  `<section class="opt-sec"><div class="head"><h2>Ma page d’accueil</h2></div><div class="pad"><p class="hint">Choisissez les personnes affichées dans la case <b>Planning</b> de votre page d’accueil. Ce réglage ne change que votre accueil.</p><div class="acc-plan">${accPlanSelect()}</div></div></section>`;
+  `<section class="opt-sec"><div class="head"><h2>Ma page d’accueil</h2></div><div class="pad"><div class="acc-plan">${accPlanSelect()}</div></div></section>`;
 OPT.lieux = () => {
   const salles = db.salles.filter(live).sort((a, b) => !!a.statut - !!b.statut || coll.compare(salleCode(a), salleCode(b))),
     sArch = db.salles.filter(x => x.arch);
@@ -1457,7 +1456,6 @@ OPT.lieux = () => {
         <div class="rtools"><button class="btn small" data-act="new-lieu" data-salle="${s.id}">${icon('plus')}Emplacement</button><button class="btn small" data-act="edit-salle" data-id="${s.id}">${icon('edit')}Modifier le local</button><button class="link del-salle" data-act="arch" data-col="salles" data-id="${s.id}">Archiver</button></div></div></details>`;
   };
   return `<section class="opt-sec"><div class="head"><h2>Emplacements</h2><div class="tools">${add}</div></div>
-    <div class="pad"><p class="hint">Ouvrez un local pour voir ses emplacements. Cliquez sur un emplacement pour le modifier.</p></div>
     ${salles.length ? salles.map(room).join('') : `<div class="pad">${empty('Aucun local', '<p>Utilisez « Ajouter ».</p>')}</div>`}
     ${sArch.length ? `<details class="arch-sec"><summary>${icon('archive')}Locaux archivés <span class="muted">${sArch.length}</span></summary>${sArch.map(x => `<div class="arch-line"><span class="plate">${esc(salleCode(x))}</span><span class="t">${esc(x.nom && x.nom !== salleCode(x) ? x.nom : '')} <span class="muted">· archivé le ${fmtD(x.arch)}</span></span><button class="btn small" data-act="unarch" data-col="salles" data-id="${x.id}">Restaurer</button><button class="link danger" data-act="del-salle" data-id="${x.id}">Supprimer</button></div>`).join('')}</details>` : ''}</section>`;
 };
@@ -1473,7 +1471,7 @@ OPT.kks = () => {
     'plus',
     'primary'
   )}</div></div>
-    <div class="pad"><p class="hint">Le système (H › HA › HAC…) est lu directement dans le code KKS. Le code AIC est facultatif.</p>
+    <div class="pad">
     <input type="search" data-search="optkks" data-opt="1" placeholder="Filtrer la liste…" value="${esc(S.q.optkks)}" aria-label="Filtrer les repères" style="max-width:320px"></div>
     <div id="opt-list">${optKksTable(rows)}</div></section>`;
 };
@@ -1495,7 +1493,7 @@ OPT.personnes = () => {
     pArch = db.personnes.filter(p => p.arch).sort(persSort);
   const groups = db.listes.groupes.filter(x => db.personnes.some(p => p.groupe === x));
   return `<section class="opt-sec"><div class="head"><h2>Personnes <span class="muted" style="font-family:var(--f-mono);font-size:.9rem">${db.personnes.length}</span></h2><div class="tools">${CLOUD.on && canDel() ? `<button class="btn" data-act="new-access" title="Créer un compte de connexion à TriFlow">${icon('person')}Créer un accès</button>` : ''}<button class="btn primary" data-act="new-pers">${icon('plus')}Personne</button></div></div>
-    <div class="pad"><p class="hint">Le personnel et les groupes sont repris automatiquement du Planning Tridel. Une personne qui n’y figure plus n’est plus proposée dans les nouveaux rapports, mais reste dans les anciens.</p>
+    <div class="pad">
     ${groups.length ? `<div><select class="mini" data-change="optGrp" aria-label="Filtrer par groupe"><option value="">Tous les groupes</option>${groups.map(x => opt(x, x, g)).join('')}</select></div>` : ''}</div>
     ${
       rows.length
@@ -1536,7 +1534,7 @@ OPT.fournisseurs = () => {
     'plus',
     'primary'
   )}</div></div>
-    <div class="pad"><p class="hint">Une pièce est reliée à un fournisseur quand son nom apparaît dans sa marque, son fournisseur, sa désignation ou ses notes.</p>
+    <div class="pad">
     <input type="search" data-search="optfour" data-opt4="1" placeholder="Filtrer…" value="${esc(S.q.optfour || '')}" aria-label="Filtrer les fournisseurs" style="max-width:320px"></div>
     <div id="opt-four">${
       rows.length
@@ -1742,7 +1740,6 @@ OPT.historique = () => {
   const f = S.jf || (S.jf = {}),
     ppl = [...new Set(Object.keys(db.reglages.moi || {}))];
   return `<section class="opt-sec"><div class="head"><h2>Historique</h2></div><div class="pad">
-    <p class="hint">Qui a fait quoi, et quand : sorties et entrées de stock, rapports, tâches, pièces, planning, réglages. Les plus récents en premier.</p>
     <div class="ychips" role="tablist" style="padding:0;border:0;margin:8px 0">${J_TYPES.map(([k, t]) => `<button role="tab" class="ychip" data-act="jtype" data-k="${k}" aria-selected="${(f.col || '') === k}">${t}</button>`).join('')}</div>
     <div class="tools" style="margin-bottom:10px"><input type="search" data-jq placeholder="Chercher : nom, pièce, rapport…" value="${esc(f.q || '')}" style="max-width:340px" aria-label="Chercher dans l’historique"></div>
     <div data-jrn="" data-full="1"><p class="empty-line">Chargement…</p></div></div></section>`;
@@ -1754,7 +1751,7 @@ OPT.roles = () => {
   const grps = db.listes.groupes.filter(g => g !== 'Cadres' && ppl.some(p => p.groupe === g));
   const cadres = ppl.filter(p => p.groupe === 'Cadres');
   return `<section class="opt-sec"><div class="head"><h2>Rôles</h2></div><div class="pad">
-    <p class="hint">Un responsable par groupe (par exemple le responsable électrique). Les droits de chaque rôle seront réglés plus tard ici.${edit ? '' : ' Seuls les cadres peuvent modifier ces réglages.'}</p></div>
+    ${edit ? '' : '<p class="hint">Seuls les cadres peuvent modifier.</p>'}</div>
     <div class="tbl-wrap"><table class="tbl compact"><thead><tr><th>Groupe</th><th>Responsable</th></tr></thead><tbody>
     ${grps
       .map(g => {
@@ -1817,7 +1814,7 @@ OPT.listes = () => {
     key,
     title,
     hint
-  ) => `<div><h3>${title}</h3><p class="hint">${hint}</p><div class="chips">${db.listes[key].map((v, i) => `<span class="c">${esc(v)}<button class="icon-btn" data-act="list-del" data-list="${key}" data-i="${i}" aria-label="Retirer ${esc(v)}">×</button></span>`).join('')}</div>
+  ) => `<div><h3 title="${esc(hint)}">${title}</h3><div class="chips">${db.listes[key].map((v, i) => `<span class="c">${esc(v)}<button class="icon-btn" data-act="list-del" data-list="${key}" data-i="${i}" aria-label="Retirer ${esc(v)}">×</button></span>`).join('')}</div>
     <form class="inline-form" data-form="list-add" data-list="${key}"><input name="v" placeholder="Ajouter…" aria-label="Ajouter à ${title}"><button class="btn">Ajouter</button></form></div>`;
   return `<section class="opt-sec"><div class="head"><h2>Listes</h2></div><div class="pad"><div class="lists">
     ${block('categories', 'Catégories de pièces', 'Proposées dans la fiche pièce.')}

@@ -274,7 +274,7 @@ VIEWS.pieces = {
     ${(() => {
       const n = db.pieces.filter(p => live(p) && isLow(p)).length;
       return `<button class="btn" data-act="to-order">${icon('truck')}À commander${n ? ` <span class="badge">${n}</span>` : ''}</button>`;
-    })()}</div></header>
+    })()}<span class="head-tools">${toolBtn(['xl-pieces', 'Exporter en Excel', 'excel', {}])}${toolBtn(['labels-list', 'Imprimer les étiquettes QR', 'qr', {}])}${canDel() ? toolBtn(['dups', 'Trouver les doublons', 'merge', {}]) : ''}${toolBtn(archItem('pieces'))}</span></div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`,
   list() {
     const rows = filteredPieces();
@@ -307,7 +307,7 @@ VIEWS.pieces = {
               `<p>Essayez un autre mot, ou scannez l’étiquette.</p><button class="btn no-desk" data-act="scan">${icon('scan')}Scanner</button>`
             ))
       );
-    const more = `${chips}<div class="list-bar"><span class="muted">${nbs(rows.length, 'pièce', 'pièces')}</span><span class="lb-r lb-tools">${toolBtn(['xl-pieces', 'Exporter en Excel', 'excel', {}])}${toolBtn(['labels-list', 'Imprimer les étiquettes QR', 'qr', {}])}${canDel() ? toolBtn(['dups', 'Trouver les doublons', 'merge', {}]) : ''}${toolBtn(archItem('pieces'))}</span><span class="lb-r lb-sort"><label>Trier<select class="mini" data-change="psort" aria-label="Trier les pièces">${[
+    const more = `${chips}<div class="list-bar"><span class="muted">${nbs(rows.length, 'pièce', 'pièces')}</span><span class="lb-r lb-sort"><label><select class="mini" data-change="psort" aria-label="Trier les pièces">${[
       ['iddesc', 'Par ID (décroissant)'],
       ['id', 'Par ID (croissant)'],
       ['alpha', 'Alphabétique'],
@@ -334,7 +334,7 @@ VIEWS.pieces = {
   },
   detail() {
     const p = getPiece(S.sel.pieces);
-    if (!p) return placeholder('box', 'Choisissez une pièce ou scannez son QR code.');
+    if (!p) return placeholder('box', 'Choisissez une pièce.');
     const lines = sortedStock(p),
       phys = lines.filter(x => !isStatut(getLieu(x.lieuId))),
       out = horsMag(p);
@@ -380,8 +380,8 @@ VIEWS.pieces = {
         }
         ${out.length ? `<div class="pd-where out">${out.map(x => `<div class="pd-loc">${plate(getLieu(x.lieuId))}<span class="t">hors magasin</span><span class="q">${num(x.qte)} <small>${esc(p.unite)}</small></span></div>`).join('')}</div>` : ''}</section>
       <section class="pd-sec"><h3>${icon('plant')}Équipements (KKS)</h3>
-        ${ks.length ? `<div class="pd-kks">${ks.map(k => `<span class="pd-k">${kksTag(k)}<span class="t">${esc(k.designation)}</span><button class="icon-btn" data-act="unlink-kks" data-piece="${p.id}" data-id="${k.id}" aria-label="Retirer ${esc(k.code)}" title="Retirer">×</button></span>`).join('')}</div>` : '<p class="empty-line">Aucun équipement lié.</p>'}
-        <form class="inline-form" data-form="link-kks" data-piece="${p.id}"><input name="kks" list="dl-kks" placeholder="Lier un équipement (code KKS)" aria-label="Repère KKS à lier" autocomplete="off"><button class="btn">Lier</button></form></section>
+        ${ks.length ? `<div class="pd-kks">${ks.map(k => `<span class="pd-k">${kksTag(k)}<span class="t">${esc(k.designation)}</span><button class="icon-btn" data-act="unlink-kks" data-piece="${p.id}" data-id="${k.id}" aria-label="Retirer ${esc(k.code)}" title="Retirer">×</button></span>`).join('')}</div>` : ''}
+        <details class="link-more"><summary>${icon('plus')}Lier un équipement</summary><form class="inline-form" data-form="link-kks" data-piece="${p.id}"><input name="kks" list="dl-kks" placeholder="Code KKS" aria-label="Repère KKS à lier" autocomplete="off"><button class="btn">Lier</button></form></details></section>
       ${
         true
           ? `<section class="pd-sec"><h3>${icon('list')}Fiche</h3><dl class="pd-info pd-fiche">
@@ -732,7 +732,7 @@ VIEWS.lieux = {
   detail() {
     const l = getLieu(S.sel.lieux);
     if (l && !liveLieu(l)) return archBanner(l.arch ? 'lieux' : 'salles', l.arch ? l : getSalle(l.salleId));
-    if (!l) return placeholder('shelf', 'Choisissez un emplacement pour voir ce qui y est rangé et imprimer les étiquettes du matériel.');
+    if (!l) return placeholder('shelf', 'Choisissez un emplacement.');
     const s = getSalle(l.salleId),
       items = contentsOf(l.id);
     const parts = [

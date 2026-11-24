@@ -18,7 +18,7 @@ function travauxShell() {
   const t = S.view === 'taches';
   return `<header class="page-head"><h1>Travaux</h1><div class="tools">${searchBox(t ? 'taches' : 'interventions', t ? 'Rechercher un travail…' : 'Rechercher un rapport…')}
     ${t ? `<button class="btn primary" data-act="new-tache">${icon('plus')}Nouveau travail</button>` : `<button class="btn primary" data-act="new-int">${icon('plus')}Nouveau rapport</button>`}
-    ${t ? `<button class="btn" data-act="signal">${icon('bell')}Signaler un problème</button>` : ''}<span class="head-tools">${(t ? [['new-int', 'Nouveau rapport sans travail prévu', 'report', {}], ['print-taches', 'Imprimer la liste', 'printer', {}], ['xl-taches', 'Exporter en Excel', 'excel', {}], archItem('taches')] : [['xl-ints', 'Exporter en Excel', 'excel', {}], archItem('interventions')]).map(x => toolBtn(x)).join('')}</span></div></header>
+    <span class="head-tools">${(t ? [['signal', 'Signaler un problème', 'bell', {}], ['new-int', 'Nouveau rapport sans travail prévu', 'report', {}], ['print-taches', 'Imprimer la liste', 'printer', {}], ['xl-taches', 'Exporter en Excel', 'excel', {}], archItem('taches')] : [['xl-ints', 'Exporter en Excel', 'excel', {}], archItem('interventions')]).map(x => toolBtn(x)).join('')}</span></div></header>
     <div class="split"><section class="pane" id="list"></section><section class="pane detail" id="detail"></section></div>`;
 }
 const doneOn = (t, d) => db.interventions.some(i => i.tacheId === t.id && i.date === d) || (t.faits || []).some(f => f.date === d);
@@ -232,7 +232,7 @@ VIEWS.taches = {
   },
   detail() {
     const t = get('taches', S.sel.taches);
-    if (!t) return placeholder('check', 'Choisissez un travail pour le faire, voir quand il a été fait ou le modifier.');
+    if (!t) return placeholder('check', 'Choisissez un travail.');
     const k = getKks(t.kksId),
       run = openRun(t),
       last = [...db.interventions.filter(i => i.tacheId === t.id && live(i)).map(i => i.date), ...(t.faits || []).map(f => f.date)]
@@ -241,7 +241,7 @@ VIEWS.taches = {
     const off = t.actif === false,
       di = dueInfo(t),
       RAP = {oui: 'avec rapport', non: 'sans rapport'};
-    return `${archBanner('taches', t)}<div class="pd-head"><span class="pd-id">${isPetit(t) ? 'Une seule fois' + (prioOf(t) !== 'normale' ? ' · priorité ' + PRIO[prioOf(t)][0].toLowerCase() : '') : esc(freqLabel(t.freq))}${t.arret ? ' · pendant l’arrêt' : ''}</span><div class="pd-tools"><button class="btn small" data-act="edit-tache" data-id="${t.id}">${icon('edit')}Modifier</button>${toolBtn(t.arch ? ['unarch', 'Restaurer', 'archive', {col: 'taches', id: t.id}] : ['arch', 'Archiver', 'archive', {col: 'taches', id: t.id}])}${toolBtn(hardItem('taches', t.id), 'danger-ghost')}</div></div>
+    return `${archBanner('taches', t)}<div class="pd-head"><span class="pd-id txt">${isPetit(t) ? 'Une seule fois' + (prioOf(t) !== 'normale' ? ' · priorité ' + PRIO[prioOf(t)][0].toLowerCase() : '') : esc(freqLabel(t.freq))}${t.arret ? ' · pendant l’arrêt' : ''}</span><div class="pd-tools"><button class="btn small" data-act="edit-tache" data-id="${t.id}">${icon('edit')}Modifier</button>${toolBtn(t.arch ? ['unarch', 'Restaurer', 'archive', {col: 'taches', id: t.id}] : ['arch', 'Archiver', 'archive', {col: 'taches', id: t.id}])}${toolBtn(hardItem('taches', t.id), 'danger-ghost')}</div></div>
       <h2 class="pd-title">${esc(t.titre)}</h2>
       ${k ? `<div class="equip-hero">${kksTag(k)}<span>${esc(k.designation || '')}</span></div>` : ''}
       <p class="pd-sub">${t.assign?.v ? `Pour <strong style="font-weight:600">${esc(assignLabel(t.assign))}</strong>` : '<span class="muted">Pour personne en particulier</span>'}${last ? ` · fait la dernière fois le ${fmtD(last)}` : ''}${RAP[t.rapport] ? ` · ${RAP[t.rapport]}` : ''}</p>
@@ -254,7 +254,10 @@ VIEWS.taches = {
       ${t.description ? `<section class="pd-sec"><h3>${icon('list')}Ce qu’il faut faire</h3><p class="pre">${esc(t.description)}</p></section>` : ''}
       ${(t.points || []).length ? `<section class="pd-sec"><h3>${icon('check')}Points à contrôler</h3><ul class="pts-list">${t.points.map(p => `<li>${esc(p)}</li>`).join('')}</ul></section>` : ''}
       ${(t.photos || []).length || t.demande ? `<section class="pd-sec"><h3>${icon('camera')}Photos</h3>${photoStrip(t.photos, {col: 'taches', id: t.id})}</section>` : ''}
-      <section class="pd-sec"><h3>${icon('check')}Déjà fait</h3>${doneHTML(t)}</section>${byLine(t)}`;
+      ${(() => {
+        const h = doneHTML(t);
+        return h.includes('empty-line') ? '' : `<section class="pd-sec"><h3>${icon('check')}Déjà fait</h3>${h}</section>`;
+      })()}${byLine(t)}`;
   }
 };
 /* Bandeau de l'onglet Arrêt : dates et avancement */
@@ -882,13 +885,9 @@ VIEWS.kks = {
         return `${crumb}<div class="sys-head"><h3><b class="code">${S.sys === '?' ? '' : cur}</b>${S.sys === '?' ? 'Sans système' : esc(sysName(cur))}</h3><span class="cnt">${rows.length} équip.</span></div>
           ${rows.length ? (rows.length > 12 && S.sys !== '?' ? kksGroups(rows) : kksRows(rows)) : '<p class="empty-line" style="padding:16px 0">Aucun équipement.</p>'}`;
       }
-      if (!cur)
-        return placeholder(
-          'plant',
-          'Choisissez un système à gauche, ou tapez un code KKS, un AIC ou un nom d’équipement dans la recherche.'
-        );
+      if (!cur) return placeholder('plant', 'Choisissez un système.');
       const kids = [...new Set([...cnt.keys()].filter(c => c !== '?' && c.startsWith(cur)).map(c => c.slice(0, cur.length + 1)))].sort();
-      return `${crumb}${cur ? `<div class="sys-head"><h3><b class="code">${cur}</b>${esc(sysName(cur))}</h3><span class="cnt">${n(cur)} équip.</span></div>` : '<p class="hint" style="margin:0 0 10px">Choisissez un système : il se déplie dans le menu de gauche.</p>'}
+      return `${crumb}${cur ? `<div class="sys-head"><h3><b class="code">${cur}</b>${esc(sysName(cur))}</h3><span class="cnt">${n(cur)} équip.</span></div>` : ''}
         <div class="sys-kids">${kids.map(c => `<button class="sys-kid" data-act="sys-sel" data-sys="${c}"><b class="code">${c}</b><span class="t">${esc(sysName(c)) || '<span class="muted">Sans nom</span>'}</span><span class="cnt">${n(c)}</span>${icon('chev')}</button>`).join('')}</div>`;
     }
     const ps = db.pieces.filter(p => live(p) && p.kks.includes(k.id)).sort((a, b) => coll.compare(a.designation, b.designation)),
